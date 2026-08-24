@@ -7,3 +7,5 @@ credentials*
 node_modules/
 mcp/.wrangler/
 mcp/submission/frames/
+mcp/submission/frames-recording/
+mcp/submission/playwright-video/
