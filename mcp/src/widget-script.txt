@@ -1,0 +1,409 @@
+(function () {
+  var SETTINGS_KEY = 'wordcounter.widget.settings';
+  var THEMES = ['light', 'dark', 'contrast', 'paper', 'glass', 'frost', 'brutal', 'loom', 'tank', 'nes'];
+  var THEME_SWATCH = {
+    light: ['#f2f2f0', '#c45c26'], dark: ['#161616', '#e07a45'], contrast: ['#000', '#ff0'],
+    paper: ['#e8e2d6', '#8b4510'], glass: ['#e8eef8', '#7c3aed'], frost: ['#070b16', '#a78bfa'],
+    brutal: ['#fff', '#f00'], loom: ['#0a0a0f', '#d4a84b'], tank: ['#0b1a22', '#57a253'], nes: ['#209cee', '#e4002b']
+  };
+  var TYPE = {
+    sans: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    serif: 'Georgia, "Times New Roman", serif',
+    book: 'Palatino, "Book Antiqua", serif',
+    mono: 'Menlo, Monaco, Consolas, monospace'
+  };
+  var MAX_CELLS = 100;
+  var rpcId = 0;
+  var syncTimer = null;
+  var userEdited = false;
+
+  var settings = {
+    theme: 'light', layout: 'hero', primary: 'words', figure: 'pair', font: 'sans',
+    chart: 'dots', target: 0, ghost: 'primary', ghostWeight: 'whisper', ghostPlace: 'se',
+    showGhost: true, showTarget: true, showChart: true
+  };
+
+  var root = document.getElementById('wcRoot');
+  var draft = document.getElementById('draft');
+  var settingsPanel = document.getElementById('wcSettings');
+  var settingsBtn = document.getElementById('settingsBtn');
+  var themeBtn = document.getElementById('themeBtn');
+  var themeGrid = document.getElementById('themeGrid');
+  var primaryBlock = document.getElementById('primaryBlock');
+  var primaryValue = document.getElementById('primaryValue');
+  var primaryLabel = document.getElementById('primaryLabel');
+  var goalHint = document.getElementById('goalHint');
+  var progress = document.getElementById('progress');
+  var viz = document.getElementById('viz');
+  var vizMeta = document.getElementById('vizMeta');
+  var editorSurface = document.getElementById('editorSurface');
+  var targetInput = document.getElementById('targetInput');
+  var expandBtn = document.getElementById('expand-btn');
+
+  var METRICS = {
+    words: { label: 'words', format: function (c) { return String(c.words); } },
+    chars: { label: 'characters', format: function (c) { return String(c.chars); } },
+    sentences: { label: 'sentences', format: function (c) { return String(c.sentences); } },
+    paragraphs: { label: 'paragraphs', format: function (c) { return String(c.paragraphs); } },
+    reading: { label: 'reading', format: function (c) { return c.reading; } }
+  };
+
+  function count(s) {
+    var trimmed = String(s || '').trim();
+    return {
+      words: trimmed ? trimmed.split(/\s+/).length : 0,
+      chars: String(s || '').length,
+      sentences: (trimmed.match(/[^\s.!?…]+(?:[^.!?…]*[.!?…]+|[^.!?…]*$)/g) || []).length,
+      paragraphs: trimmed ? trimmed.split(/\n\s*\n/).filter(function (p) { return p.trim(); }).length : 0
+    };
+  }
+
+  function readingTime(words) {
+    var secs = Math.round(words / 200 * 60);
+    return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  }
+
+  function countWithReading(s) {
+    var c = count(s);
+    return { words: c.words, chars: c.chars, sentences: c.sentences, paragraphs: c.paragraphs, reading: readingTime(c.words) };
+  }
+
+  function layerOn(name) {
+    if (name === 'ghost') return settings.showGhost;
+    if (name === 'target') return settings.showTarget;
+    if (name === 'chart') return settings.showChart;
+    return true;
+  }
+
+  function effectiveTarget() {
+    return layerOn('target') && settings.target > 0 ? settings.target : 0;
+  }
+
+  function saveSettings() {
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+  }
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      if (!raw) return;
+      var p = JSON.parse(raw);
+      Object.keys(settings).forEach(function (k) {
+        if (p[k] !== undefined) settings[k] = p[k];
+      });
+      if (THEMES.indexOf(settings.theme) < 0) settings.theme = 'light';
+    } catch (e) {}
+  }
+
+  function applyTheme(theme) {
+    if (THEMES.indexOf(theme) < 0) theme = 'light';
+    settings.theme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    themeBtn.setAttribute('aria-label', 'theme: ' + theme);
+    themeGrid.querySelectorAll('.theme-swatch').forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.getAttribute('data-theme') === theme);
+    });
+  }
+
+  function cycleTheme(dir) {
+    dir = dir === -1 ? -1 : 1;
+    var i = THEMES.indexOf(settings.theme);
+    applyTheme(THEMES[(i + dir + THEMES.length) % THEMES.length]);
+    saveSettings();
+  }
+
+  function applyControls() {
+    root.setAttribute('data-layout', settings.layout);
+    primaryBlock.setAttribute('data-figure', settings.figure);
+    document.documentElement.style.setProperty('--type', TYPE[settings.font] || TYPE.sans);
+    document.querySelectorAll('.seg input[type="radio"]').forEach(function (input) {
+      input.checked = input.value === String(settings[input.name]);
+    });
+    targetInput.value = settings.target > 0 ? String(settings.target) : '';
+    document.querySelectorAll('.layer-sq').forEach(function (btn) {
+      var layer = btn.getAttribute('data-layer');
+      var on = layerOn(layer);
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var fieldset = btn.closest('.layer-row');
+      if (fieldset) fieldset.classList.toggle('is-off', !on);
+    });
+    document.querySelectorAll('[data-metric]').forEach(function (node) {
+      node.classList.toggle('is-primary', node.getAttribute('data-metric') === settings.primary);
+    });
+    applyTheme(settings.theme);
+  }
+
+  function ghostText(c) {
+    if (!layerOn('ghost')) return '';
+    var g = settings.ghost === 'primary' ? settings.primary : settings.ghost;
+    return METRICS[g] ? METRICS[g].format(c) : METRICS.words.format(c);
+  }
+
+  function cellPlan(words, target) {
+    if (target <= MAX_CELLS) {
+      return { total: target, filled: Math.max(0, Math.min(words, target)), unit: 1 };
+    }
+    var unit = Math.ceil(target / MAX_CELLS);
+    return {
+      total: Math.ceil(target / unit),
+      filled: Math.max(0, Math.min(Math.ceil(target / unit), Math.floor(words / unit))),
+      unit: unit
+    };
+  }
+
+  function ringPlan(words, target) {
+    var best = 1;
+    var bestScore = Infinity;
+    var c, per, score, i, rings = [];
+    for (c = 1; c <= 5; c++) {
+      per = target / c;
+      score = Math.abs(per - 55);
+      if (target % c === 0) score *= 0.72;
+      if (score < bestScore) { bestScore = score; best = c; }
+    }
+    per = target / best;
+    for (i = 0; i < best; i++) {
+      var start = i * per;
+      var filled = Math.max(0, Math.min(per, words - start));
+      rings.push({ pct: (filled / per) * 100, full: filled >= per - 0.0001 });
+    }
+    return { count: best, per: per, rings: rings };
+  }
+
+  function donutSvg(pct) {
+    var r = 15.9155;
+    var circ = 2 * Math.PI * r;
+    var offset = circ * (1 - Math.max(0, Math.min(100, pct)) / 100);
+    return '<svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="' + r + '"></circle><circle class="fill" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + circ.toFixed(3) + '" stroke-dashoffset="' + offset.toFixed(3) + '"></circle></svg>';
+  }
+
+  function renderProgress(words) {
+    var target = effectiveTarget();
+    if (!target || !layerOn('chart')) {
+      progress.hidden = true;
+      viz.innerHTML = '';
+      vizMeta.textContent = '';
+      return;
+    }
+    var plan = cellPlan(words, target);
+    var chart = settings.chart;
+    var pct = Math.min(100, Math.round((words / target) * 100));
+    var html = '';
+    var i, rp, rings;
+    if (chart === 'bar') {
+      html = '<div class="fill" style="width:' + pct + '%"></div>';
+    } else if (chart === 'ring') {
+      rp = ringPlan(words, target);
+      rings = rp.rings;
+      for (i = 0; i < rings.length; i++) {
+        html += '<div class="donut' + (rings[i].full ? ' is-full' : '') + '">' + donutSvg(rings[i].pct) + '</div>';
+      }
+    } else {
+      var majorEvery = chart === 'ticks' ? Math.max(1, Math.round(plan.total / 10)) : 0;
+      for (i = 0; i < plan.total; i++) {
+        html += '<span class="cell' + (i < plan.filled ? ' on' : '') + (majorEvery && i % majorEvery === 0 ? ' major' : '') + '"></span>';
+      }
+    }
+    progress.hidden = false;
+    progress.setAttribute('data-met', words >= target ? 'true' : 'false');
+    viz.className = 'viz viz-' + chart;
+    viz.innerHTML = html;
+    if (chart === 'ring') {
+      vizMeta.textContent = Math.min(words, target) + ' of ' + target + ' · ' + pct + '% · ' + rp.count + ' rings';
+    } else {
+      vizMeta.textContent = Math.min(words, target) + ' of ' + target + ' · ' + pct + '%';
+    }
+  }
+
+  function render() {
+    var c = countWithReading(draft.value);
+    var key;
+    for (key in METRICS) {
+      var node = document.getElementById('m-' + key);
+      if (node) node.textContent = METRICS[key].format(c);
+    }
+    var primary = METRICS[settings.primary] || METRICS.words;
+    primaryValue.textContent = primary.format(c);
+    primaryLabel.textContent = primary.label;
+    var target = effectiveTarget();
+    if (target > 0 && settings.primary === 'words') {
+      goalHint.hidden = false;
+      goalHint.textContent = '/ ' + target;
+      goalHint.setAttribute('data-met', c.words >= target ? 'true' : 'false');
+    } else if (target > 0) {
+      goalHint.hidden = false;
+      goalHint.textContent = '· ' + c.words + ' / ' + target;
+      goalHint.setAttribute('data-met', c.words >= target ? 'true' : 'false');
+    } else {
+      goalHint.hidden = true;
+    }
+    root.setAttribute('data-met', target > 0 && c.words >= target ? 'true' : 'false');
+    editorSurface.setAttribute('data-ghost', layerOn('ghost') ? settings.ghost : 'off');
+    editorSurface.setAttribute('data-ghost-weight', settings.ghostWeight);
+    editorSurface.setAttribute('data-ghost-place', settings.ghostPlace);
+    editorSurface.setAttribute('data-count', ghostText(c));
+    renderProgress(c.words);
+  }
+
+  function setDraft(text, fromUser) {
+    if (typeof text !== 'string') return;
+    if (!fromUser && userEdited && draft.value.trim()) return;
+    draft.value = text;
+    if (!fromUser) userEdited = false;
+    render();
+  }
+
+  function syncContext() {
+    var text = draft.value;
+    var c = countWithReading(text);
+    var summary = c.words + ' words, ' + c.chars + ' chars, reading ' + c.reading;
+    var payload = { content: [{ type: 'text', text: 'Word counter draft (' + summary + '):\n\n' + text }] };
+    if (window.openai && typeof window.openai.updateModelContext === 'function') {
+      window.openai.updateModelContext(payload);
+      return;
+    }
+    window.parent.postMessage({ jsonrpc: '2.0', id: 'wc-' + (++rpcId), method: 'ui/update-model-context', params: payload }, '*');
+  }
+
+  function scheduleSync() {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncContext, 600);
+  }
+
+  function setSettingsOpen(open) {
+    settingsBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    settingsBtn.textContent = open ? 'close' : 'settings';
+    if (open) {
+      settingsPanel.hidden = false;
+      settingsPanel.classList.add('open');
+    } else {
+      settingsPanel.classList.remove('open');
+      setTimeout(function () { if (!settingsPanel.classList.contains('open')) settingsPanel.hidden = true; }, 260);
+    }
+  }
+
+  function bindSettings() {
+    THEMES.forEach(function (t) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'theme-swatch';
+      btn.setAttribute('data-theme', t);
+      btn.title = t;
+      btn.innerHTML = '<span style="background:linear-gradient(135deg,' + THEME_SWATCH[t][0] + ',' + THEME_SWATCH[t][1] + ')"></span>';
+      btn.addEventListener('click', function () {
+        applyTheme(t);
+        saveSettings();
+      });
+      themeGrid.appendChild(btn);
+    });
+
+    document.querySelectorAll('.seg input[type="radio"]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        if (!input.checked) return;
+        settings[input.name] = input.value;
+        if (input.name === 'layout' || input.name === 'figure' || input.name === 'font' ||
+            input.name === 'primary' || input.name === 'ghost' || input.name === 'ghostWeight' ||
+            input.name === 'ghostPlace' || input.name === 'chart') {
+          applyControls();
+          saveSettings();
+          render();
+        }
+      });
+    });
+
+    document.querySelectorAll('.layer-sq').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var layer = btn.getAttribute('data-layer');
+        if (layer === 'ghost') settings.showGhost = !settings.showGhost;
+        if (layer === 'target') settings.showTarget = !settings.showTarget;
+        if (layer === 'chart') settings.showChart = !settings.showChart;
+        applyControls();
+        saveSettings();
+        render();
+      });
+    });
+
+    targetInput.addEventListener('input', function () {
+      var n = parseInt(targetInput.value, 10);
+      settings.target = n > 0 ? n : 0;
+      saveSettings();
+      render();
+    });
+
+    settingsBtn.addEventListener('click', function () {
+      setSettingsOpen(settingsPanel.classList.contains('open') ? false : true);
+    });
+
+    themeBtn.addEventListener('click', function () { cycleTheme(1); });
+
+    document.getElementById('shuffleBtn').addEventListener('click', function () {
+      settings.theme = THEMES[Math.floor(Math.random() * THEMES.length)];
+      settings.figure = ['pair', 'stack', 'spine', 'caption', 'ticket', 'slab'][Math.floor(Math.random() * 6)];
+      settings.chart = ['dots', 'squares', 'ticks', 'bar', 'ring'][Math.floor(Math.random() * 5)];
+      settings.layout = ['hero', 'compact', 'focus'][Math.floor(Math.random() * 3)];
+      settings.font = ['sans', 'serif', 'book', 'mono'][Math.floor(Math.random() * 4)];
+      applyControls();
+      saveSettings();
+      render();
+    });
+  }
+
+  function seedFromHost() {
+    var input = window.openai && window.openai.toolInput;
+    var output = window.openai && window.openai.toolOutput;
+    if (input && typeof input.text === 'string' && input.text) { setDraft(input.text, false); return; }
+    if (output && typeof output.text === 'string' && output.text) { setDraft(output.text, false); return; }
+    if (output) render();
+  }
+
+  draft.addEventListener('input', function () {
+    userEdited = true;
+    render();
+    scheduleSync();
+  });
+
+  if (window.openai && typeof window.openai.openExternal === 'function') {
+    document.getElementById('full-counter').addEventListener('click', function (e) {
+      e.preventDefault();
+      window.openai.openExternal({ href: 'https://ibm.io/wordcount/' });
+    });
+  }
+  if (window.openai && typeof window.openai.requestDisplayMode === 'function') {
+    expandBtn.hidden = false;
+    expandBtn.addEventListener('click', function () {
+      window.openai.requestDisplayMode({ mode: 'fullscreen' });
+    });
+  }
+
+  window.addEventListener('openai:set_globals', function (event) {
+    var globals = event.detail && event.detail.globals;
+    if (!globals) return;
+    if (globals.toolInput && typeof globals.toolInput.text === 'string') setDraft(globals.toolInput.text, false);
+    else if (globals.toolOutput) {
+      if (typeof globals.toolOutput.text === 'string') setDraft(globals.toolOutput.text, false);
+      else render();
+    }
+  }, { passive: true });
+
+  window.addEventListener('message', function (event) {
+    if (event.source !== window.parent) return;
+    var message = event.data;
+    if (!message || message.jsonrpc !== '2.0' || !message.method) return;
+    if (message.method === 'ui/notifications/tool-input') {
+      var args = message.params || {};
+      if (typeof args.text === 'string') setDraft(args.text, false);
+    } else if (message.method === 'ui/notifications/tool-result') {
+      var sc = message.params && message.params.structuredContent;
+      if (!sc) return;
+      if (typeof sc.text === 'string') setDraft(sc.text, false);
+      else render();
+    }
+  }, { passive: true });
+
+  loadSettings();
+  bindSettings();
+  applyControls();
+  render();
+  seedFromHost();
+})();

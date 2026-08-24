@@ -4,3 +4,6 @@
 .env*
 .ftp*
 credentials*
+node_modules/
+mcp/.wrangler/
+mcp/submission/frames/

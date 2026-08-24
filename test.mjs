@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { count, readingTime } from './lib/count.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -21,18 +22,6 @@ function test(name, fn) {
     console.error('fail -', name);
     console.error('     ', err.message);
   }
-}
-
-function count(s) {
-  const trimmed = String(s || '').trim();
-  return {
-    words: trimmed ? trimmed.split(/\s+/).length : 0,
-    chars: String(s || '').length,
-    sentences: (trimmed.match(/[^\s.!?…]+(?:[^.!?…]*[.!?…]+|[^.!?…]*$)/g) || []).length,
-    paragraphs: trimmed
-      ? trimmed.split(/\n\s*\n/).filter((p) => p.trim()).length
-      : 0
-  };
 }
 
 function ringPlan(words, target) {
@@ -123,6 +112,12 @@ test('count words and sentences', () => {
 test('count paragraphs', () => {
   assert.equal(count('one\n\ntwo').paragraphs, 2);
   assert.equal(count('one\ntwo').paragraphs, 1);
+});
+
+test('readingTime format', () => {
+  assert.equal(readingTime(0), '0:00');
+  assert.equal(readingTime(200), '1:00');
+  assert.equal(readingTime(4), '0:01');
 });
 
 // --- ring plan ---

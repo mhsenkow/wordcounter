@@ -1,0 +1,58 @@
+<div class="wc-root" id="wcRoot" data-layout="hero">
+  <header class="wc-bar">
+    <button type="button" class="wc-icon theme-btn" id="themeBtn" title="theme" aria-label="cycle theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button type="button" class="wc-bar-settings" id="settingsBtn" aria-expanded="false" aria-controls="wcSettings">settings</button>
+    <div class="wc-head-actions">
+      <a class="wc-full" id="full-counter" href="https://ibm.io/wordcount/" target="_blank" rel="noopener" title="Open full counter at ibm.io/wordcount" aria-label="Open full counter at ibm.io/wordcount">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.5 3.5H3.75A1.25 1.25 0 0 0 2.5 4.75v7.5A1.25 1.25 0 0 0 3.75 13.25h7.5a1.25 1.25 0 0 0 1.25-1.25V9.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/><path d="M8.5 2.5h5v5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.5 2.5 7.25 8.75" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg>
+      </a>
+      <button type="button" class="wc-expand" id="expand-btn" hidden>Expand</button>
+    </div>
+  </header>
+
+  <div id="wcSettings" class="wc-settings" hidden>
+    <div class="wc-settings-inner">
+      <div class="wc-settings-head">
+        <span>look &amp; data</span>
+        <button type="button" class="wc-shuffle" id="shuffleBtn" title="shuffle looks">shuffle</button>
+      </div>
+      <div class="wc-fields">
+        <fieldset><legend>theme</legend><div class="theme-grid" id="themeGrid"></div></fieldset>
+        <fieldset><legend>layout</legend><div class="seg" data-setting="layout"><label><input type="radio" name="layout" value="hero" checked><span>hero</span></label><label><input type="radio" name="layout" value="compact"><span>compact</span></label><label><input type="radio" name="layout" value="focus"><span>focus</span></label></div></fieldset>
+        <fieldset><legend>primary</legend><div class="seg" data-setting="primary"><label><input type="radio" name="primary" value="words" checked><span>words</span></label><label><input type="radio" name="primary" value="chars"><span>chars</span></label><label><input type="radio" name="primary" value="sentences"><span>sentences</span></label><label><input type="radio" name="primary" value="paragraphs"><span>paragraphs</span></label><label><input type="radio" name="primary" value="reading"><span>reading</span></label></div></fieldset>
+        <fieldset><legend>figure</legend><div class="seg" data-setting="figure"><label><input type="radio" name="figure" value="pair" checked><span>pair</span></label><label><input type="radio" name="figure" value="stack"><span>stack</span></label><label><input type="radio" name="figure" value="spine"><span>spine</span></label><label><input type="radio" name="figure" value="caption"><span>caption</span></label><label><input type="radio" name="figure" value="ticket"><span>ticket</span></label><label><input type="radio" name="figure" value="slab"><span>slab</span></label></div></fieldset>
+        <fieldset><legend>type</legend><div class="seg" data-setting="font"><label><input type="radio" name="font" value="sans" checked><span>sans</span></label><label><input type="radio" name="font" value="serif"><span>serif</span></label><label><input type="radio" name="font" value="book"><span>book</span></label><label><input type="radio" name="font" value="mono"><span>mono</span></label></div></fieldset>
+        <fieldset class="layer-row"><legend>ghost</legend><div class="opts"><div class="seg" data-setting="ghost"><label><input type="radio" name="ghost" value="primary" checked><span>primary</span></label><label><input type="radio" name="ghost" value="words"><span>words</span></label><label><input type="radio" name="ghost" value="chars"><span>chars</span></label></div><div class="seg" data-setting="ghostWeight"><label><input type="radio" name="ghostWeight" value="whisper" checked><span>whisper</span></label><label><input type="radio" name="ghostWeight" value="soft"><span>soft</span></label><label><input type="radio" name="ghostWeight" value="firm"><span>firm</span></label></div><div class="seg" data-setting="ghostPlace"><label><input type="radio" name="ghostPlace" value="se" checked><span>se</span></label><label><input type="radio" name="ghostPlace" value="sw"><span>sw</span></label><label><input type="radio" name="ghostPlace" value="ne"><span>ne</span></label><label><input type="radio" name="ghostPlace" value="nw"><span>nw</span></label></div></div><button type="button" class="layer-sq is-on" data-layer="ghost" aria-pressed="true" title="show ghost"></button></fieldset>
+        <fieldset class="layer-row"><legend>target</legend><div class="target-field"><input id="targetInput" type="number" min="1" step="1" inputmode="numeric" placeholder="word goal"><em>words</em></div><button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" title="show target"></button></fieldset>
+        <fieldset class="layer-row"><legend>chart</legend><div class="seg" data-setting="chart"><label><input type="radio" name="chart" value="dots" checked><span>dots</span></label><label><input type="radio" name="chart" value="squares"><span>squares</span></label><label><input type="radio" name="chart" value="ticks"><span>ticks</span></label><label><input type="radio" name="chart" value="bar"><span>bar</span></label><label><input type="radio" name="chart" value="ring"><span>ring</span></label></div><button type="button" class="layer-sq is-on" data-layer="chart" aria-pressed="true" title="show chart"></button></fieldset>
+      </div>
+    </div>
+  </div>
+
+  <section class="wc-hero">
+    <div class="wc-primary" id="primaryBlock" data-figure="pair" aria-live="polite">
+      <b id="primaryValue">0</b>
+      <span class="primary-notes"><span id="primaryLabel">words</span><span id="goalHint" class="goal-hint" hidden></span></span>
+    </div>
+    <div id="progress" class="wc-progress" hidden aria-label="goal progress">
+      <div id="viz" class="viz viz-dots"></div>
+      <p id="vizMeta" class="viz-meta"></p>
+    </div>
+  </section>
+
+  <dl class="wc-metrics" id="metrics">
+    <div data-metric="words"><dt>words</dt><dd id="m-words">0</dd></div>
+    <div data-metric="chars"><dt>chars</dt><dd id="m-chars">0</dd></div>
+    <div data-metric="sentences"><dt>sentences</dt><dd id="m-sentences">0</dd></div>
+    <div data-metric="paragraphs"><dt>paragraphs</dt><dd id="m-paragraphs">0</dd></div>
+    <div data-metric="reading"><dt>reading</dt><dd id="m-reading">0:00</dd></div>
+  </dl>
+
+  <div class="wc-editor" id="editor">
+    <div class="wc-editor-surface" id="editorSurface">
+      <textarea id="draft" spellcheck="true" placeholder="Type or paste here — counts update as you write."></textarea>
+    </div>
+  </div>
+</div>

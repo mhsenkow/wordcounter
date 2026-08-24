@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Counter MCP — live demo</title>
+<style>
+  :root {
+    --bg: #f2f2f0;
+    --face: #fafaf8;
+    --ink: #111;
+    --mute: #757575;
+    --hair: #e4e4e0;
+    --accent: #c45c26;
+    --mark: #c62828;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100dvh;
+    padding: clamp(20px, 4vw, 40px);
+    line-height: 1.5;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 1.1rem; font-weight: 500; letter-spacing: 0.02em; text-transform: lowercase; margin-bottom: 6px; }
+  .lead { font-size: 0.9rem; color: var(--mute); margin-bottom: 20px; max-width: 36em; }
+  .lead code { font-size: 0.85em; color: var(--ink); }
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px 16px;
+    border: 1px solid var(--hair);
+    background: var(--face);
+    color: var(--ink);
+    font: inherit;
+    resize: vertical;
+    border-radius: 4px;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 20px; align-items: center; }
+  button {
+    font: inherit;
+    padding: 8px 14px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--face);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--ink); }
+  button:disabled { opacity: 0.5; cursor: wait; }
+  .status { font-size: 0.85rem; color: var(--mute); min-height: 1.2em; }
+  .status.err { color: var(--mark); }
+  .panel {
+    background: var(--face);
+    border: 1px solid var(--hair);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .panel h2 { font-size: 0.75rem; text-transform: lowercase; color: var(--mute); font-weight: 500; margin-bottom: 10px; }
+  .hero { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .hero b { font-size: 2.5rem; font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
+  .hero span { font-size: 0.85rem; color: var(--mute); }
+  .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid var(--hair); }
+  .row dt { font-size: 0.65rem; color: var(--mute); margin-bottom: 2px; }
+  .row dd { font-size: 0.95rem; font-weight: 500; }
+  .raw { font-size: 0.8rem; color: var(--mute); white-space: pre-wrap; word-break: break-word; }
+  .links { font-size: 0.85rem; margin-top: 20px; }
+  .links a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>word counter mcp demo</h1>
+  <p class="lead">This page calls the live MCP tool <code>count_text</code> at <code id="mcpUrl"></code> — the same endpoint ChatGPT and Claude connect to.</p>
+  <textarea id="text" spellcheck="false">The quick brown fox jumps over the lazy dog. This is a second sentence.
+
+And a new paragraph.</textarea>
+  <div class="actions">
+    <button id="run" type="button">Count via MCP</button>
+    <button id="sample" type="button" class="secondary">Reset sample</button>
+  </div>
+  <p id="status" class="status" aria-live="polite"></p>
+  <div class="panel" id="widget" hidden>
+    <h2>widget preview (same layout as ChatGPT)</h2>
+    <div class="hero"><b id="w-words">0</b><span>words</span></div>
+    <dl class="row">
+      <div><dt>chars</dt><dd id="w-chars">0</dd></div>
+      <div><dt>sentences</dt><dd id="w-sentences">0</dd></div>
+      <div><dt>paragraphs</dt><dd id="w-paragraphs">0</dd></div>
+      <div><dt>reading</dt><dd id="w-reading">0:00</dd></div>
+    </dl>
+  </div>
+  <div class="panel" id="rawPanel" hidden>
+    <h2>MCP response</h2>
+    <pre class="raw" id="raw"></pre>
+  </div>
+  <p class="links">
+    <a href="https://ibm.io/wordcount/" target="_blank" rel="noopener">Full editor at ibm.io/wordcount</a>
+    · <a href="/">MCP server info</a>
+  </p>
+</div>
+<script>
+(function () {
+  var SAMPLE = document.getElementById('text').value;
+  var mcpUrl = location.origin + '/mcp';
+  document.getElementById('mcpUrl').textContent = mcpUrl;
+
+  function parseSse(body) {
+    var line = body.split('\n').find(function (l) { return l.indexOf('data: ') === 0; });
+    if (!line) throw new Error('No MCP data line in response');
+    var payload = JSON.parse(line.slice(6));
+    if (payload.error) throw new Error(payload.error.message || 'MCP error');
+    return payload.result;
+  }
+
+  function render(data) {
+    document.getElementById('w-words').textContent = data.words;
+    document.getElementById('w-chars').textContent = data.chars;
+    document.getElementById('w-sentences').textContent = data.sentences;
+    document.getElementById('w-paragraphs').textContent = data.paragraphs;
+    document.getElementById('w-reading').textContent = data.reading;
+    document.getElementById('widget').hidden = false;
+    document.getElementById('raw').textContent = JSON.stringify(data, null, 2);
+    document.getElementById('rawPanel').hidden = false;
+  }
+
+  async function countViaMcp() {
+    var text = document.getElementById('text').value;
+    var status = document.getElementById('status');
+    var run = document.getElementById('run');
+    status.textContent = 'Calling count_text…';
+    status.className = 'status';
+    run.disabled = true;
+    try {
+      var res = await fetch(mcpUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json, text/event-stream'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: { name: 'count_text', arguments: { text: text } }
+        })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var result = parseSse(await res.text());
+      var data = result.structuredContent;
+      if (!data) throw new Error('No structuredContent in tool result');
+      render(data);
+      status.textContent = result.content && result.content[0] ? result.content[0].text : 'Done.';
+    } catch (err) {
+      status.textContent = String(err.message || err);
+      status.className = 'status err';
+    } finally {
+      run.disabled = false;
+    }
+  }
+
+  document.getElementById('run').addEventListener('click', countViaMcp);
+  document.getElementById('sample').addEventListener('click', function () {
+    document.getElementById('text').value = SAMPLE;
+  });
+  countViaMcp();
+})();
+</script>
+</body>
+</html>

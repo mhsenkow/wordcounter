@@ -1789,6 +1789,23 @@
     color: var(--ink);
     white-space: nowrap;
   }
+  .ai-tool-hint {
+    margin-top: auto;
+    padding-top: 12px;
+    font-size: 11px;
+    color: var(--mute);
+    text-align: center;
+  }
+  .ai-tool-hint a {
+    color: var(--mute);
+    text-decoration: none;
+    border-bottom: 1px solid var(--hair);
+  }
+  .ai-tool-hint a:hover,
+  .ai-tool-hint a:focus-visible {
+    color: var(--ink);
+    border-bottom-color: var(--rule);
+  }
 
   /* ---- instrument strip: count as readout, not a billboard ---- */
   .hero {
@@ -4202,6 +4219,9 @@
       <textarea id="text" placeholder="type or paste text." spellcheck="false" autofocus></textarea>
     </div>
   </div>
+  <p class="ai-tool-hint">
+    <a href="https://wordcount-mcp.mhsenkow.workers.dev/demo" target="_blank" rel="noopener noreferrer">Use in ChatGPT or Claude</a>
+  </p>
 </main>
 
 <aside class="scale-rail" id="scaleRail" aria-hidden="true" data-scale="rule">

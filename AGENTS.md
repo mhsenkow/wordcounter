@@ -55,3 +55,26 @@ Some local machines still resolve apex `ibm.io` to the GreenGeeks IP (stale cach
 - Job: count words with zero friction.
 - Single file, offline, `localStorage` only.
 - Non-goals: accounts, export, AI, SEO suites.
+
+## AI tool (MCP)
+
+Separate Cloudflare Worker — not part of the static `index.html` build.
+
+| Item | Value |
+|---|---|
+| **MCP URL** | `https://wordcount-mcp.mhsenkow.workers.dev/mcp` |
+| **Source** | [`mcp/`](mcp/) in this repo |
+| **Deploy** | `cd mcp && npm run deploy` |
+| **Docs** | [`mcp/README.md`](mcp/README.md), [`mcp/SUBMISSION.md`](mcp/SUBMISSION.md) |
+
+Verify after deploy:
+
+```bash
+curl -sS https://wordcount-mcp.mhsenkow.workers.dev/
+curl -sS -X POST https://wordcount-mcp.mhsenkow.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"count_text","arguments":{"text":"Hello world."}}}'
+```
+
+The static site footer links to the MCP info page for ChatGPT / Claude connector setup.
