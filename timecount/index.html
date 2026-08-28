@@ -83,8 +83,16 @@
   html[data-show-ghost="false"] .stage-ghost::before { content: none !important; opacity: 0 !important; }
   html[data-show-chart="false"] #progress { display: none !important; }
   html[data-show-scale="false"] .scale-rail { display: none !important; }
-  html[data-show-target="false"] .presets,
-  html[data-show-target="false"] .dial svg.ring { opacity: .15 !important; pointer-events: none; }
+  html[data-show-dial="false"] .dial svg.ring,
+  html[data-show-dial="false"] .hand-ring,
+  html[data-show-dial="false"] .done-tag { display: none !important; }
+  html[data-show-dial="false"] .dial {
+    aspect-ratio: auto; width: min(100%, 280px); min-height: 0;
+  }
+  html[data-show-dial="false"] #progress {
+    max-width: min(100%, 320px); margin-top: 10px;
+  }
+  html[data-show-target="false"] .presets { display: none !important; }
   html[data-ui="bauhaus"] body { letter-spacing: 0.05em; }
   html[data-ui="monocle"] body { letter-spacing: 0.01em; }
   html[data-ui="military"] h1,
@@ -734,27 +742,81 @@
   main[data-layout="focus"][data-state="running"] #progress { display: none !important; }
   main[data-layout="focus"][data-state="running"] .dial { width: min(100%, 340px); }
 
-  /* progress chart — limit goal viz (non-ring styles) */
-  #progress { width: 100%; max-width: 280px; margin-top: 14px; min-height: 0; }
+  /* progress chart — time-filling beads / columns / rail */
+  #progress { width: 100%; max-width: 300px; margin-top: 18px; min-height: 0; }
   #progress[hidden] { display: none !important; }
   .viz { width: 100%; min-width: 0; }
-  .viz-dots, .viz-squares { display: flex; flex-wrap: wrap; gap: 5px; }
-  .viz-dots .cell { width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
-  .viz-dots .cell.on { background: var(--accent); }
-  .viz-squares .cell { width: 9px; height: 9px; border-radius: 1.5px; background: var(--rule); }
-  .viz-squares .cell.on { background: var(--accent); }
-  .viz-ticks { display: flex; align-items: flex-end; gap: 1px; height: 28px; width: 100%; overflow: hidden; }
-  .viz-ticks .cell { flex: 1 1 0; height: 55%; background: var(--rule); border-radius: 99px 99px 0 0; }
-  .viz-ticks .cell.on { background: var(--accent); }
-  .viz-ticks .cell.major { height: 100%; }
-  .viz-bar { height: 8px; width: 100%; background: var(--rule); border-radius: 99px; overflow: hidden; }
-  .viz-bar .fill { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
-  .viz-ring-mini { display: flex; justify-content: center; gap: 8px; }
-  .viz-ring-mini svg { width: 48px; height: 48px; transform: rotate(-90deg); }
-  .viz-ring-mini circle { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+  .viz-dots, .viz-squares {
+    display: flex; flex-wrap: nowrap; align-items: center;
+    gap: clamp(4px, 1.6vw, 8px); width: 100%;
+  }
+  .viz-dots .cell, .viz-squares .cell {
+    flex: 1 1 0; aspect-ratio: 1; min-width: 0;
+    max-width: 28px; margin: 0 auto;
+    background: var(--rule); position: relative; overflow: hidden;
+    transition: background-color .2s ease;
+  }
+  .viz-dots .cell { border-radius: 50%; }
+  .viz-squares .cell { border-radius: 3px; }
+  .viz-dots .cell.on, .viz-squares .cell.on { background: var(--accent); }
+  .viz-dots .cell.is-now,
+  .viz-squares .cell.is-now {
+    background:
+      linear-gradient(90deg,
+        var(--accent) 0%,
+        var(--accent) var(--frac, 0%),
+        var(--rule) var(--frac, 0%),
+        var(--rule) 100%);
+  }
+  .viz-ticks {
+    display: flex; align-items: flex-end; gap: 2px;
+    height: 40px; width: 100%; overflow: hidden;
+  }
+  .viz-ticks .cell {
+    flex: 1 1 0; min-width: 0; height: 28%;
+    background: var(--rule); border-radius: 2px 2px 0 0;
+    transition: height .18s linear, background-color .18s ease;
+  }
+  .viz-ticks .cell.on { background: var(--accent); height: 100%; }
+  .viz-ticks .cell.major { height: 48%; }
+  .viz-ticks .cell.major.on { height: 100%; }
+  .viz-ticks .cell.is-now {
+    background: var(--accent);
+    height: calc(28% + 72% * var(--frac-n, 0));
+  }
+  .viz-ticks .cell.major.is-now {
+    height: calc(48% + 52% * var(--frac-n, 0));
+  }
+  .viz-bar {
+    position: relative; height: 10px; width: 100%;
+    background: var(--rule); border-radius: 99px; overflow: visible;
+  }
+  .viz-bar .fill {
+    height: 100%; width: 0%; background: var(--accent); border-radius: 99px;
+    transition: width .2s linear; position: relative;
+  }
+  .viz-bar .fill::after {
+    content: ""; position: absolute; right: -5px; top: 50%;
+    width: 10px; height: 10px; margin-top: -5px;
+    border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 0 2px var(--bg);
+  }
+  .viz-ring-mini { display: flex; justify-content: center; }
+  .viz-ring-mini svg { width: 72px; height: 72px; transform: rotate(-90deg); }
+  .viz-ring-mini circle { fill: none; stroke-width: 3; stroke-linecap: round; }
   .viz-ring-mini .track { stroke: var(--hair); }
-  .viz-ring-mini .fill { stroke: var(--accent); }
-  .viz-meta { font-size: 10px; color: var(--mute); margin-top: 6px; letter-spacing: .04em; }
+  .viz-ring-mini .fill {
+    stroke: var(--accent);
+    transition: stroke-dashoffset .2s linear;
+  }
+  .viz-meta {
+    font-size: 10px; color: var(--mute); margin-top: 8px;
+    letter-spacing: .04em; text-align: center;
+  }
+  .layer-hint {
+    font-size: 10px; color: var(--mute); font-style: normal;
+    letter-spacing: .02em;
+  }
 
   /* scale rail — horizontal timeline above dock */
   .scale-rail {
@@ -1353,9 +1415,14 @@
           <legend>limit</legend>
           <div class="target-field">
             <input id="targetInput" type="text" inputmode="numeric" placeholder="25m" aria-label="time limit">
-            <em>ring, scale, presets</em>
+            <em>goal · presets</em>
           </div>
           <button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" aria-label="show limit"></button>
+        </fieldset>
+        <fieldset class="layer-row" data-layer="dial">
+          <legend>dial</legend>
+          <p class="layer-hint">circle progress around the clock face</p>
+          <button type="button" class="layer-sq is-on" data-layer="dial" aria-pressed="true" aria-label="show dial ring"></button>
         </fieldset>
         <fieldset>
           <legend>hand</legend>
@@ -1412,7 +1479,7 @@
             <label><input type="radio" name="chart" value="bar" checked><span>bar</span></label>
             <label><input type="radio" name="chart" value="ring"><span>ring</span></label>
           </div>
-          <button type="button" class="layer-sq" data-layer="chart" aria-pressed="false" aria-label="show chart"></button>
+          <button type="button" class="layer-sq is-on" data-layer="chart" aria-pressed="true" aria-label="show chart"></button>
         </fieldset>
         <fieldset class="layer-row" data-layer="scale">
           <legend>scale</legend>
@@ -1619,7 +1686,10 @@
   var GHOST_WEIGHTS = { whisper: true, soft: true, firm: true };
   var HAND_MODES = { auto: true, limit: true, always: true, off: true };
   var GHOST_PLACES = { se: true, sw: true, ne: true, nw: true };
-  var LAYER_KEYS = { ghost: 'showGhost', target: 'showTarget', reach: 'showReach', chart: 'showChart', scale: 'showScale' };
+  var LAYER_KEYS = {
+    ghost: 'showGhost', target: 'showTarget', dial: 'showDial',
+    reach: 'showReach', chart: 'showChart', scale: 'showScale'
+  };
   var LOOK_AFFINITY = {
     light: { ui: ['braun', 'monocle', 'noyes'], font: ['sans', 'mono', 'book'], figure: ['pair', 'stack', 'caption'], chart: ['dots', 'bar', 'ring'], scale: ['rule', 'spine', 'ladder'], reach: ['tint', 'wash'], layout: ['hero', 'compact'] },
     dark: { ui: ['braun', 'terminal', 'noyes'], font: ['mono', 'sans'], figure: ['stack', 'spine', 'slab'], chart: ['bar', 'ticks'], scale: ['rule', 'mercury'], reach: ['tint', 'dot'], layout: ['hero', 'focus'] },
@@ -1695,8 +1765,9 @@
     hand: 'auto',
     showGhost: false,
     showTarget: true,
+    showDial: true,
     showReach: true,
-    showChart: false,
+    showChart: true,
     showScale: true,
     labelDefault: DEFAULT_LABEL
   };
@@ -1846,9 +1917,9 @@
     settings.target = Math.max(0, Math.floor(Number(settings.target) || 0));
     if (settings.target === 25000) settings.target = 1500000;
     settings.labelDefault = String(settings.labelDefault != null ? settings.labelDefault : DEFAULT_LABEL).trim();
-    ['showGhost', 'showTarget', 'showReach', 'showChart', 'showScale'].forEach(function (k) {
+    ['showGhost', 'showTarget', 'showDial', 'showReach', 'showChart', 'showScale'].forEach(function (k) {
       if (typeof settings[k] !== 'boolean') {
-        settings[k] = k === 'showGhost' || k === 'showChart' ? false : true;
+        settings[k] = k === 'showGhost' ? false : true;
       }
     });
     if (settings.mode === 'limit' && settings.target <= 0) settings.target = 1500000;
@@ -1978,7 +2049,7 @@
     var ring = arc.closest('.ring');
     var hasTarget = effectiveTarget() > 0;
     if (ring) ring.style.opacity = hasTarget ? '1' : '0.22';
-    if (!hasTarget || !layerOn('target')) {
+    if (!hasTarget || !layerOn('target') || !layerOn('dial')) {
       arc.setAttribute('stroke-dashoffset', dash);
       arc.style.strokeDashoffset = dash;
     }
@@ -2009,7 +2080,7 @@
     u = u || uiState();
     var pct = progressPct(u);
     var show = false;
-    if (settings.hand !== 'off') {
+    if (layerOn('dial') && settings.hand !== 'off') {
       if (settings.hand === 'limit') show = effectiveTarget() > 0 && layerOn('target');
       else if (settings.hand === 'always') show = true;
       else if (goalArcActive(u)) show = false;
@@ -2126,13 +2197,25 @@
     }
   }
 
-  function cellPlan(elapsed, target) {
-    if (target <= MAX_CELLS) {
-      return { total: target, filled: Math.max(0, Math.min(Math.floor(elapsed / 1000), target)), unit: 1 };
-    }
-    var unit = Math.ceil(target / MAX_CELLS);
-    var total = Math.ceil(target / unit);
-    return { total: total, filled: Math.max(0, Math.min(total, Math.floor(elapsed / (unit * 1000)))), unit: unit };
+  function chartPlan(elapsed, target) {
+    target = Math.max(1, target || 1);
+    elapsed = Math.max(0, Math.min(elapsed || 0, target));
+    var secs = Math.max(1, Math.round(target / 1000));
+    var mins = target / 60000;
+    var total;
+    if (secs <= 20) total = secs;
+    else if (Math.abs(mins - 1) < 0.02) total = 12;
+    else if (mins >= 2 && mins <= 36 && Math.abs(mins - Math.round(mins)) < 0.02) {
+      total = Math.round(mins);
+    } else if (secs <= 120) total = 12;
+    else if (secs <= 600) total = 20;
+    else total = 24;
+    total = Math.max(1, Math.min(MAX_CELLS, total));
+    var unitMs = target / total;
+    var raw = elapsed / unitMs;
+    var filled = Math.min(total, Math.floor(raw));
+    var frac = filled >= total ? 0 : Math.max(0, Math.min(1, raw - filled));
+    return { total: total, filled: filled, frac: frac, unitMs: unitMs };
   }
 
   function renderChart(u) {
@@ -2143,29 +2226,32 @@
     var pct = settings.mode === 'limit'
       ? (100 - (u.remaining / target) * 100)
       : Math.min(100, (u.elapsed / target) * 100);
+    pct = Math.max(0, Math.min(100, pct));
     var kind = CHARTS[settings.chart] ? settings.chart : 'dots';
     vizEl.className = 'viz viz-' + kind;
     if (kind === 'bar') {
-      vizEl.innerHTML = '<div class="fill" style="width:' + pct.toFixed(1) + '%"></div>';
+      vizEl.innerHTML = '<div class="fill" style="width:' + pct.toFixed(2) + '%"></div>';
       vizEl.className = 'viz viz-bar';
-    } else if (kind === 'ticks') {
-      var ticks = '';
-      for (var t = 0; t < 24; t++) {
-        var on = (t / 24) * 100 < pct;
-        ticks += '<i class="cell' + (t % 6 === 0 ? ' major' : '') + (on ? ' on' : '') + '"></i>';
-      }
-      vizEl.innerHTML = ticks;
     } else if (kind === 'ring') {
       var r = 15.9155;
       var circ = 2 * Math.PI * r;
       var off = circ * (1 - pct / 100);
       vizEl.className = 'viz viz-ring-mini';
-      vizEl.innerHTML = '<svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="' + r + '"/><circle class="fill" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"/></svg>';
+      vizEl.innerHTML = '<svg viewBox="0 0 36 36" aria-hidden="true"><circle class="track" cx="18" cy="18" r="' + r + '"/><circle class="fill" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"/></svg>';
     } else {
-      var plan = cellPlan(u.elapsed, Math.max(1, Math.floor(target / 60000) || Math.floor(target / 1000) || 24));
+      var plan = chartPlan(u.elapsed, target);
       var cells = '';
+      var majorEvery = kind === 'ticks' ? Math.max(1, Math.round(plan.total / 4)) : 0;
       for (var c = 0; c < plan.total; c++) {
-        cells += '<i class="cell' + (c < plan.filled ? ' on' : '') + '"></i>';
+        var cls = 'cell';
+        if (majorEvery && c % majorEvery === 0) cls += ' major';
+        if (c < plan.filled) cls += ' on';
+        else if (c === plan.filled && plan.frac > 0.02) cls += ' is-now';
+        var style = '';
+        if (c === plan.filled && plan.frac > 0.02) {
+          style = ' style="--frac:' + (plan.frac * 100).toFixed(1) + '%;--frac-n:' + plan.frac.toFixed(3) + '"';
+        }
+        cells += '<i class="' + cls + '"' + style + '></i>';
       }
       vizEl.innerHTML = cells;
     }
@@ -2185,6 +2271,7 @@
     });
     document.documentElement.setAttribute('data-show-ghost', layerOn('ghost') ? 'true' : 'false');
     document.documentElement.setAttribute('data-show-target', layerOn('target') ? 'true' : 'false');
+    document.documentElement.setAttribute('data-show-dial', layerOn('dial') ? 'true' : 'false');
     document.documentElement.setAttribute('data-show-chart', layerOn('chart') ? 'true' : 'false');
     document.documentElement.setAttribute('data-show-scale', layerOn('scale') ? 'true' : 'false');
   }

@@ -140,12 +140,14 @@ Sibling tool at [`timecount/index.html`](timecount/index.html) — a **chronogra
 | Mode | Job |
 |---|---|
 | **Duration** | How long have I been at this? Optional limit arc; pause creates **segments**. |
-| **Limit** | Count down to a preset (5m · 15m · 25m · 1h). Face shows **remaining**; ring depletes. |
+| **Limit** | Count down to a preset (5m · 15m · 25m · 1h). Face shows **remaining**; ring / chart fill. |
 | **Splits** | Mark **split** times; record table shows split + total columns. |
 
-Layout: dial face (time + arc + session name) → mode bar → run / split / reset → record (when density = full). Settings: chrome, limit, calm/full density, done cue. Same suite menu and shared theme as word counter.
+Layout: masthead (modes left, limit presets + theme + settings right) → dial face (time + optional ring) → optional chart → start / reset lower-right → record (when density = full). Dial and chart are independent layers. Same suite menu and shared theme as word counter.
 
 ## Tools suite
+
+Top-right grid switches between [wordcount](https://ibm.io/wordcount/) and [timecount](https://ibm.io/timecount/). Theme / chrome / font sync via `localStorage` key `ibm.tools.shared`.
 
 ## File layout
 
@@ -164,7 +166,7 @@ wordcounter/
 
 ## Production
 
-Live at [ibm.io/wordcount](https://ibm.io/wordcount/). Deploy steps (GreenGeeks + Cloudflare) are in `AGENTS.md`.
+Live at [ibm.io/wordcount](https://ibm.io/wordcount/) and [ibm.io/timecount](https://ibm.io/timecount/). Deploy steps (GreenGeeks + Cloudflare) are in `AGENTS.md`.
 
 ## License
 

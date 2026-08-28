@@ -9,3 +9,4 @@ mcp/.wrangler/
 mcp/submission/frames/
 mcp/submission/frames-recording/
 mcp/submission/playwright-video/
+mcp/submission/.pw-openai-profile/

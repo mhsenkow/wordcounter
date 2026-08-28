@@ -88,4 +88,4 @@ curl -sS -X POST https://wordcount-mcp.mhsenkow.workers.dev/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"count_text","arguments":{"text":"Hello world."}}}'
 ```
 
-The static site footer links to the MCP info page for ChatGPT / Claude connector setup.
+Word counter settings include a ChatGPT / Claude icon linking to the MCP demo page for connector setup.
