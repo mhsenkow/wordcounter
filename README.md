@@ -133,13 +133,33 @@ Needs https or localhost. No AI — browser speech recognition only.
 
 Select text in the draft to see a **selection** count in the hero.
 
+## Time counter
+
+Sibling tool at [`timecount/index.html`](timecount/index.html) — a **chronograph**, not a clone of the word counter.
+
+| Mode | Job |
+|---|---|
+| **Duration** | How long have I been at this? Optional limit arc; pause creates **segments**. |
+| **Limit** | Count down to a preset (5m · 15m · 25m · 1h). Face shows **remaining**; ring depletes. |
+| **Splits** | Mark **split** times; record table shows split + total columns. |
+
+Layout: dial face (time + arc + session name) → mode bar → run / split / reset → record (when density = full). Settings: chrome, limit, calm/full density, done cue. Same suite menu and shared theme as word counter.
+
+## Tools suite
+
 ## File layout
 
 ```
 wordcounter/
-├── index.html   # UI + counting + settings
+├── index.html       # Word counter UI
+├── timecount/
+│   └── index.html   # Time counter — stopwatch, countdown, laps
+├── lib/
+│   ├── count.mjs    # Shared text metrics
+│   ├── time.mjs     # Shared time metrics
+│   └── suite.js     # Top-right tools switcher + shared theme
 ├── README.md
-└── AGENTS.md    # Deploy / hosting notes for agents
+└── AGENTS.md        # Deploy / hosting notes for agents
 ```
 
 ## Production

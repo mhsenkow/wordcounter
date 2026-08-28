@@ -1,0 +1,2685 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>Time Counter — duration, limit &amp; splits</title>
+<meta name="description" content="Track duration, countdown limits, and lap splits. Stays on this device.">
+<link rel="canonical" href="https://ibm.io/timecount/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cstyle%3Erect.bg%7Bfill%3A%23f4f4f4%7Dcircle.ink%7Bfill%3A%23161616%7Dcircle.ac%7Bfill%3A%230f62fe%7D%40media%20%28prefers-color-scheme%3Adark%29%7Brect.bg%7Bfill%3A%23161616%7Dcircle.ink%7Bfill%3A%23f4f4f4%7Dcircle.ac%7Bfill%3A%2378a9ff%7D%7D%3C%2Fstyle%3E%3Crect%20class%3D%22bg%22%20width%3D%2232%22%20height%3D%2232%22%2F%3E%3Ccircle%20class%3D%22ink%22%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%23161616%22%20stroke-width%3D%221%22%2F%3E%3Cpath%20class%3D%22ink%22%20d%3D%22M16%208v8l5%203%22%20fill%3D%22none%22%20stroke%3D%22%23161616%22%20stroke-width%3D%221%22%20stroke-linecap%3D%22butt%22%2F%3E%3Ccircle%20class%3D%22ac%22%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Press+Start+2P&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root, [data-theme="light"] {
+    --bg: #f2f2f0; --face: #fafaf8; --ink: #111; --mute: #757575;
+    --rule: #c4c4c0; --hair: #e4e4e0; --accent: #c45c26; --mark: #b91c1c;
+    --pad: clamp(24px, 5vw, 48px);
+    --ui: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    --digits: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    --done: #2d6a4f; --goal-pct: 0%;
+    --action-rail: 22px;
+    --mast-h: 48px;
+    --dock-h: 12px;
+    --rail-h: 6px;
+  }
+  [data-theme="dark"] {
+    --bg: #161616; --face: #1c1c1c; --ink: #f0f0ee; --mute: #8a8a86;
+    --rule: #333; --hair: #252525; --accent: #e07a45; --mark: #e07070;
+    --done: #5a9e6f;
+  }
+  [data-theme="contrast"] {
+    --bg: #000; --face: #000; --ink: #fff; --mute: #b0b0b0;
+    --rule: #fff; --hair: #666; --accent: #ff0; --mark: #ff0; --done: #0f0;
+  }
+  [data-theme="paper"] {
+    --bg: #e8e2d6; --face: #f3efe6; --ink: #1c1914; --mute: #6e685c;
+    --rule: #c4bbaa; --hair: #d9d1c3; --accent: #8b4510; --mark: #9b2c2c;
+    --done: #166534;
+  }
+  [data-theme="glass"] {
+    --bg: #e8eef8; --face: rgba(255,255,255,.55); --ink: #0f172a; --mute: #64748b;
+    --rule: rgba(148,163,184,.45); --hair: rgba(255,255,255,.55);
+    --accent: #7c3aed; --mark: #dc2626; --done: #16a34a;
+  }
+  [data-theme="frost"] {
+    --bg: #070b16; --face: rgba(15,23,42,.72); --ink: #e2e8f0; --mute: #94a3b8;
+    --rule: rgba(148,163,184,.22); --hair: rgba(148,163,184,.14);
+    --accent: #a78bfa; --mark: #f87171; --done: #4ade80;
+  }
+  [data-theme="brutal"] {
+    --bg: #fff; --face: #fff; --ink: #000; --mute: #000;
+    --rule: #000; --hair: #000; --accent: #ff0000; --mark: #000; --done: #000;
+  }
+  [data-theme="loom"] {
+    --bg: #0a0a0f; --face: #12121a; --ink: #e8e6e3; --mute: #a8a5a0;
+    --rule: #2a2a35; --hair: #1a1a25; --accent: #d4a84b; --mark: #ef4444; --done: #22c55e;
+  }
+  [data-theme="tank"] {
+    --bg: #0b1a22; --face: #163040; --ink: #c5e2e7; --mute: #69a1b3;
+    --rule: #23475a; --hair: #1d3b22; --accent: #57a253; --mark: #c33b3b; --done: #79c069;
+  }
+  [data-theme="nes"] {
+    --bg: #209cee; --face: #f8f8f8; --ink: #212529; --mute: #495057;
+    --rule: #000; --hair: #dee2e6; --accent: #e4002b; --mark: #e4002b; --done: #92cc41;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { height: 100%; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+  body.timecount-app {
+    background: var(--bg); color: var(--ink);
+    font: 400 14px/1.45 var(--ui);
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100dvh; position: relative;
+    padding:
+      calc(max(var(--pad), env(safe-area-inset-top)) + var(--mast-h))
+      max(var(--pad), env(safe-area-inset-right))
+      calc(max(var(--pad), env(safe-area-inset-bottom)) + var(--dock-h) + var(--rail-h) + 8px)
+      max(var(--pad), env(safe-area-inset-left));
+  }
+  html[data-show-scale="false"] body.timecount-app {
+    padding-bottom: calc(max(var(--pad), env(safe-area-inset-bottom)) + var(--dock-h));
+  }
+  html[data-show-ghost="false"] .stage-ghost::before { content: none !important; opacity: 0 !important; }
+  html[data-show-chart="false"] #progress { display: none !important; }
+  html[data-show-scale="false"] .scale-rail { display: none !important; }
+  html[data-show-target="false"] .presets,
+  html[data-show-target="false"] .dial svg.ring { opacity: .15 !important; pointer-events: none; }
+  html[data-ui="bauhaus"] body { letter-spacing: 0.05em; }
+  html[data-ui="monocle"] body { letter-spacing: 0.01em; }
+  html[data-ui="military"] h1,
+  html[data-ui="military"] button:not(.icon-btn),
+  html[data-ui="military"] legend,
+  html[data-ui="military"] .seg label span,
+  html[data-ui="military"] .keys-hint,
+  html[data-ui="military"] .viz-meta,
+  html[data-ui="military"] .mode-bar button,
+  html[data-ui="military"] #runBtn,
+  html[data-ui="military"] .face-sub,
+  html[data-ui="military"] .record-head h2 {
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  html[data-ui="military"] .scale-rail .marks b,
+  html[data-ui="military"] .scale-rail .cap {
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  html[data-ui="bauhaus"] .face-time { letter-spacing: 0.02em; font-weight: 400; }
+  html[data-ui="bauhaus"] .mode-bar button,
+  html[data-ui="bauhaus"] .seg label span { letter-spacing: 0.14em; }
+  html[data-ui="nyt"] .face-time { font-weight: 400; letter-spacing: -.03em; }
+  html[data-ui="nyt"] .dial svg.ring .arc { stroke-linecap: butt; }
+  html[data-ui="nyt"] .mode-bar button[aria-pressed="true"] {
+    border-bottom: 1px solid var(--ink);
+  }
+  html[data-ui="nyt"] .masthead .mode-bar button[aria-pressed="true"] {
+    border-bottom: 0 !important;
+  }
+  html[data-ui="terminal"] .face-time,
+  html[data-ui="terminal"] h1,
+  html[data-ui="terminal"] #runBtn,
+  html[data-ui="terminal"] .mode-bar button {
+    font-family: var(--digits), ui-monospace, monospace;
+  }
+  html[data-ui="terminal"] .dial svg.ring .track { stroke-dasharray: 2 2; }
+  html[data-ui="terminal"] .seg input:checked + span {
+    border-bottom: 1px dashed var(--accent);
+  }
+  html[data-ui="ikea"] #runBtn {
+    font-weight: 700; letter-spacing: 0.04em;
+  }
+  html[data-ui="ikea"] .dial-core[data-figure="slab"] {
+    background: color-mix(in srgb, var(--accent) 12%, var(--face));
+  }
+  html[data-ui="braun"] .hand-dot { border-radius: 50%; }
+  html[data-ui="braun"] .dial svg.ring .arc { stroke-linecap: round; stroke-width: 2; }
+  html[data-ui="braun"] .theme-orb { border-radius: 50%; }
+  html[data-ui="noyes"] .hand-dot { border-radius: 0; }
+  html[data-ui="noyes"] .dial svg.ring .arc { stroke-linecap: butt; stroke-width: 1.25; }
+  html[data-ui="noyes"] .theme-orb { border-radius: 0; }
+  html[data-ui="monocle"] .face-sub { font-style: italic; letter-spacing: 0.04em; }
+  html[data-ui="monocle"] .label-input { letter-spacing: 0.06em; }
+  main {
+    width: 100%; max-width: min(420px, 100%);
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    min-height: 0; position: relative; z-index: 1;
+  }
+  .clock-stage {
+    flex: 1 1 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: min(520px, calc(100dvh - var(--mast-h) - var(--dock-h) - var(--rail-h) - var(--pad) * 2));
+    padding: 12px 0 8px;
+    gap: 0;
+  }
+
+  /* viewport ghost — ambient readout behind the whole stage */
+  .stage-ghost {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none; user-select: none; overflow: hidden;
+  }
+  .stage-ghost::before {
+    content: attr(data-ghost-text);
+    position: absolute;
+    font: 200 min(34vmin, 28vw, 42vh)/0.88 var(--digits);
+    letter-spacing: -.04em; color: var(--ink); opacity: .028;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+    max-width: 96vw;
+    transition: opacity .35s ease, font-size .35s ease;
+  }
+  .stage-ghost[data-ghost="off"]::before { content: none; opacity: 0; }
+  /* ghost presence: tertiary · ambient · prominent */
+  .stage-ghost[data-ghost-weight="whisper"]::before {
+    font-size: min(22vmin, 18vw, 28vh); opacity: .012;
+  }
+  .stage-ghost[data-ghost-weight="soft"]::before {
+    font-size: min(28vmin, 22vw, 34vh); opacity: .024;
+  }
+  .stage-ghost[data-ghost-weight="firm"]::before {
+    font-size: min(36vmin, 28vw, 42vh); opacity: .05; font-weight: 300;
+  }
+  [data-theme="dark"] .stage-ghost[data-ghost-weight="whisper"]::before { opacity: .02; }
+  [data-theme="dark"] .stage-ghost[data-ghost-weight="soft"]::before { opacity: .035; }
+  [data-theme="dark"] .stage-ghost[data-ghost-weight="firm"]::before { opacity: .06; }
+  [data-theme="contrast"] .stage-ghost[data-ghost-weight="firm"]::before { opacity: .16; }
+  .stage-ghost[data-ghost-place="se"]::before { right: 4vw; bottom: calc(var(--dock-h) + var(--rail-h) + 6vh); }
+  .stage-ghost[data-ghost-place="sw"]::before { left: 4vw; bottom: calc(var(--dock-h) + var(--rail-h) + 6vh); }
+  .stage-ghost[data-ghost-place="ne"]::before { right: 4vw; top: 8vh; }
+  .stage-ghost[data-ghost-place="nw"]::before { left: 4vw; top: 8vh; }
+
+  /* masthead — IBM product chrome: top, type-led */
+  header.masthead {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 6;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    height: calc(var(--mast-h) + env(safe-area-inset-top));
+    padding:
+      env(safe-area-inset-top)
+      calc(max(var(--pad), env(safe-area-inset-right)) + 36px)
+      0
+      max(var(--pad), env(safe-area-inset-left));
+    background: var(--bg);
+    pointer-events: none;
+  }
+  header.masthead h1,
+  header.masthead .actions,
+  header.masthead .mode-bar,
+  header.masthead .presets { pointer-events: auto; }
+  .masthead-start {
+    display: flex; align-items: baseline; gap: 14px; min-width: 0;
+  }
+  h1 {
+    font-size: 12px; font-weight: 400; letter-spacing: .02em;
+    text-transform: none; color: var(--ink); flex-shrink: 0;
+  }
+  .actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .actions #settingsToggle {
+    font-size: 12px; letter-spacing: .02em; text-transform: none;
+  }
+
+  /* limit presets — surreptitious, header right */
+  .presets {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 0; min-height: 0; flex-shrink: 0;
+  }
+  .presets[hidden] { display: none; }
+  .presets button {
+    flex: 0 1 auto; padding: 2px 0; font-size: 10px;
+    letter-spacing: .02em; text-transform: lowercase;
+    border: 0; background: none; box-shadow: none;
+    color: var(--mute); min-width: 0; min-height: 0;
+    opacity: .28; transition: opacity .15s ease, color .15s ease;
+  }
+  .presets button.is-set {
+    color: var(--ink); opacity: .58;
+  }
+  header.masthead:hover .presets button,
+  .presets:focus-within button { opacity: .48; }
+  .presets button:hover,
+  .presets button:focus-visible { opacity: 1; color: var(--ink); outline: none; }
+  .presets button.is-set:hover,
+  .presets button.is-set:focus-visible { color: var(--accent); }
+  main[data-mode="limit"] .presets button.is-set { color: var(--accent); opacity: .72; }
+  .masthead .presets button {
+    border: 0 !important; box-shadow: none !important;
+    background: transparent !important; text-transform: lowercase !important;
+    font-size: 10px !important; letter-spacing: .02em !important;
+    min-height: 0 !important; padding: 2px 0 !important;
+  }
+  html[data-ui="military"] .masthead .presets button {
+    text-transform: lowercase !important; letter-spacing: .02em !important;
+    font-family: inherit !important;
+  }
+  [data-theme="brutal"] .masthead .presets button.is-set,
+  [data-theme="nes"] .masthead .presets button.is-set,
+  [data-theme="tank"] .masthead .presets button.is-set {
+    background: transparent !important; box-shadow: none !important;
+    border: 0 !important; padding: 2px 0 !important;
+  }
+
+  /* mode — surreptitious, lives in masthead */
+  .mode-bar {
+    display: flex; align-items: baseline; gap: 10px;
+    margin: 0; border: 0; min-width: 0;
+  }
+  .mode-bar button {
+    flex: 0 1 auto; padding: 2px 0; font-size: 10px;
+    letter-spacing: .02em; text-transform: lowercase;
+    border: 0; background: none; box-shadow: none;
+    color: var(--mute); min-width: 0; min-height: 0;
+    opacity: .28; transition: opacity .15s ease, color .15s ease;
+  }
+  .mode-bar button[aria-pressed="true"] {
+    color: var(--ink); background: none; font-weight: 400; opacity: .58;
+  }
+  .mode-bar button.is-live { color: var(--accent); opacity: .92; }
+  header.masthead:hover .mode-bar button,
+  .mode-bar:focus-within button { opacity: .48; }
+  .mode-bar button:hover,
+  .mode-bar button:focus-visible { opacity: 1; color: var(--ink); outline: none; }
+  .mode-bar button.is-live:hover,
+  .mode-bar button.is-live:focus-visible { color: var(--accent); }
+  /* keep header modes quiet even in loud themes */
+  .masthead .mode-bar button {
+    border: 0 !important; box-shadow: none !important;
+    background: transparent !important; text-transform: lowercase !important;
+    font-size: 10px !important; letter-spacing: .02em !important;
+    min-height: 0 !important; padding: 2px 0 !important;
+  }
+  html[data-ui="military"] .masthead .mode-bar button {
+    text-transform: lowercase !important; letter-spacing: .02em !important;
+    font-family: inherit !important;
+  }
+  [data-theme="brutal"] .masthead .mode-bar button[aria-pressed="true"],
+  [data-theme="nes"] .masthead .mode-bar button[aria-pressed="true"],
+  [data-theme="tank"] .masthead .mode-bar button[aria-pressed="true"] {
+    background: transparent !important; box-shadow: none !important;
+    border: 0 !important; padding: 2px 0 !important;
+  }
+
+  /* settings sheet — rises from bottom when open */
+  .dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 4;
+    padding: 0 max(var(--pad), env(safe-area-inset-right))
+      max(8px, env(safe-area-inset-bottom))
+      max(var(--pad), env(safe-area-inset-left));
+    background: var(--bg);
+    pointer-events: none;
+  }
+  body.settings-open .dock { pointer-events: auto; }
+  .dock-inner {
+    width: 100%; max-width: min(420px, 100%); margin: 0 auto;
+    display: flex; flex-direction: column;
+  }
+  button {
+    font: inherit; font-size: 12px; letter-spacing: .02em;
+    color: var(--mute); background: none; border: 0; padding: 0;
+    cursor: pointer; touch-action: manipulation;
+  }
+  button:hover, button:focus-visible { color: var(--ink); outline: none; }
+  button:focus-visible { outline: 1px solid var(--accent); outline-offset: 3px; }
+  .icon-btn {
+    width: 28px; height: 28px; display: inline-flex;
+    align-items: center; justify-content: center;
+  }
+  .theme-orb {
+    width: 12px; height: 12px; border: 1.5px solid currentColor;
+    border-radius: 50%; display: block;
+  }
+  [data-theme="light"] .theme-orb { background: none; }
+  [data-theme="dark"] .theme-orb { background: currentColor; }
+  [data-theme="contrast"] .theme-orb {
+    background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  }
+  [data-theme="paper"] .theme-orb { border-radius: 2px; }
+  [data-theme="glass"] .theme-orb {
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a78bfa, #38bdf8);
+    border-color: transparent;
+  }
+  [data-theme="frost"] .theme-orb {
+    border-radius: 50%;
+    background: linear-gradient(135deg, #312e81, #a78bfa);
+    border-color: rgba(255,255,255,.35);
+  }
+  [data-theme="brutal"] .theme-orb {
+    border-radius: 0; border-width: 2px; background: #ff0000; border-color: #000;
+  }
+  [data-theme="loom"] .theme-orb {
+    border-radius: 2px; background: #d4a84b; border-color: #d4a84b;
+    box-shadow: 0 0 8px rgba(212,168,75,.55);
+  }
+  [data-theme="tank"] .theme-orb {
+    border-radius: 0; border-width: 2px;
+    background: linear-gradient(180deg, #57a253 33%, #4a52c4 33% 66%, #e6c92a 66%);
+    border-color: #356379;
+  }
+  [data-theme="nes"] .theme-orb {
+    border-radius: 0; border-width: 2px; border-color: #000;
+    background: linear-gradient(90deg, #e4002b 33%, #fce100 33% 66%, #209cee 66%);
+  }
+
+  /* settings — sheet rises from bottom dock */
+  #settings {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows .28s ease;
+    position: relative; z-index: 2;
+  }
+  #settings.open { grid-template-rows: 1fr; }
+  #settings > .inner { overflow: hidden; min-height: 0; }
+  #settings .fields {
+    padding: 0 0 12px; display: flex; flex-direction: column; gap: 14px;
+    opacity: 0; transition: opacity .2s ease;
+  }
+  #settings.open .fields {
+    opacity: 1;
+    max-height: min(58vh, 440px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: 16px;
+  }
+  .settings-group {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .settings-group + .settings-group { margin-top: 18px; }
+  .settings-head {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 8px; margin-bottom: 4px; padding-right: 2px;
+  }
+  .settings-head .support { display: flex; gap: 6px; align-items: center; }
+  .shuffle-looks {
+    width: 22px; height: 22px; padding: 0; border: 0; background: none;
+    color: var(--mute); cursor: pointer; opacity: .35;
+  }
+  .shuffle-looks:hover, .shuffle-looks:focus-visible { opacity: .85; color: var(--ink); outline: none; }
+  .shuffle-looks svg { width: 13px; height: 13px; display: block; }
+  body.is-shuffling .shuffle-looks svg { animation: shuffle-dice .42s ease; }
+  @keyframes shuffle-dice {
+    0% { transform: rotate(0deg) scale(1); }
+    35% { transform: rotate(-28deg) scale(1.12); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+  fieldset.layer-row { position: relative; padding-right: var(--action-rail); }
+  fieldset.layer-row .layer-sq {
+    position: absolute; right: calc(var(--action-rail) / 2); top: 4px;
+    width: 7px; height: 7px; padding: 0; border: 0; border-radius: 1px;
+    background: var(--ink); opacity: .14; cursor: pointer; transform: translateX(50%);
+  }
+  fieldset.layer-row .layer-sq.is-on { opacity: .48; }
+  fieldset.layer-row.is-off > :not(legend):not(.layer-sq) {
+    opacity: .28; pointer-events: none;
+  }
+  .target-field { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .target-field input {
+    width: 4.5rem; font: inherit; font-size: 14px; color: var(--ink);
+    background: transparent; border: 0; padding: 2px 0;
+  }
+  .target-field em { font-size: 10px; color: var(--mute); font-style: normal; }
+  fieldset .opts { display: flex; flex-direction: column; gap: 8px; }
+  .about-copy { font-size: 11px; color: var(--mute); line-height: 1.55; margin-bottom: 8px; }
+  .about-copy code { font-size: 10px; }
+  fieldset { border: 0; min-width: 0; }
+  legend {
+    font-size: 11px; letter-spacing: .02em; color: var(--mute);
+    text-transform: none; margin-bottom: 8px; font-weight: 400;
+  }
+  .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+  .seg label span {
+    display: inline-block; font-size: 12px; padding: 4px 8px;
+    border: 0; color: var(--mute); cursor: pointer;
+  }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg input:checked + span { color: var(--ink); font-weight: 500; }
+  .seg label span:hover { color: var(--ink); }
+  /* chrome face previews in settings */
+  .seg .ui-braun span { font-family: Helvetica, Arial, sans-serif; }
+  .seg .ui-monocle span { font-family: "Source Sans 3", "Avenir Next", sans-serif; }
+  .seg .ui-bauhaus span { font-family: "Josefin Sans", Futura, sans-serif; letter-spacing: .08em; }
+  .seg .ui-noyes span { font-family: "IBM Plex Sans", Helvetica, sans-serif; }
+  .seg .ui-ikea span { font-family: Verdana, Geneva, sans-serif; }
+  .seg .ui-military span { font-family: Oswald, "Arial Narrow", sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .seg .ui-terminal span { font-family: "SF Mono", Menlo, monospace; }
+  .seg .ui-nyt span { font-family: Georgia, "Times New Roman", serif; }
+  .field-row {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  }
+  .field-row input {
+    width: 4.5rem; font: inherit; font-size: 14px; color: var(--ink);
+    background: transparent; border: 0; padding: 2px 0;
+  }
+  .field-row em { font-size: 10px; color: var(--mute); font-style: normal; }
+  .keys-hint { font-size: 10px; color: var(--mute); line-height: 1.65; }
+  kbd {
+    font: inherit; font-size: 9px; padding: 0 2px;
+    border: 0; border-radius: 0;
+  }
+
+  /* ---- THE DIAL: geometric, thin, IBM-quiet ---- */
+  .dial-wrap {
+    flex: 0 0 auto; display: flex; flex-direction: column;
+    align-items: center; width: 100%;
+  }
+  .dial {
+    position: relative; width: min(100%, 300px); aspect-ratio: 1;
+    display: grid; place-items: center;
+  }
+  .done-tag {
+    position: absolute; top: 14%; right: 12%; z-index: 3;
+    font-size: 11px; letter-spacing: .02em; text-transform: none;
+    padding: 2px 6px; border: 1px solid var(--done); color: var(--done);
+    background: var(--bg);
+    opacity: 0; transform: translateY(-4px); transition: opacity .25s ease, transform .25s ease;
+    pointer-events: none;
+  }
+  main[data-met="true"][data-reach="tag"] .done-tag { opacity: 1; transform: none; }
+
+  /* progress hand — small square on the ring */
+  .hand-ring {
+    position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    transform: rotate(calc(-90deg + var(--progress-deg, 0deg)));
+    transition: transform .12s linear, opacity .25s ease;
+    opacity: 0;
+  }
+  main[data-hand="on"] .hand-ring { opacity: 1; }
+  .hand-dot {
+    position: absolute; top: 2.8%; left: 50%;
+    width: 5px; height: 5px; margin-left: -2.5px;
+    border-radius: 0; background: var(--ink);
+    box-shadow: 0 0 0 1.5px var(--bg);
+    transition: background-color .25s ease;
+  }
+  main[data-state="running"] .hand-dot { background: var(--accent); }
+  main[data-state="done"] .hand-dot { background: var(--done); }
+  main[data-state="paused"] .hand-dot { opacity: .45; }
+  main[data-met="true"][data-reach="dot"] .hand-dot {
+    animation: hand-pulse .55s ease 4;
+  }
+  @keyframes hand-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: .55; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hand-ring, .dial svg.ring circle, .scale-rail .fill, .scale-rail .head,
+    .scale-rail .cap, .viz-bar .fill, #settings, #settings .fields {
+      transition: none !important;
+    }
+    .hand-ring { transition: none; }
+    main[data-met="true"][data-reach="dot"] .hand-dot { animation: none; }
+    main[data-reach="alarm"] .face-time { animation: none; }
+    body.is-shuffling .shuffle-looks svg { animation: none; }
+  }
+
+  .reach-dot { display: none; }
+  .dial svg.ring {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transform: rotate(-90deg); pointer-events: none;
+  }
+  .dial svg.ring circle {
+    fill: none; stroke-linecap: butt;
+    transition: stroke-dashoffset .15s linear, stroke .3s ease;
+  }
+  .dial svg.ring .track {
+    stroke: var(--hair); stroke-width: 1; opacity: .9;
+  }
+  .dial svg.ring .arc {
+    stroke: var(--ink); stroke-width: 1.25;
+  }
+  .dial svg.ring .dial-ticks line {
+    stroke: var(--rule); stroke-width: .4; stroke-linecap: butt; opacity: .4;
+  }
+  .dial svg.ring .dial-ticks line.major {
+    stroke: var(--mute); stroke-width: .5; opacity: .35;
+  }
+  main[data-state="running"] .dial svg.ring .arc { stroke: var(--accent); }
+  main[data-state="done"] .dial svg.ring .arc { stroke: var(--done); }
+  main[data-mode="limit"] .dial svg.ring .arc { stroke-width: 1.5; }
+
+  .dial-core {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; text-align: center; max-width: 72%;
+  }
+  .dial-core .label-input {
+    width: 100%; font: inherit; font-size: 12px; letter-spacing: .01em;
+    text-transform: none; text-align: center; color: var(--mute);
+    background: transparent; border: 0; border-bottom: 1px solid transparent;
+    padding: 2px 4px;
+  }
+  .dial-core .label-input:hover,
+  .dial-core .label-input:focus {
+    color: var(--ink); border-bottom-color: var(--hair); outline: none;
+  }
+  .dial-core .label-input::placeholder { color: var(--mute); opacity: .55; }
+  /* hide empty session name until focused / filled */
+  .dial-core .label-input:placeholder-shown:not(:focus) {
+    opacity: 0;
+  }
+  main[data-state="idle"] .dial-core .label-input:placeholder-shown:not(:focus) {
+    opacity: 0;
+  }
+
+  .face-time {
+    font-family: var(--digits);
+    font-size: clamp(3.2rem, 17vmin, 4.75rem);
+    font-weight: 400; line-height: .9; letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+  main[data-state="idle"] .face-time { color: var(--mute); }
+  main[data-state="running"] .face-time { color: var(--ink); }
+  main[data-state="done"] .face-time { color: var(--done); }
+  main[data-mode="limit"] .face-time { letter-spacing: -.02em; }
+
+  .face-sub {
+    font-size: 12px; letter-spacing: .01em; color: var(--mute);
+    min-height: 1.2em; text-transform: none;
+  }
+  .face-sub:empty { min-height: 0; }
+  .face-sub b { font-weight: 400; color: var(--ink); }
+
+  /* controls — lap only; run + reset live lower-right */
+  .controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: clamp(20px, 6vw, 32px); padding: 8px 0 4px; min-height: 0;
+  }
+  .controls:empty { display: none; }
+  .action-rail {
+    position: fixed; z-index: 5;
+    right: max(var(--pad), env(safe-area-inset-right));
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + var(--dock-h) + var(--rail-h));
+    display: flex; align-items: baseline; gap: 14px;
+    pointer-events: auto;
+  }
+  #runBtn {
+    font-size: 14px; letter-spacing: .02em; text-transform: none;
+    color: var(--ink); min-width: 0; text-align: right;
+    min-height: 44px; padding: 0; font-weight: 400;
+  }
+  #runBtn.is-running { color: var(--accent); }
+  #resetBtn.reset-btn {
+    font-size: 10px; letter-spacing: .02em; text-transform: lowercase;
+    color: var(--mute); min-height: 44px; padding: 0;
+    opacity: .18; pointer-events: none;
+    transition: opacity .15s ease, color .15s ease;
+  }
+  main[data-can-reset] #resetBtn.reset-btn {
+    opacity: .38; pointer-events: auto;
+  }
+  .action-rail:hover #resetBtn.reset-btn,
+  #resetBtn.reset-btn:hover,
+  #resetBtn.reset-btn:focus-visible {
+    opacity: 1; color: var(--ink); outline: none;
+  }
+  .action-rail .reset-btn {
+    border: 0 !important; box-shadow: none !important;
+    background: transparent !important; text-transform: lowercase !important;
+    font-size: 10px !important; letter-spacing: .02em !important;
+    min-height: 44px !important; padding: 0 !important;
+  }
+  html[data-ui="military"] .action-rail .reset-btn {
+    text-transform: lowercase !important; letter-spacing: .02em !important;
+    font-family: inherit !important;
+  }
+  body.settings-open .action-rail { opacity: 0; pointer-events: none; }
+  .controls .lap { font-size: 12px; letter-spacing: .01em; min-height: 44px; padding: 0 10px; }
+  .controls .lap[hidden] { display: none; }
+
+  /* record — the scrollable body; only earns space when it has rows */
+  .record {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto;
+    border-top: 0; padding-top: 12px;
+  }
+  .record[hidden] { display: none; }
+  .record-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 8px;
+  }
+  .record-head h2 {
+    font-size: 12px; font-weight: 400; letter-spacing: .01em;
+    text-transform: none; color: var(--mute);
+  }
+  .record-head .sum {
+    font-size: 11px; color: var(--mute); font-variant-numeric: tabular-nums;
+  }
+  .record-head .sum b { font-weight: 400; color: var(--ink); }
+
+  .record table {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px; font-variant-numeric: tabular-nums;
+  }
+  .record th {
+    font-size: 9px; font-weight: 400; letter-spacing: .1em;
+    text-transform: lowercase; color: var(--mute);
+    text-align: left; padding: 0 8px 6px 0;
+    border-bottom: 0;
+  }
+  .record th:last-child { text-align: right; padding-right: 0; }
+  .record td {
+    padding: 7px 8px 7px 0; border-bottom: 0;
+    vertical-align: baseline;
+  }
+  .record td:last-child { text-align: right; padding-right: 0; color: var(--mute); }
+  .record td.split { color: var(--ink); font-weight: 400; }
+  .record tr:first-child td { border-top: 0; }
+  .record tr.is-latest td { color: var(--accent); }
+  .record tr.is-latest td.split { color: var(--accent); }
+  .record .note {
+    display: block; font-size: 10px; color: var(--mute);
+    letter-spacing: .02em; margin-top: 1px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 12rem;
+  }
+
+  /* calm density — face + controls only */
+  main[data-density="calm"] .record { display: none !important; }
+
+  /* figure — dial readout layout variants */
+  .dial-core[data-figure="pair"] { gap: 6px; }
+  .dial-core[data-figure="stack"] { gap: 6px; }
+  .dial-core[data-figure="stack"] .face-time {
+    font-size: clamp(3.4rem, 18vmin, 5rem); line-height: .88;
+  }
+  .dial-core[data-figure="stack"] .face-sub {
+    order: -1; font-size: 12px; letter-spacing: .01em; min-height: auto;
+  }
+  .dial-core[data-figure="stack"] .label-input { order: -2; }
+  .dial-core[data-figure="spine"] {
+    flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 10px; max-width: 92%;
+  }
+  .dial-core[data-figure="spine"] .label-input {
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    width: auto; max-height: 5rem; border-bottom: 0; border-right: 1px solid var(--hair);
+    padding-right: 6px; text-align: center;
+  }
+  .dial-core[data-figure="spine"] .face-stack { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .dial-core[data-figure="caption"] { align-items: flex-start; text-align: left; }
+  .dial-core[data-figure="caption"] .face-time { font-size: clamp(2.6rem, 13vw, 4rem); }
+  .dial-core[data-figure="caption"] .face-sub {
+    width: 100%; padding-top: 5px; border-top: 1px solid var(--hair);
+  }
+  .dial-core[data-figure="ticket"] {
+    align-items: stretch; border-left: 2px solid var(--ink); padding-left: 10px; max-width: 85%;
+  }
+  .dial-core[data-figure="ticket"] .label-input { order: -1; text-align: left; }
+  .dial-core[data-figure="slab"] {
+    padding: 14px 16px; max-width: 88%;
+  }
+  .dial-core[data-figure="slab"] .face-time { font-weight: 400; letter-spacing: -.03em; }
+
+  /* layout — instrument posture */
+  main[data-layout="compact"] .dial { width: min(100%, 260px); }
+  main[data-layout="compact"] .face-sub { font-size: 10px; }
+  main[data-layout="focus"] .record { display: none !important; }
+  main[data-layout="focus"][data-state="running"] header.masthead .mode-bar,
+  main[data-layout="focus"][data-state="running"] .presets,
+  main[data-layout="focus"][data-state="running"] #progress { display: none !important; }
+  main[data-layout="focus"][data-state="running"] .dial { width: min(100%, 340px); }
+
+  /* progress chart — limit goal viz (non-ring styles) */
+  #progress { width: 100%; max-width: 280px; margin-top: 14px; min-height: 0; }
+  #progress[hidden] { display: none !important; }
+  .viz { width: 100%; min-width: 0; }
+  .viz-dots, .viz-squares { display: flex; flex-wrap: wrap; gap: 5px; }
+  .viz-dots .cell { width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
+  .viz-dots .cell.on { background: var(--accent); }
+  .viz-squares .cell { width: 9px; height: 9px; border-radius: 1.5px; background: var(--rule); }
+  .viz-squares .cell.on { background: var(--accent); }
+  .viz-ticks { display: flex; align-items: flex-end; gap: 1px; height: 28px; width: 100%; overflow: hidden; }
+  .viz-ticks .cell { flex: 1 1 0; height: 55%; background: var(--rule); border-radius: 99px 99px 0 0; }
+  .viz-ticks .cell.on { background: var(--accent); }
+  .viz-ticks .cell.major { height: 100%; }
+  .viz-bar { height: 8px; width: 100%; background: var(--rule); border-radius: 99px; overflow: hidden; }
+  .viz-bar .fill { height: 100%; width: 0%; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
+  .viz-ring-mini { display: flex; justify-content: center; gap: 8px; }
+  .viz-ring-mini svg { width: 48px; height: 48px; transform: rotate(-90deg); }
+  .viz-ring-mini circle { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+  .viz-ring-mini .track { stroke: var(--hair); }
+  .viz-ring-mini .fill { stroke: var(--accent); }
+  .viz-meta { font-size: 10px; color: var(--mute); margin-top: 6px; letter-spacing: .04em; }
+
+  /* scale rail — horizontal timeline above dock */
+  .scale-rail {
+    display: none; position: fixed; z-index: 2; pointer-events: none;
+    left: max(var(--pad), env(safe-area-inset-left, 0px));
+    right: max(var(--pad), env(safe-area-inset-right, 0px));
+    bottom: calc(max(10px, env(safe-area-inset-bottom, 0px)) + var(--dock-h));
+    height: var(--rail-h, 14px);
+    --rail-ink: var(--ink); --rail-mute: var(--mute); --rail-rule: var(--rule);
+  }
+  body:has(main[data-goal="true"]) .scale-rail { display: block; }
+  .scale-rail .track {
+    position: absolute; inset: 0;
+    border-top: 0;
+  }
+  .scale-rail .fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: var(--goal-pct, 0%); max-width: 100%;
+    background: var(--rail-ink); opacity: .22;
+    transition: width .12s linear, background-color .35s ease;
+  }
+  .scale-rail .head {
+    position: absolute; top: 50%; left: var(--goal-pct, 0%);
+    width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+    border-radius: 0; background: var(--rail-ink);
+    box-shadow: 0 0 0 1.5px var(--bg);
+    transition: left .12s linear, background-color .35s ease;
+    opacity: 0;
+  }
+  body:has(main[data-hand="on"]) .scale-rail .head { opacity: 1; }
+  body:has(main[data-met="true"]) .scale-rail .head { background: var(--done); }
+  body:has(main[data-met="true"]) .scale-rail .fill { background: var(--done); }
+  .scale-rail .ticks { position: absolute; inset: 0; }
+  .scale-rail .ticks i {
+    position: absolute; bottom: 0; width: 1px; height: 8px;
+    background: var(--rail-rule); transform: translateX(-50%);
+  }
+  .scale-rail .ticks i.major { height: 12px; background: var(--rail-mute); }
+  .scale-rail .marks { position: absolute; inset: 0; pointer-events: none; }
+  .scale-rail .marks b {
+    position: absolute; bottom: calc(100% + 4px); font-size: 8px; font-weight: 400;
+    letter-spacing: .08em; color: var(--rail-mute);
+    font-variant-numeric: tabular-nums; transform: translateX(-50%);
+    transition: opacity .2s ease;
+  }
+  .scale-rail .marks b.is-occluded { opacity: 0; }
+  .scale-rail .cap {
+    position: absolute; bottom: calc(100% + 3px);
+    left: clamp(0px, var(--goal-pct, 0%), calc(100% - 3rem));
+    font-family: var(--digits); font-size: 9px; letter-spacing: .04em;
+    color: var(--rail-mute); font-variant-numeric: tabular-nums;
+    white-space: nowrap; transition: left .2s linear, color .25s ease;
+  }
+  body:has(main[data-met="true"]) .scale-rail .cap { color: var(--done); }
+  .scale-rail .cap em {
+    display: block; font-style: normal; font-size: 7px;
+    letter-spacing: .12em; opacity: .75; margin-top: 1px;
+  }
+  .scale-rail[data-scale="ladder"] { --rail-h: 18px; }
+  .scale-rail[data-scale="ladder"] .track {
+    border-top-width: 2px; border-bottom: 1px solid var(--rail-hair, var(--hair));
+  }
+  .scale-rail[data-scale="ladder"] .fill { opacity: .22; top: 2px; bottom: 2px; height: auto; }
+  .scale-rail[data-scale="ladder"] .ticks i { height: 100%; width: 1px; bottom: 0; }
+  .scale-rail[data-scale="mercury"] { --rail-h: 16px; }
+  .scale-rail[data-scale="mercury"] .track {
+    border: 1px solid var(--rail-rule); border-radius: 99px;
+    background: color-mix(in srgb, var(--face) 92%, var(--ink) 8%);
+  }
+  .scale-rail[data-scale="mercury"] .fill {
+    top: 1px; bottom: 1px; height: auto; border-radius: 99px;
+  }
+  .scale-rail[data-scale="mercury"] .ticks { display: none; }
+  .scale-rail[data-scale="spine"] { --rail-h: 10px; }
+  .scale-rail[data-scale="spine"] .track { border-top-width: 2px; opacity: .55; }
+  .scale-rail[data-scale="index"] .track { border-top-style: dotted; }
+  .scale-rail[data-scale="tape"] { --rail-h: 20px; }
+  .scale-rail[data-scale="tape"] .track {
+    border: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ink) 8%, transparent) 0 10%,
+      transparent 10% 20%
+    );
+    border-top: 1px solid var(--rail-ink);
+    border-bottom: 1px solid var(--rail-rule);
+  }
+  .scale-rail[data-scale="tape"] .fill { opacity: .28; background: var(--accent); top: 0; bottom: 0; height: auto; }
+  body:has(main[data-met="true"]) .scale-rail[data-scale="tape"] .fill {
+    background: var(--done); opacity: .35;
+  }
+
+  /* reach — honest, minimal */
+  main[data-reach="wash"][data-state="done"] .dial-wrap,
+  main[data-reach="wash"][data-met="true"] .dial-wrap {
+    background: none;
+  }
+  main[data-reach="tint"][data-state="done"] .dial svg.ring .arc,
+  main[data-reach="tint"][data-met="true"] .dial svg.ring .arc { stroke: var(--done); }
+  main[data-reach="tint"][data-state="done"] .face-time,
+  main[data-reach="tint"][data-met="true"] .face-time { color: var(--done); }
+  main[data-reach="alarm"][data-state="done"] .face-time,
+  main[data-reach="alarm"][data-met="true"] .face-time {
+    animation: pulse .55s ease 2;
+    color: var(--mark);
+  }
+  main[data-reach="none"][data-state="done"] .dial-wrap,
+  main[data-reach="none"][data-met="true"] .dial-wrap { background: none; }
+  main[data-reach="none"][data-state="done"] .face-time,
+  main[data-reach="none"][data-met="true"] .face-time { color: var(--done); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .45; }
+  }
+
+  body.settings-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body.settings-open .clock-stage { position: relative; z-index: 2; }
+  body.settings-open main { z-index: 4; }
+  body.settings-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    background: color-mix(in srgb, var(--ink) 3%, transparent);
+    pointer-events: none;
+  }
+  body.settings-open .dock { z-index: 5; pointer-events: auto; }
+  body.settings-open header.masthead { z-index: 7; }
+  /* suite tools menu sits with top chrome */
+  .timecount-app .suite-nav {
+    top: max(12px, env(safe-area-inset-top));
+    right: max(10px, env(safe-area-inset-right));
+  }
+  @media (max-width: 380px) {
+    .controls { gap: 12px; }
+    .masthead-start { gap: 10px; }
+    .mode-bar { gap: 8px; }
+    .mode-bar button { font-size: 9px; }
+    .presets { gap: 8px; }
+    .presets button { font-size: 9px; }
+    .actions { gap: 12px; }
+  }
+
+  /* ========== THEME INSTRUMENTS (match wordcounter depth) ========== */
+
+  /* light — Braun precision */
+  [data-theme="light"] .dial svg.ring .arc { stroke-linecap: round; }
+  [data-theme="light"] .hand-dot { border-radius: 50%; }
+  [data-theme="light"] .seg input:checked + span { border-bottom: 1px solid var(--accent); }
+
+  /* dark — glow accents */
+  [data-theme="dark"] .dial svg.ring .arc { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 45%, transparent)); }
+  [data-theme="dark"] main[data-state="running"] .hand-dot { box-shadow: 0 0 0 1.5px var(--bg), 0 0 8px var(--accent); }
+  [data-theme="dark"] .scale-rail .fill { box-shadow: 0 0 6px color-mix(in srgb, var(--ink) 40%, transparent); }
+
+  /* contrast — max geometry */
+  [data-theme="contrast"] .dial svg.ring .arc { stroke-width: 3; stroke-linecap: butt; }
+  [data-theme="contrast"] .dial svg.ring .track { stroke: #fff; stroke-width: 1; opacity: .35; }
+  [data-theme="contrast"] .hand-dot { border-radius: 0; width: 8px; height: 8px; margin-left: -4px; background: #ff0; }
+  [data-theme="contrast"] .mode-bar button[aria-pressed="true"],
+  [data-theme="contrast"] .seg input:checked + span {
+    background: #fff; color: #000; padding: 4px 8px;
+  }
+  [data-theme="contrast"] #runBtn {
+    border: 2px solid #fff; padding: 8px 18px; text-transform: uppercase; letter-spacing: .12em;
+  }
+  [data-theme="contrast"] .layer-sq { border: 1px solid #fff; background: transparent; opacity: 1; }
+  [data-theme="contrast"] .layer-sq.is-on { background: #ff0; border-color: #ff0; }
+
+  /* paper — editorial */
+  [data-theme="paper"] .dial svg.ring .track { stroke: var(--rule); stroke-dasharray: 1 3; }
+  [data-theme="paper"] .face-sub { font-style: italic; }
+  [data-theme="paper"] .hand-dot { border-radius: 40% 60% 55% 45%; }
+  [data-theme="paper"] .scale-rail .track { border-top-style: dotted; }
+  [data-theme="paper"] .seg input:checked + span { border-bottom: 1px solid var(--accent); font-style: italic; }
+
+  /* glass — frosted panels + liquid ring */
+  [data-theme="glass"] body.timecount-app {
+    background:
+      radial-gradient(1200px 700px at 12% -10%, rgba(147,51,234,.18), transparent 55%),
+      radial-gradient(900px 600px at 88% 8%, rgba(59,130,246,.16), transparent 50%),
+      #e8eef8;
+    background-attachment: fixed;
+  }
+  [data-theme="glass"] header.masthead,
+  [data-theme="glass"] .dock,
+  [data-theme="glass"] #settings > .inner {
+    background: rgba(255,255,255,.55);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border-color: rgba(255,255,255,.7);
+  }
+  [data-theme="glass"] header.masthead {
+    border-bottom: 1px solid rgba(255,255,255,.55);
+    box-shadow: 0 8px 28px rgba(59,130,246,.08);
+  }
+  [data-theme="glass"] #settings > .inner {
+    border: 1px solid rgba(255,255,255,.7);
+    border-radius: 16px;
+    padding: 12px 14px;
+    box-shadow: 0 8px 28px rgba(59,130,246,.1), inset 0 1px 0 rgba(255,255,255,.85);
+  }
+  [data-theme="glass"] .dial svg.ring .arc {
+    stroke-width: 3; stroke-linecap: round;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 50%, transparent));
+  }
+  [data-theme="glass"] .dial svg.ring .track { stroke: rgba(255,255,255,.8); stroke-width: 3; opacity: 1; }
+  [data-theme="glass"] .hand-dot {
+    border-radius: 50%; width: 9px; height: 9px; margin-left: -4.5px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,.9), 0 0 12px var(--accent);
+  }
+  [data-theme="glass"] #runBtn {
+    background: rgba(255,255,255,.5); border-radius: 999px; padding: 10px 22px;
+    border: 1px solid rgba(255,255,255,.8);
+  }
+  [data-theme="glass"] .mode-bar button[aria-pressed="true"] {
+    background: rgba(124,58,237,.12); border-radius: 999px; color: var(--accent);
+  }
+  [data-theme="glass"] .seg input:checked + span {
+    background: rgba(124,58,237,.14); border-radius: 8px; color: var(--accent);
+  }
+  [data-theme="glass"] .presets button.is-set {
+    background: rgba(124,58,237,.12); border-radius: 999px; color: var(--accent); padding: 6px 12px;
+  }
+  [data-theme="glass"] .masthead .presets button.is-set {
+    background: transparent !important; border-radius: 0 !important; padding: 2px 0 !important;
+  }
+  [data-theme="glass"] .layer-sq { border-radius: 50%; }
+
+  /* frost — dark ice glass */
+  [data-theme="frost"] body.timecount-app {
+    background:
+      radial-gradient(1100px 700px at 10% -8%, rgba(139,92,246,.28), transparent 55%),
+      radial-gradient(900px 600px at 92% 0%, rgba(59,130,246,.18), transparent 50%),
+      #070b16;
+    background-attachment: fixed;
+  }
+  [data-theme="frost"] header.masthead,
+  [data-theme="frost"] .dock,
+  [data-theme="frost"] #settings > .inner {
+    background: rgba(15,23,42,.72);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+  }
+  [data-theme="frost"] #settings > .inner {
+    border: 1px solid rgba(148,163,184,.2);
+    border-radius: 16px; padding: 12px 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  [data-theme="frost"] .dial svg.ring .arc {
+    stroke-width: 2; stroke-linecap: round;
+    filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 55%, transparent));
+  }
+  [data-theme="frost"] .dial svg.ring .track { stroke: rgba(148,163,184,.25); stroke-width: 2; }
+  [data-theme="frost"] .hand-dot {
+    border-radius: 50%; background: transparent; border: 1.5px solid var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  [data-theme="frost"] #runBtn {
+    border: 1px solid rgba(148,163,184,.3); border-radius: 999px; padding: 10px 22px;
+  }
+  [data-theme="frost"] .mode-bar button[aria-pressed="true"],
+  [data-theme="frost"] .seg input:checked + span { color: var(--accent); }
+  [data-theme="frost"] .layer-sq {
+    border-radius: 50%; background: transparent; border: 1px solid var(--mute); opacity: .6;
+  }
+  [data-theme="frost"] .layer-sq.is-on { border-color: var(--accent); background: var(--accent); opacity: 1; }
+
+  /* brutal — neo-brutal hard edges */
+  [data-theme="brutal"] body.timecount-app { background: #fff; }
+  [data-theme="brutal"] header.masthead {
+    border-bottom: 3px solid #000; box-shadow: 0 3px 0 #000;
+  }
+  [data-theme="brutal"] #settings > .inner {
+    border: 3px solid #000; border-radius: 0; background: #fff;
+    box-shadow: 5px 5px 0 #000; padding: 12px;
+  }
+  [data-theme="brutal"] .dock { border-top: 3px solid #000; }
+  [data-theme="brutal"] .dial svg.ring .arc { stroke-width: 4; stroke-linecap: butt; stroke: #000; }
+  [data-theme="brutal"] main[data-state="running"] .dial svg.ring .arc { stroke: #ff0000; }
+  [data-theme="brutal"] .dial svg.ring .track { stroke: #000; stroke-width: 3; opacity: 1; }
+  [data-theme="brutal"] .dial svg.ring .dial-ticks { display: none; }
+  [data-theme="brutal"] .hand-dot {
+    border-radius: 0; width: 10px; height: 10px; margin-left: -5px;
+    background: #ff0000; box-shadow: 2px 2px 0 #000;
+  }
+  [data-theme="brutal"] .face-time { font-weight: 800; letter-spacing: -.04em; }
+  [data-theme="brutal"] #runBtn,
+  [data-theme="brutal"] .controls .lap,
+  [data-theme="brutal"] .mode-bar button,
+  [data-theme="brutal"] .presets button {
+    border: 2px solid #000; border-radius: 0; box-shadow: 3px 3px 0 #000;
+    text-transform: uppercase; letter-spacing: .08em; padding: 8px 12px; background: #fff; color: #000;
+  }
+  [data-theme="brutal"] .mode-bar button[aria-pressed="true"],
+  [data-theme="brutal"] .presets button.is-set,
+  [data-theme="brutal"] #runBtn.is-running {
+    background: #ff0000; color: #fff; box-shadow: 3px 3px 0 #000;
+  }
+  [data-theme="brutal"] .seg input:checked + span {
+    background: #ff0000; color: #fff; border: 2px solid #000; padding: 2px 6px;
+  }
+  [data-theme="brutal"] .layer-sq {
+    width: 0; height: 0; border-radius: 0; background: transparent; opacity: 1;
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-bottom: 9px solid #000; transform: none;
+  }
+  [data-theme="brutal"] .layer-sq.is-on { border-bottom-color: #ff0000; }
+  [data-theme="brutal"] .scale-rail .fill { background: #ff0000; opacity: 1; }
+  [data-theme="brutal"] .scale-rail .head { border-radius: 0; background: #ff0000; box-shadow: 2px 2px 0 #000; }
+
+  /* loom — gold phosphor CRT */
+  [data-theme="loom"] body.timecount-app {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212,168,75,.08), transparent 50%),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.18) 2px, rgba(0,0,0,.18) 3px),
+      #0a0a0f;
+    background-attachment: fixed;
+  }
+  [data-theme="loom"] header.masthead,
+  [data-theme="loom"] #settings > .inner {
+    background: #12121a; border: 1px solid rgba(255,255,255,.05);
+    box-shadow: 0 0 24px rgba(212,168,75,.06);
+  }
+  [data-theme="loom"] #settings > .inner { border-radius: 12px; padding: 12px 14px; }
+  [data-theme="loom"] h1,
+  [data-theme="loom"] .face-time,
+  [data-theme="loom"] #runBtn {
+    font-family: "JetBrains Mono", "SF Mono", Menlo, monospace; letter-spacing: .06em;
+  }
+  [data-theme="loom"] .face-time {
+    background: linear-gradient(135deg, #d4a84b 0%, #8b5cf6 100%);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; -webkit-text-fill-color: transparent;
+  }
+  [data-theme="loom"] main[data-state="idle"] .face-time {
+    opacity: .55;
+  }
+  [data-theme="loom"] .dial svg.ring .arc {
+    stroke: #d4a84b; stroke-width: 2;
+    filter: drop-shadow(0 0 6px rgba(212,168,75,.55));
+  }
+  [data-theme="loom"] .hand-dot {
+    border-radius: 0; transform: rotate(45deg);
+    background: #d4a84b; box-shadow: 0 0 8px rgba(212,168,75,.7);
+  }
+  [data-theme="loom"] .seg input:checked + span,
+  [data-theme="loom"] .mode-bar button[aria-pressed="true"] { color: #d4a84b; }
+  [data-theme="loom"] #runBtn.is-running { color: #d4a84b; }
+  [data-theme="loom"] .scale-rail .fill {
+    background: #d4a84b; opacity: .9; box-shadow: 0 0 8px rgba(212,168,75,.5);
+  }
+  [data-theme="loom"] .scale-rail .track { border-top-style: dashed; border-color: #d4a84b; }
+  [data-theme="loom"] .layer-sq {
+    border-radius: 0; transform: translateX(50%) rotate(45deg); width: 7px; height: 7px;
+  }
+
+  /* tank — pixel aquarium */
+  [data-theme="tank"] body.timecount-app {
+    background: linear-gradient(180deg, #0b1a22 0%, #163040 42%, #1d3b22 72%, #2c1f15 88%, #1a120c 100%);
+    background-attachment: fixed;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+  }
+  [data-theme="tank"] body.timecount-app::before {
+    content: ""; pointer-events: none; position: fixed; inset: 0; z-index: 0; opacity: .35;
+    background-image:
+      linear-gradient(rgba(11,26,34,.35) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(11,26,34,.35) 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  [data-theme="tank"] header.masthead,
+  [data-theme="tank"] main,
+  [data-theme="tank"] .dock,
+  [data-theme="tank"] .scale-rail { position: relative; z-index: 1; }
+  [data-theme="tank"] header.masthead,
+  [data-theme="tank"] #settings > .inner {
+    background: #163040; border: 2px solid #356379; border-radius: 0;
+    box-shadow: 0 0 0 1px #0b1a22, 4px 4px 0 #1a120c;
+  }
+  [data-theme="tank"] #settings > .inner { padding: 10px 12px; }
+  [data-theme="tank"] h1,
+  [data-theme="tank"] #runBtn,
+  [data-theme="tank"] .controls .lap,
+  [data-theme="tank"] .mode-bar button,
+  [data-theme="tank"] .presets button,
+  [data-theme="tank"] .seg label span,
+  [data-theme="tank"] .actions #settingsToggle {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 9px; letter-spacing: .04em; image-rendering: pixelated;
+  }
+  [data-theme="tank"] .face-time {
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(1.1rem, 5vmin, 1.6rem);
+    color: #a5d97e; text-shadow: 2px 2px 0 #102614; letter-spacing: 0;
+  }
+  [data-theme="tank"] .dial svg.ring .arc { stroke-width: 4; stroke-linecap: butt; stroke: #57a253; }
+  [data-theme="tank"] .dial svg.ring .track { stroke: #356379; stroke-width: 4; opacity: 1; }
+  [data-theme="tank"] .hand-dot {
+    border-radius: 0; width: 8px; height: 8px; margin-left: -4px;
+    background: #a5d97e; box-shadow: 2px 2px 0 #102614;
+  }
+  [data-theme="tank"] #runBtn,
+  [data-theme="tank"] .mode-bar button,
+  [data-theme="tank"] .presets button {
+    border: 2px solid #356379; background: #163040; color: #c5e2e7;
+    box-shadow: 3px 3px 0 #1a120c; padding: 8px 10px;
+  }
+  [data-theme="tank"] .mode-bar button[aria-pressed="true"],
+  [data-theme="tank"] .presets button.is-set,
+  [data-theme="tank"] #runBtn.is-running {
+    color: #a5d97e; border-color: #57a253;
+  }
+  [data-theme="tank"] .seg input:checked + span { color: #a5d97e; border-bottom: 2px solid #57a253; }
+  [data-theme="tank"] .scale-rail .fill { background: #57a253; opacity: 1; }
+  [data-theme="tank"] .layer-sq { border-radius: 0; box-shadow: 1px 1px 0 #102614; }
+
+  /* nes — 8-bit HUD */
+  [data-theme="nes"] body.timecount-app {
+    background: repeating-linear-gradient(90deg, #209cee 0 8px, #1a86d1 8px 16px);
+    background-attachment: fixed;
+    image-rendering: pixelated;
+    -webkit-font-smoothing: none;
+  }
+  [data-theme="nes"] header.masthead,
+  [data-theme="nes"] #settings > .inner {
+    background: #f8f8f8; border: 4px solid #000; border-radius: 0;
+    box-shadow: inset -4px -4px 0 #adb5bd, inset 4px 4px 0 #fff, 4px 4px 0 #000;
+  }
+  [data-theme="nes"] header.masthead { border-bottom: 4px solid #000; }
+  [data-theme="nes"] #settings > .inner { padding: 10px 12px; margin-bottom: 8px; }
+  [data-theme="nes"] .dock {
+    background: #f8f8f8; border-top: 4px solid #000; box-shadow: 0 -4px 0 #000;
+  }
+  [data-theme="nes"] h1,
+  [data-theme="nes"] #runBtn,
+  [data-theme="nes"] .controls .lap,
+  [data-theme="nes"] .mode-bar button,
+  [data-theme="nes"] .presets button,
+  [data-theme="nes"] .seg label span,
+  [data-theme="nes"] .actions #settingsToggle {
+    font-family: "Press Start 2P", "Courier New", monospace;
+    font-size: 9px; letter-spacing: .02em; text-transform: uppercase;
+  }
+  [data-theme="nes"] .face-time {
+    font-family: "Press Start 2P", monospace;
+    font-size: clamp(1rem, 4.5vmin, 1.5rem);
+    color: #fce100; text-shadow: 3px 3px 0 #e4002b; letter-spacing: 0;
+  }
+  [data-theme="nes"] main[data-state="idle"] .face-time { color: #212529; text-shadow: 2px 2px 0 #adb5bd; }
+  [data-theme="nes"] .dial {
+    background: #212529; border: 4px solid #000;
+    box-shadow: 4px 4px 0 #000; border-radius: 0;
+  }
+  [data-theme="nes"] .dial svg.ring .arc { stroke: #e4002b; stroke-width: 4; stroke-linecap: butt; }
+  [data-theme="nes"] .dial svg.ring .track { stroke: #495057; stroke-width: 4; opacity: 1; }
+  [data-theme="nes"] .hand-dot {
+    border-radius: 0; width: 8px; height: 8px; margin-left: -4px;
+    background: #fce100; box-shadow: 2px 2px 0 #000;
+  }
+  [data-theme="nes"] #runBtn,
+  [data-theme="nes"] .mode-bar button,
+  [data-theme="nes"] .presets button {
+    border: 3px solid #000; background: #f8f8f8; color: #212529;
+    box-shadow: 3px 3px 0 #000; padding: 8px 10px; border-radius: 0;
+  }
+  [data-theme="nes"] .mode-bar button[aria-pressed="true"],
+  [data-theme="nes"] .presets button.is-set {
+    background: #e4002b; color: #fff;
+  }
+  [data-theme="nes"] #runBtn.is-running { background: #fce100; color: #000; }
+  [data-theme="nes"] .seg input:checked + span {
+    background: #e4002b; color: #fff; box-shadow: 2px 2px 0 #000; padding: 2px 4px;
+  }
+  [data-theme="nes"] .scale-rail .fill { background: #e4002b; opacity: 1; }
+  [data-theme="nes"] .scale-rail .head { border-radius: 0; background: #fce100; box-shadow: 2px 2px 0 #000; }
+  [data-theme="nes"] .viz .cell.on { background: #92cc41; }
+  [data-theme="nes"] .layer-sq {
+    border-radius: 0; border: 2px solid #000; box-shadow: 2px 2px 0 #000; opacity: 1;
+  }
+  [data-theme="nes"] .layer-sq.is-on { background: #e4002b; }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-theme="glass"] header.masthead,
+    [data-theme="glass"] #settings > .inner,
+    [data-theme="frost"] header.masthead,
+    [data-theme="frost"] #settings > .inner {
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+    }
+  }
+</style>
+</head>
+<body class="timecount-app">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>time</h1>
+    <nav class="mode-bar" role="group" aria-label="mode">
+      <button type="button" data-mode="duration" aria-pressed="true">duration</button>
+      <button type="button" data-mode="limit" aria-pressed="false">limit</button>
+      <button type="button" data-mode="splits" aria-pressed="false">splits</button>
+    </nav>
+  </div>
+  <div class="actions">
+    <div class="presets" id="presets" hidden aria-label="limit presets">
+      <button type="button" data-ms="300000">5m</button>
+      <button type="button" data-ms="900000">15m</button>
+      <button type="button" data-ms="1500000">25m</button>
+      <button type="button" data-ms="3600000">1h</button>
+    </div>
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<div id="stageGhost" class="stage-ghost" aria-hidden="true"></div>
+<main data-mode="duration" data-state="idle" data-density="calm" data-reach="tint" data-layout="hero" data-figure="stack">
+  <section class="clock-stage">
+  <section class="dial-wrap" aria-label="timer">
+    <div class="dial" id="dial">
+      <span class="done-tag" id="doneTag" aria-hidden="true">done</span>
+      <div class="hand-ring" id="handRing" aria-hidden="true"><span class="hand-dot"></span></div>
+      <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="track" cx="50" cy="50" r="46"/>
+        <g class="dial-ticks" id="dialTicks" aria-hidden="true"></g>
+        <circle class="arc" id="arc" cx="50" cy="50" r="46"/>
+      </svg>
+      <div class="dial-core" id="dialCore" data-figure="stack">
+        <input id="labelInput" class="label-input" type="text" maxlength="64"
+          placeholder="name this" spellcheck="true" aria-label="session name">
+        <div class="face-stack">
+          <div class="face-time" id="faceTime" role="timer" aria-live="polite" aria-atomic="true">0:00</div>
+          <p class="face-sub" id="faceSub"></p>
+        </div>
+      </div>
+    </div>
+
+    <div id="progress" class="progress" hidden aria-label="limit progress">
+      <div id="viz" class="viz viz-dots"></div>
+      <p id="vizMeta" class="viz-meta"></p>
+    </div>
+
+  </section>
+
+  <div class="controls" aria-label="timer controls">
+    <button type="button" id="lapBtn" class="lap" hidden aria-label="mark split">split</button>
+  </div>
+
+  <section class="record" id="record" hidden aria-label="record">
+    <div class="record-head">
+      <h2 id="recordTitle">splits</h2>
+      <p class="sum" id="recordSum" hidden></p>
+    </div>
+    <table>
+      <thead id="recordHead"></thead>
+      <tbody id="recordBody"></tbody>
+    </table>
+  </section>
+
+  </section>
+
+  <div class="action-rail" aria-label="primary timer controls">
+    <button type="button" id="resetBtn" class="reset-btn" aria-label="reset timer">reset</button>
+    <button type="button" id="runBtn" class="run" aria-label="start timer">start</button>
+  </div>
+
+  <footer class="dock">
+    <div class="dock-inner">
+  <div id="settings" role="region" aria-label="settings" hidden>
+    <div class="inner">
+      <div class="fields">
+        <div class="settings-head">
+          <div class="support">
+            <button id="shuffleLooks" class="shuffle-looks" type="button" aria-label="shuffle looks" title="shuffle looks">
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><circle cx="5.5" cy="5.5" r=".75" fill="currentColor" stroke="none"/><circle cx="10.5" cy="5.5" r=".75" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r=".75" fill="currentColor" stroke="none"/><circle cx="5.5" cy="10.5" r=".75" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10.5" r=".75" fill="currentColor" stroke="none"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="settings-group" aria-label="instrument">
+        <fieldset class="layer-row" data-layer="target">
+          <legend>limit</legend>
+          <div class="target-field">
+            <input id="targetInput" type="text" inputmode="numeric" placeholder="25m" aria-label="time limit">
+            <em>ring, scale, presets</em>
+          </div>
+          <button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" aria-label="show limit"></button>
+        </fieldset>
+        <fieldset>
+          <legend>hand</legend>
+          <div class="seg" role="radiogroup" aria-label="progress dot">
+            <label><input type="radio" name="hand" value="auto" checked><span>auto</span></label>
+            <label><input type="radio" name="hand" value="limit"><span>limit</span></label>
+            <label><input type="radio" name="hand" value="always"><span>always</span></label>
+            <label><input type="radio" name="hand" value="off"><span>off</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="layer-row" data-layer="reach">
+          <legend>done</legend>
+          <div class="seg" role="radiogroup" aria-label="done cue">
+            <label><input type="radio" name="reach" value="none"><span>quiet</span></label>
+            <label><input type="radio" name="reach" value="tint" checked><span>tint</span></label>
+            <label><input type="radio" name="reach" value="wash"><span>wash</span></label>
+            <label><input type="radio" name="reach" value="dot"><span>dot</span></label>
+            <label><input type="radio" name="reach" value="alarm"><span>alarm</span></label>
+            <label><input type="radio" name="reach" value="tag"><span>tag</span></label>
+          </div>
+          <button type="button" class="layer-sq is-on" data-layer="reach" aria-pressed="true" aria-label="show done cue"></button>
+        </fieldset>
+        <fieldset class="layer-row" data-layer="ghost">
+          <legend>ghost</legend>
+          <div class="opts">
+            <div class="seg" role="radiogroup" aria-label="ghost metric">
+              <label><input type="radio" name="ghost" value="primary" checked><span>primary</span></label>
+              <label><input type="radio" name="ghost" value="elapsed"><span>elapsed</span></label>
+              <label><input type="radio" name="ghost" value="remaining"><span>remaining</span></label>
+              <label><input type="radio" name="ghost" value="splits"><span>splits</span></label>
+              <label><input type="radio" name="ghost" value="segments"><span>segments</span></label>
+              <label><input type="radio" name="ghost" value="average"><span>average</span></label>
+            </div>
+            <div class="seg" role="radiogroup" aria-label="ghost presence">
+              <label><input type="radio" name="ghostWeight" value="whisper" checked><span>tertiary</span></label>
+              <label><input type="radio" name="ghostWeight" value="soft"><span>ambient</span></label>
+              <label><input type="radio" name="ghostWeight" value="firm"><span>prominent</span></label>
+            </div>
+            <div class="seg" role="radiogroup" aria-label="ghost corner">
+              <label><input type="radio" name="ghostPlace" value="se" checked><span>se</span></label>
+              <label><input type="radio" name="ghostPlace" value="sw"><span>sw</span></label>
+              <label><input type="radio" name="ghostPlace" value="ne"><span>ne</span></label>
+              <label><input type="radio" name="ghostPlace" value="nw"><span>nw</span></label>
+            </div>
+          </div>
+          <button type="button" class="layer-sq" data-layer="ghost" aria-pressed="false" aria-label="show ghost"></button>
+        </fieldset>
+        <fieldset class="layer-row" data-layer="chart">
+          <legend>chart</legend>
+          <div class="seg" role="radiogroup" aria-label="goal chart">
+            <label><input type="radio" name="chart" value="dots"><span>dots</span></label>
+            <label><input type="radio" name="chart" value="squares"><span>squares</span></label>
+            <label><input type="radio" name="chart" value="ticks"><span>ticks</span></label>
+            <label><input type="radio" name="chart" value="bar" checked><span>bar</span></label>
+            <label><input type="radio" name="chart" value="ring"><span>ring</span></label>
+          </div>
+          <button type="button" class="layer-sq" data-layer="chart" aria-pressed="false" aria-label="show chart"></button>
+        </fieldset>
+        <fieldset class="layer-row" data-layer="scale">
+          <legend>scale</legend>
+          <div class="seg" role="radiogroup" aria-label="bottom timeline">
+            <label><input type="radio" name="scale" value="rule"><span>rule</span></label>
+            <label><input type="radio" name="scale" value="ladder"><span>ladder</span></label>
+            <label><input type="radio" name="scale" value="mercury"><span>mercury</span></label>
+            <label><input type="radio" name="scale" value="spine" checked><span>spine</span></label>
+            <label><input type="radio" name="scale" value="index"><span>index</span></label>
+            <label><input type="radio" name="scale" value="tape"><span>tape</span></label>
+          </div>
+          <button type="button" class="layer-sq is-on" data-layer="scale" aria-pressed="true" aria-label="show scale"></button>
+        </fieldset>
+        <fieldset>
+          <legend>record</legend>
+          <div class="seg" role="radiogroup">
+            <label><input type="radio" name="density" value="calm" checked><span>calm</span></label>
+            <label><input type="radio" name="density" value="full"><span>full</span></label>
+          </div>
+        </fieldset>
+        </div>
+        <div class="settings-group" aria-label="appearance">
+        <fieldset>
+          <legend>theme</legend>
+          <div class="seg" role="radiogroup" aria-label="theme">
+            <label><input type="radio" name="theme" value="light" checked><span>light</span></label>
+            <label><input type="radio" name="theme" value="dark"><span>dark</span></label>
+            <label><input type="radio" name="theme" value="contrast"><span>contrast</span></label>
+            <label><input type="radio" name="theme" value="paper"><span>paper</span></label>
+            <label><input type="radio" name="theme" value="glass"><span>glass</span></label>
+            <label><input type="radio" name="theme" value="frost"><span>frost</span></label>
+            <label><input type="radio" name="theme" value="brutal"><span>brutal</span></label>
+            <label><input type="radio" name="theme" value="loom"><span>loom</span></label>
+            <label><input type="radio" name="theme" value="tank"><span>tank</span></label>
+            <label><input type="radio" name="theme" value="nes"><span>nes</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>layout</legend>
+          <div class="seg" role="radiogroup" aria-label="layout">
+            <label><input type="radio" name="layout" value="hero" checked><span>hero</span></label>
+            <label><input type="radio" name="layout" value="compact"><span>compact</span></label>
+            <label><input type="radio" name="layout" value="focus"><span>focus</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>readout</legend>
+          <div class="seg" role="radiogroup" aria-label="primary readout">
+            <label><input type="radio" name="primary" value="elapsed" checked><span>elapsed</span></label>
+            <label><input type="radio" name="primary" value="remaining"><span>remaining</span></label>
+            <label><input type="radio" name="primary" value="splits"><span>splits</span></label>
+            <label><input type="radio" name="primary" value="segments"><span>segments</span></label>
+            <label><input type="radio" name="primary" value="average"><span>average</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>figure</legend>
+          <div class="seg" role="radiogroup" aria-label="dial figure">
+            <label><input type="radio" name="figure" value="pair"><span>pair</span></label>
+            <label><input type="radio" name="figure" value="stack" checked><span>stack</span></label>
+            <label><input type="radio" name="figure" value="spine"><span>spine</span></label>
+            <label><input type="radio" name="figure" value="caption"><span>caption</span></label>
+            <label><input type="radio" name="figure" value="ticket"><span>ticket</span></label>
+            <label><input type="radio" name="figure" value="slab"><span>slab</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>chrome</legend>
+          <div class="seg" role="radiogroup" aria-label="interface font">
+            <label class="ui-braun"><input type="radio" name="ui" value="braun" checked><span>braun</span></label>
+            <label class="ui-monocle"><input type="radio" name="ui" value="monocle"><span>monocle</span></label>
+            <label class="ui-bauhaus"><input type="radio" name="ui" value="bauhaus"><span>bauhaus</span></label>
+            <label class="ui-noyes"><input type="radio" name="ui" value="noyes"><span>noyes</span></label>
+            <label class="ui-ikea"><input type="radio" name="ui" value="ikea"><span>ikea</span></label>
+            <label class="ui-military"><input type="radio" name="ui" value="military"><span>military</span></label>
+            <label class="ui-terminal"><input type="radio" name="ui" value="terminal"><span>terminal</span></label>
+            <label class="ui-nyt"><input type="radio" name="ui" value="nyt"><span>nyt</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>digits</legend>
+          <div class="seg" role="radiogroup" aria-label="clock digits">
+            <label><input type="radio" name="font" value="sans"><span>sans</span></label>
+            <label><input type="radio" name="font" value="serif"><span>serif</span></label>
+            <label><input type="radio" name="font" value="book"><span>book</span></label>
+            <label><input type="radio" name="font" value="mono" checked><span>mono</span></label>
+            <label><input type="radio" name="font" value="dyslexic"><span>dyslexic</span></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>faces</legend>
+          <div class="seg" role="radiogroup" aria-label="font source">
+            <label><input type="radio" name="faces" value="auto" checked><span>auto</span></label>
+            <label><input type="radio" name="faces" value="web"><span>web</span></label>
+            <label><input type="radio" name="faces" value="local"><span>local</span></label>
+          </div>
+        </fieldset>
+        </div>
+        <div class="settings-group" aria-label="session">
+        <fieldset>
+          <legend>default name</legend>
+          <div class="field-row">
+            <input id="labelDefaultInput" type="text" maxlength="64" placeholder="session name" aria-label="default session name" spellcheck="true">
+            <em>optional</em>
+          </div>
+        </fieldset>
+        </div>
+        <div class="settings-group" aria-label="about">
+        <fieldset class="about-info">
+          <legend>how it works</legend>
+          <p class="about-copy">Local only. Duration counts up, limit counts down, splits mark laps. Limits: <code>25m</code>, <code>5:00</code>, or bare minutes.</p>
+        </fieldset>
+        <fieldset>
+          <legend>keys</legend>
+          <p class="keys-hint">
+            <kbd>space</kbd> run · <kbd>l</kbd> split · <kbd>r</kbd> reset ·
+            <kbd>esc</kbd> close · <kbd>⌘/ctrl</kbd>+<kbd>,</kbd> settings ·
+            <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>t</kbd> theme
+          </p>
+        </fieldset>
+        </div>
+      </div>
+    </div>
+  </div>
+    </div>
+  </footer>
+</main>
+
+<aside class="scale-rail" id="scaleRail" aria-hidden="true" data-scale="rule" data-axis="horizontal">
+  <div class="track"></div>
+  <div class="fill"></div>
+  <div class="head" id="scaleHead" aria-hidden="true"></div>
+  <div class="ticks" id="scaleTicks"></div>
+  <div class="marks" id="scaleMarks"></div>
+  <div class="cap" id="scaleCap"></div>
+</aside>
+
+<script src="lib/suite.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var STATE_KEY = 'timecounter.state';
+  var SETTINGS_KEY = 'timecounter.settings';
+  var THEMES = ['light', 'dark', 'contrast', 'paper', 'glass', 'frost', 'brutal', 'loom', 'tank', 'nes'];
+  var RING_LEN = 2 * Math.PI * 46;
+  var PRESETS = [300000, 900000, 1500000, 3600000];
+  var MAX_CELLS = 48;
+  var DEFAULT_LABEL = '';
+
+  var DYSLEXIC_WEB = '"OpenDyslexic", "Comic Sans MS", "Chalkboard SE", sans-serif';
+  var DYSLEXIC_LOCAL = '"Comic Sans MS", "Chalkboard SE", "Segoe Print", "Bradley Hand", sans-serif';
+
+  var TYPE_FACES_WEB = {
+    braun: { sans: 'Helvetica, "Helvetica Neue", Arial, sans-serif', serif: 'Times, "Times New Roman", serif', book: 'Palatino, "Palatino Linotype", Georgia, serif', mono: '"SF Mono", Menlo, Consolas, monospace', dyslexic: DYSLEXIC_WEB },
+    monocle: { sans: '"Source Sans 3", "Avenir Next", sans-serif', serif: '"Source Serif 4", Georgia, serif', book: '"Source Serif 4", Palatino, Georgia, serif', mono: '"Source Code Pro", Menlo, monospace', dyslexic: DYSLEXIC_WEB },
+    bauhaus: { sans: '"Josefin Sans", Futura, sans-serif', serif: '"Josefin Slab", Georgia, serif', book: '"Cormorant Garamond", Didot, Georgia, serif', mono: '"Space Mono", Menlo, monospace', dyslexic: DYSLEXIC_WEB },
+    noyes: { sans: '"IBM Plex Sans", Helvetica, Arial, sans-serif', serif: '"IBM Plex Serif", Georgia, serif', book: '"IBM Plex Serif", Palatino, Georgia, serif', mono: '"IBM Plex Mono", Menlo, monospace', dyslexic: DYSLEXIC_WEB },
+    ikea: { sans: 'Verdana, Geneva, Tahoma, sans-serif', serif: 'Georgia, Times, serif', book: 'Palatino, Georgia, serif', mono: 'Consolas, monospace', dyslexic: DYSLEXIC_WEB },
+    military: { sans: 'Oswald, "Arial Narrow", sans-serif', serif: '"Roboto Slab", Georgia, serif', book: '"Roboto Slab", Georgia, serif', mono: '"Share Tech Mono", monospace', dyslexic: DYSLEXIC_WEB },
+    terminal: { sans: '"IBM Plex Sans", Helvetica, Arial, sans-serif', serif: '"IBM Plex Serif", Georgia, serif', book: 'Georgia, Times, serif', mono: '"SF Mono", Menlo, Consolas, monospace', dyslexic: DYSLEXIC_WEB },
+    nyt: { sans: '"Libre Franklin", Helvetica, Arial, sans-serif', serif: 'Georgia, Times, serif', book: '"Newsreader", Georgia, serif', mono: '"IBM Plex Mono", Menlo, monospace', dyslexic: DYSLEXIC_WEB }
+  };
+  var TYPE_FACES_LOCAL = {
+    braun: { sans: 'Helvetica, Arial, sans-serif', serif: 'Times, serif', book: 'Palatino, Georgia, serif', mono: 'ui-monospace, Menlo, monospace', dyslexic: DYSLEXIC_LOCAL },
+    monocle: { sans: '"Avenir Next", "Gill Sans", sans-serif', serif: 'Georgia, serif', book: 'Palatino, Georgia, serif', mono: 'ui-monospace, Menlo, monospace', dyslexic: DYSLEXIC_LOCAL },
+    bauhaus: { sans: 'Futura, "Century Gothic", sans-serif', serif: '"Century Schoolbook", Georgia, serif', book: 'Didot, Georgia, serif', mono: 'ui-monospace, monospace', dyslexic: DYSLEXIC_LOCAL },
+    noyes: { sans: 'system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif', serif: 'Georgia, serif', book: 'Palatino, Georgia, serif', mono: 'ui-monospace, Menlo, monospace', dyslexic: DYSLEXIC_LOCAL },
+    ikea: { sans: 'Verdana, Geneva, Tahoma, sans-serif', serif: 'Georgia, Times, serif', book: 'Palatino, Georgia, serif', mono: 'Consolas, monospace', dyslexic: DYSLEXIC_LOCAL },
+    military: { sans: '"Arial Narrow", Impact, sans-serif', serif: 'Georgia, serif', book: 'Georgia, serif', mono: '"Courier New", monospace', dyslexic: DYSLEXIC_LOCAL },
+    terminal: { sans: 'system-ui, Helvetica, Arial, sans-serif', serif: 'Georgia, serif', book: 'Georgia, serif', mono: 'ui-monospace, Menlo, monospace', dyslexic: DYSLEXIC_LOCAL },
+    nyt: { sans: 'system-ui, Helvetica, Arial, sans-serif', serif: 'Georgia, Times, serif', book: 'Georgia, serif', mono: 'ui-monospace, Menlo, monospace', dyslexic: DYSLEXIC_LOCAL }
+  };
+  var UI_FONTS_WEB = {
+    braun: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    monocle: '"Source Sans 3", "Avenir Next", "Gill Sans", sans-serif',
+    bauhaus: '"Josefin Sans", Futura, "Century Gothic", sans-serif',
+    noyes: '"IBM Plex Sans", Helvetica, Arial, sans-serif',
+    ikea: 'Verdana, Geneva, Tahoma, sans-serif',
+    military: 'Oswald, "Arial Narrow", sans-serif',
+    terminal: '"SF Mono", Menlo, Consolas, monospace',
+    nyt: 'Georgia, "Times New Roman", Times, serif'
+  };
+  var UI_FONTS_LOCAL = {
+    braun: 'Helvetica, Arial, sans-serif',
+    monocle: '"Avenir Next", "Gill Sans", sans-serif',
+    bauhaus: 'Futura, "Century Gothic", sans-serif',
+    noyes: 'system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif',
+    ikea: 'Verdana, Geneva, Tahoma, sans-serif',
+    military: '"Arial Narrow", sans-serif',
+    terminal: 'ui-monospace, Menlo, monospace',
+    nyt: 'Georgia, "Times New Roman", Times, serif'
+  };
+
+  var FONT_ROLES = { sans: true, serif: true, book: true, mono: true, dyslexic: true };
+  var FACES = { auto: true, web: true, local: true };
+  var LAYOUTS = { hero: true, compact: true, focus: true };
+  var PRIMARY = { elapsed: true, remaining: true, splits: true, segments: true, average: true };
+  var FIGURES = { pair: true, stack: true, spine: true, caption: true, ticket: true, slab: true };
+  var REACH = { none: true, tint: true, wash: true, dot: true, alarm: true, tag: true };
+  var CHARTS = { dots: true, squares: true, ticks: true, bar: true, ring: true };
+  var SCALES = { rule: true, ladder: true, mercury: true, spine: true, index: true, tape: true };
+  var GHOSTS = { primary: true, elapsed: true, remaining: true, splits: true, segments: true, average: true };
+  var GHOST_WEIGHTS = { whisper: true, soft: true, firm: true };
+  var HAND_MODES = { auto: true, limit: true, always: true, off: true };
+  var GHOST_PLACES = { se: true, sw: true, ne: true, nw: true };
+  var LAYER_KEYS = { ghost: 'showGhost', target: 'showTarget', reach: 'showReach', chart: 'showChart', scale: 'showScale' };
+  var LOOK_AFFINITY = {
+    light: { ui: ['braun', 'monocle', 'noyes'], font: ['sans', 'mono', 'book'], figure: ['pair', 'stack', 'caption'], chart: ['dots', 'bar', 'ring'], scale: ['rule', 'spine', 'ladder'], reach: ['tint', 'wash'], layout: ['hero', 'compact'] },
+    dark: { ui: ['braun', 'terminal', 'noyes'], font: ['mono', 'sans'], figure: ['stack', 'spine', 'slab'], chart: ['bar', 'ticks'], scale: ['rule', 'mercury'], reach: ['tint', 'dot'], layout: ['hero', 'focus'] },
+    contrast: { ui: ['braun', 'military', 'ikea'], font: ['sans', 'mono'], figure: ['slab', 'stack', 'ticket'], chart: ['squares', 'bar'], scale: ['ladder', 'index'], reach: ['alarm', 'tag'], layout: ['hero', 'compact'] },
+    paper: { ui: ['nyt', 'monocle', 'braun'], font: ['serif', 'book'], figure: ['caption', 'ticket', 'pair'], chart: ['ticks', 'ring'], scale: ['spine', 'rule'], reach: ['tint', 'wash'], layout: ['hero'] },
+    glass: { ui: ['monocle', 'bauhaus', 'noyes'], font: ['sans'], figure: ['slab', 'pair', 'stack'], chart: ['ring', 'dots', 'bar'], scale: ['mercury', 'rule'], reach: ['wash', 'tint'], layout: ['hero', 'compact'] },
+    frost: { ui: ['monocle', 'braun', 'noyes'], font: ['sans', 'book'], figure: ['stack', 'slab', 'spine'], chart: ['bar', 'ring'], scale: ['mercury', 'spine'], reach: ['wash', 'dot'], layout: ['hero', 'focus'] },
+    brutal: { ui: ['bauhaus', 'military', 'ikea'], font: ['sans', 'mono'], figure: ['slab', 'ticket', 'stack'], chart: ['squares', 'bar'], scale: ['ladder', 'tape'], reach: ['alarm', 'tag'], layout: ['hero', 'compact'] },
+    loom: { ui: ['terminal', 'noyes'], font: ['mono'], figure: ['spine', 'slab', 'pair'], chart: ['ticks', 'bar'], scale: ['index', 'mercury'], reach: ['tint', 'alarm'], layout: ['hero', 'focus'] },
+    tank: { ui: ['bauhaus', 'military', 'ikea'], font: ['mono', 'sans'], figure: ['slab', 'stack', 'ticket'], chart: ['squares', 'dots'], scale: ['mercury', 'tape'], reach: ['wash', 'dot'], layout: ['hero', 'compact'] },
+    nes: { ui: ['bauhaus', 'ikea', 'military'], font: ['mono', 'sans'], figure: ['ticket', 'slab', 'stack'], chart: ['squares', 'bar'], scale: ['ladder', 'tape'], reach: ['alarm', 'tag'], layout: ['hero', 'compact'] }
+  };
+
+  var tickTimer = null;
+  var wasDone = false;
+  var shuffleBusy = false;
+  var shuffleTimer = null;
+
+  var el = function (id) { return document.getElementById(id); };
+  var main = document.querySelector('main');
+  var dialEl = el('dial');
+  var stageGhost = el('stageGhost');
+  var dialCore = el('dialCore');
+  var faceTime = el('faceTime');
+  var faceSub = el('faceSub');
+  var arc = el('arc');
+  var runBtn = el('runBtn');
+  var lapBtn = el('lapBtn');
+  var resetBtn = el('resetBtn');
+  var labelInput = el('labelInput');
+  var labelDefaultInput = el('labelDefaultInput');
+  var targetInput = el('targetInput');
+  var settingsPanel = el('settings');
+  var settingsToggle = el('settingsToggle');
+  var themeBtn = el('themeBtn');
+  var shuffleBtn = el('shuffleLooks');
+  var presetsEl = el('presets');
+  var recordEl = el('record');
+  var recordTitle = el('recordTitle');
+  var recordSum = el('recordSum');
+  var recordHead = el('recordHead');
+  var recordBody = el('recordBody');
+  var progressEl = el('progress');
+  var vizEl = el('viz');
+  var vizMeta = el('vizMeta');
+  var scaleRail = el('scaleRail');
+  var scaleTicks = el('scaleTicks');
+  var scaleMarks = el('scaleMarks');
+  var scaleCap = el('scaleCap');
+  var modeBtns = document.querySelectorAll('.mode-bar button');
+
+  var MODE_KEYS = ['duration', 'limit', 'splits'];
+  var DENSITY_KEYS = ['calm', 'full'];
+  var LABEL_PLACEHOLDER = { duration: 'name this', limit: 'name this', splits: 'name this' };
+
+  var settings = {
+    mode: 'duration',
+    layout: 'hero',
+    primary: 'elapsed',
+    figure: 'stack',
+    font: 'mono',
+    faces: 'auto',
+    ui: 'braun',
+    theme: 'light',
+    target: 1500000,
+    density: 'calm',
+    reach: 'tint',
+    chart: 'bar',
+    scale: 'spine',
+    ghost: 'elapsed',
+    ghostWeight: 'whisper',
+    ghostPlace: 'sw',
+    hand: 'auto',
+    showGhost: false,
+    showTarget: true,
+    showReach: true,
+    showChart: false,
+    showScale: true,
+    labelDefault: DEFAULT_LABEL
+  };
+
+  var state = {
+    running: false,
+    startedAt: null,
+    accumulated: 0,
+    label: '',
+    marks: [],
+    segments: []
+  };
+
+  function pad2(n) { return String(Math.floor(Math.abs(n))).padStart(2, '0'); }
+
+  function useWebFaces() {
+    if (settings.faces === 'local') return false;
+    if (settings.faces === 'web') return true;
+    try { return navigator.onLine !== false; } catch (e) { return true; }
+  }
+
+  function typeFacesMap() { return useWebFaces() ? TYPE_FACES_WEB : TYPE_FACES_LOCAL; }
+  function uiFontsMap() { return useWebFaces() ? UI_FONTS_WEB : UI_FONTS_LOCAL; }
+
+  function layerOn(name) {
+    var key = LAYER_KEYS[name];
+    return !key || settings[key] !== false;
+  }
+
+  function effectiveTarget() {
+    return layerOn('target') && settings.target > 0 ? settings.target : 0;
+  }
+
+  function keysOf(map) { return Object.keys(map); }
+  function pickOne(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function pickLookValue(preferred, all) {
+    if (preferred && preferred.length && Math.random() < 0.72) return pickOne(preferred);
+    return pickOne(all);
+  }
+
+  function haptic(pattern) {
+    try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+
+  function formatClock(ms) {
+    ms = Math.max(0, Math.round(ms || 0));
+    var cs = Math.floor((ms % 1000) / 10);
+    var s = Math.floor(ms / 1000) % 60;
+    var m = Math.floor(ms / 60000) % 60;
+    var h = Math.floor(ms / 3600000);
+    if (h > 0) return h + ':' + pad2(m) + ':' + pad2(s);
+    if (settings.mode === 'splits' && state.running) return m + ':' + pad2(s) + '.' + pad2(cs);
+    return m + ':' + pad2(s);
+  }
+
+  function formatLimit(ms) {
+    ms = Math.max(0, Math.round(ms || 0));
+    if (!ms) return '—';
+    if (ms >= 3600000 && ms % 3600000 === 0) return (ms / 3600000) + 'h';
+    if (ms >= 60000 && ms % 60000 === 0) return (ms / 60000) + 'm';
+    if (ms >= 60000) return formatClock(ms);
+    if (ms >= 1000 && ms % 1000 === 0) return (ms / 1000) + 's';
+    return formatClock(ms);
+  }
+
+  function formatTargetField(ms) {
+    ms = Math.max(0, Math.round(ms || 0));
+    if (!ms) return '';
+    return formatLimit(ms);
+  }
+
+  function parseDuration(raw) {
+    raw = String(raw || '').trim().toLowerCase();
+    if (!raw) return 0;
+    var m = raw.match(/^(\d+(?:\.\d+)?)\s*m(?:in(?:ute)?s?)?$/);
+    if (m) return Math.round(parseFloat(m[1], 10) * 60000);
+    var s = raw.match(/^(\d+(?:\.\d+)?)\s*s(?:ec(?:ond)?s?)?$/);
+    if (s) return Math.round(parseFloat(s[1], 10) * 1000);
+    if (/^\d+$/.test(raw)) {
+      var n = parseInt(raw, 10);
+      if (n >= 1 && n <= 180) return n * 60000;
+      return n * 1000;
+    }
+    var p = raw.split(':').map(function (x) { return parseInt(x, 10); });
+    if (p.some(function (n) { return Number.isNaN(n); })) return 0;
+    if (p.length === 3) return (p[0] * 3600 + p[1] * 60 + p[2]) * 1000;
+    if (p.length === 2) return (p[0] * 60 + p[1]) * 1000;
+    return p[0] * 1000;
+  }
+
+  function elapsed(now) {
+    now = now || Date.now();
+    var base = state.accumulated || 0;
+    if (!state.running || state.startedAt == null) return base;
+    return base + (now - state.startedAt);
+  }
+
+  function limit() { return effectiveTarget(); }
+
+  function remaining(now) {
+    var L = limit();
+    if (!L) return 0;
+    return Math.max(0, L - elapsed(now));
+  }
+
+  function preferTheme() {
+    try {
+      return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch (e) { return 'light'; }
+  }
+
+  function applyTheme(t) {
+    if (THEMES.indexOf(t) < 0) t = preferTheme();
+    settings.theme = t;
+    document.documentElement.setAttribute('data-theme', t);
+    themeBtn.setAttribute('aria-label', 'theme: ' + t);
+    var meta = document.querySelector('meta[name="theme-color"]:not([media]), meta[name="theme-color"][media*="light"]');
+    var darkMeta = document.querySelector('meta[name="theme-color"][media*="dark"]');
+    var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#f2f2f0';
+    if (meta) meta.setAttribute('content', bg.indexOf('rgba') === 0 ? '#e8eef8' : bg);
+    if (darkMeta && (t === 'dark' || t === 'frost' || t === 'loom' || t === 'tank')) {
+      darkMeta.setAttribute('content', bg.indexOf('rgba') === 0 ? '#070b16' : bg);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('input[name="theme"]'), function (inp) {
+      inp.checked = inp.value === settings.theme;
+    });
+  }
+
+  function normalizeSettings() {
+    if (MODE_KEYS.indexOf(settings.mode) < 0) settings.mode = 'duration';
+    if (!LAYOUTS[settings.layout]) settings.layout = 'hero';
+    if (!PRIMARY[settings.primary]) settings.primary = 'elapsed';
+    if (!FIGURES[settings.figure]) settings.figure = 'pair';
+    if (!FONT_ROLES[settings.font]) settings.font = 'sans';
+    if (!FACES[settings.faces]) settings.faces = 'auto';
+    if (!(uiFontsMap()[settings.ui])) settings.ui = 'braun';
+    if (settings.ui === 'mono') settings.ui = 'terminal';
+    if (DENSITY_KEYS.indexOf(settings.density) < 0) settings.density = 'calm';
+    if (!REACH[settings.reach]) settings.reach = 'wash';
+    if (!CHARTS[settings.chart]) settings.chart = 'dots';
+    if (!SCALES[settings.scale]) settings.scale = 'rule';
+    if (!GHOSTS[settings.ghost]) settings.ghost = 'primary';
+    if (!GHOST_WEIGHTS[settings.ghostWeight]) settings.ghostWeight = 'whisper';
+    if (!GHOST_PLACES[settings.ghostPlace]) settings.ghostPlace = 'se';
+    if (!HAND_MODES[settings.hand]) settings.hand = 'auto';
+    if (THEMES.indexOf(settings.theme) < 0) settings.theme = preferTheme();
+    settings.target = Math.max(0, Math.floor(Number(settings.target) || 0));
+    if (settings.target === 25000) settings.target = 1500000;
+    settings.labelDefault = String(settings.labelDefault != null ? settings.labelDefault : DEFAULT_LABEL).trim();
+    ['showGhost', 'showTarget', 'showReach', 'showChart', 'showScale'].forEach(function (k) {
+      if (typeof settings[k] !== 'boolean') {
+        settings[k] = k === 'showGhost' || k === 'showChart' ? false : true;
+      }
+    });
+    if (settings.mode === 'limit' && settings.target <= 0) settings.target = 1500000;
+  }
+
+  function effectiveLabel() {
+    var custom = String(state.label || '').trim();
+    if (custom) return custom;
+    return settings.labelDefault || '';
+  }
+
+  function applyLabelUi() {
+    var ph = settings.labelDefault || LABEL_PLACEHOLDER[settings.mode] || LABEL_PLACEHOLDER.duration;
+    labelInput.placeholder = ph;
+    labelInput.value = state.label || '';
+    if (labelDefaultInput) labelDefaultInput.value = settings.labelDefault || '';
+  }
+
+  function seedLabelIfEmpty() {
+    if (!String(state.label || '').trim() && settings.labelDefault) {
+      state.label = settings.labelDefault;
+    }
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      if (window.IBMTools) IBMTools.pushSharedFrom(settings);
+    } catch (e) {}
+  }
+
+  function loadAll() {
+    try {
+      var s = localStorage.getItem(SETTINGS_KEY);
+      if (s) Object.assign(settings, JSON.parse(s));
+    } catch (e) {}
+    if (window.IBMTools) {
+      var shared = IBMTools.loadShared();
+      if (shared.theme && THEMES.indexOf(shared.theme) >= 0) settings.theme = shared.theme;
+      if (shared.ui && (UI_FONTS_WEB[shared.ui] || UI_FONTS_LOCAL[shared.ui])) settings.ui = shared.ui;
+      if (shared.font && FONT_ROLES[shared.font]) settings.font = shared.font;
+      if (shared.faces && FACES[shared.faces]) settings.faces = shared.faces;
+    }
+    if (settings.mode === 'countdown') settings.mode = 'limit';
+    if (settings.mode === 'split' || settings.mode === 'stopwatch') settings.mode = settings.mode === 'split' ? 'splits' : 'duration';
+    /* one-shot: expand theme set + chrome depth to match wordcounter */
+    if (settings._idl !== 2) {
+      if (THEMES.indexOf(settings.theme) < 0) settings.theme = 'light';
+      if (!settings.ui) settings.ui = 'braun';
+      settings._idl = 2;
+      try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+    }
+    normalizeSettings();
+    if (!settings.theme) settings.theme = preferTheme();
+    try {
+      var st = localStorage.getItem(STATE_KEY);
+      if (st) {
+        var parsed = JSON.parse(st);
+        Object.assign(state, parsed);
+        state.marks = state.marks || state.laps || [];
+        state.segments = state.segments || [];
+        delete state.laps;
+        if (state.label === 'writing session') state.label = '';
+        if (state.running && state.startedAt) {
+          state.accumulated = elapsed(Date.now());
+          state.running = false;
+          state.startedAt = null;
+        }
+      }
+    } catch (e) {}
+    seedLabelIfEmpty();
+  }
+
+  function setSettingsOpen(open) {
+    settingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    settingsToggle.textContent = open ? 'close' : 'settings';
+    document.body.classList.toggle('settings-open', !!open);
+    if (open) {
+      settingsPanel.hidden = false;
+      settingsPanel.offsetHeight;
+      settingsPanel.classList.add('open');
+      var fields = settingsPanel.querySelector('.fields');
+      if (fields) fields.scrollTop = 0;
+    } else {
+      settingsPanel.classList.remove('open');
+      var done = function (e) {
+        if (e && e.target !== settingsPanel) return;
+        settingsPanel.hidden = true;
+        settingsPanel.removeEventListener('transitionend', done);
+      };
+      settingsPanel.addEventListener('transitionend', done);
+      setTimeout(function () {
+        if (!settingsPanel.classList.contains('open')) settingsPanel.hidden = true;
+      }, 320);
+    }
+  }
+
+  function uiState(now) {
+    now = now || Date.now();
+    var e = elapsed(now);
+    var L = limit();
+    var rem = L ? remaining(now) : 0;
+    var done = false;
+    if (settings.mode === 'limit' && L > 0 && rem <= 0 && e > 0) done = true;
+    if (settings.mode === 'duration' && L > 0 && e >= L) done = true;
+
+    var runState = 'idle';
+    if (done) runState = 'done';
+    else if (state.running) runState = 'running';
+    else if (e > 0) runState = 'paused';
+
+    return { elapsed: e, remaining: rem, limit: L, done: done, runState: runState };
+  }
+
+  function setArc(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    var offset = RING_LEN * (1 - pct / 100);
+    var dash = RING_LEN.toFixed(2);
+    arc.setAttribute('stroke-dasharray', dash);
+    arc.setAttribute('stroke-dashoffset', offset.toFixed(2));
+    arc.style.strokeDasharray = dash;
+    arc.style.strokeDashoffset = offset.toFixed(2);
+    var ring = arc.closest('.ring');
+    var hasTarget = effectiveTarget() > 0;
+    if (ring) ring.style.opacity = hasTarget ? '1' : '0.22';
+    if (!hasTarget || !layerOn('target')) {
+      arc.setAttribute('stroke-dashoffset', dash);
+      arc.style.strokeDashoffset = dash;
+    }
+  }
+
+  function progressPct(u) {
+    var target = effectiveTarget();
+    if (target > 0 && layerOn('target')) {
+      if (settings.mode === 'limit' && u.limit) {
+        return Math.max(0, Math.min(100, 100 - (u.remaining / u.limit) * 100));
+      }
+      return Math.max(0, Math.min(100, (u.elapsed / target) * 100));
+    }
+    if (state.running || u.elapsed > 0) {
+      return ((u.elapsed % 60000) / 60000) * 100;
+    }
+    return 0;
+  }
+
+  function goalArcActive(u) {
+    if (!layerOn('target')) return false;
+    if (effectiveTarget() <= 0) return false;
+    if (settings.mode === 'limit') return u.limit > 0;
+    return state.running || u.elapsed > 0;
+  }
+
+  function setProgressHand(u) {
+    u = u || uiState();
+    var pct = progressPct(u);
+    var show = false;
+    if (settings.hand !== 'off') {
+      if (settings.hand === 'limit') show = effectiveTarget() > 0 && layerOn('target');
+      else if (settings.hand === 'always') show = true;
+      else if (goalArcActive(u)) show = false;
+      else show = state.running || u.elapsed > 0;
+    }
+    main.setAttribute('data-hand', show ? 'on' : 'off');
+    if (dialEl) dialEl.style.setProperty('--progress-deg', (pct * 3.6).toFixed(3) + 'deg');
+  }
+
+  function splitStats() {
+    var deltas = state.marks.map(function (m) { return m.delta; });
+    var best = deltas.length ? Math.min.apply(null, deltas) : 0;
+    var last = deltas.length ? deltas[deltas.length - 1] : 0;
+    var avg = deltas.length ? deltas.reduce(function (a, b) { return a + b; }, 0) / deltas.length : 0;
+    return { count: deltas.length, best: best, last: last, avg: avg };
+  }
+
+  function metricValue(key, u) {
+    u = u || uiState();
+    var st = splitStats();
+    if (key === 'primary') key = settings.primary;
+    if (key === 'elapsed') return formatClock(u.elapsed);
+    if (key === 'remaining') return u.limit ? formatClock(u.remaining) : '—';
+    if (key === 'splits') return String(st.count);
+    if (key === 'segments') return String(state.segments.length);
+    if (key === 'average') return st.count ? formatClock(st.avg) : '—';
+    return formatClock(u.elapsed);
+  }
+
+  function ghostText(u) {
+    if (!layerOn('ghost')) return '';
+    var g = GHOSTS[settings.ghost] ? settings.ghost : 'primary';
+    return metricValue(g, u);
+  }
+
+  function applyGhost(u) {
+    var node = stageGhost || dialEl;
+    if (!node) return;
+    var weight = GHOST_WEIGHTS[settings.ghostWeight] ? settings.ghostWeight : 'whisper';
+    var place = GHOST_PLACES[settings.ghostPlace] ? settings.ghostPlace : 'se';
+    node.setAttribute('data-ghost', layerOn('ghost') ? (GHOSTS[settings.ghost] ? settings.ghost : 'primary') : 'off');
+    node.setAttribute('data-ghost-weight', weight);
+    node.setAttribute('data-ghost-place', place);
+    node.setAttribute('data-ghost-text', ghostText(u));
+  }
+
+  function scaleStations(kind) {
+    if (kind === 'ladder' || kind === 'tape') return [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+    if (kind === 'index' || kind === 'mercury') return [0, 25, 50, 75, 100];
+    if (kind === 'spine') return [0, 50, 100];
+    return [0, 50, 100];
+  }
+
+  function rebuildScaleChrome() {
+    var kind = SCALES[settings.scale] ? settings.scale : 'rule';
+    var tickCount = kind === 'ladder' || kind === 'tape' ? 40 : kind === 'mercury' ? 0 : 20;
+    var majorEvery = kind === 'tape' || kind === 'ladder' ? 4 : 5;
+    if (scaleRail) scaleRail.setAttribute('data-scale', kind);
+    if (scaleTicks) {
+      scaleTicks.innerHTML = '';
+      for (var i = 0; i <= tickCount; i++) {
+        var node = document.createElement('i');
+        var pct = tickCount ? ((i / tickCount) * 100) : 0;
+        node.style.left = pct + '%';
+        if (majorEvery && i % majorEvery === 0) node.className = 'major';
+        scaleTicks.appendChild(node);
+      }
+    }
+    if (scaleMarks) {
+      scaleMarks.innerHTML = '';
+      var stations = scaleStations(kind);
+      for (var j = 0; j < stations.length; j++) {
+        var mark = document.createElement('b');
+        mark.textContent = stations[j] + (kind === 'tape' ? '' : '%');
+        mark.style.left = stations[j] + '%';
+        if (stations[j] === 0 || stations[j] === 50 || stations[j] === 100) mark.setAttribute('data-major', '');
+        scaleMarks.appendChild(mark);
+      }
+    }
+    if (scaleCap && scaleMarks) {
+      Array.prototype.forEach.call(scaleMarks.querySelectorAll('b'), function (node) {
+        node.classList.remove('is-occluded');
+      });
+    }
+  }
+
+  function updateScaleRail(u) {
+    var target = effectiveTarget();
+    var pct = 0;
+    if (target > 0) {
+      if (settings.mode === 'limit') pct = Math.round(100 - (u.remaining / target) * 100);
+      else pct = Math.round(Math.min(100, (u.elapsed / target) * 100));
+    }
+    document.documentElement.style.setProperty('--goal-pct', pct + '%');
+    if (target > 0 && layerOn('scale')) main.setAttribute('data-goal', 'true');
+    else main.removeAttribute('data-goal');
+    if (u.done && layerOn('reach')) main.setAttribute('data-met', 'true');
+    else main.removeAttribute('data-met');
+    if (scaleCap) {
+      var elapsedStr = formatClock(Math.min(u.elapsed, target || u.elapsed));
+      var targetStr = formatLimit(target || u.elapsed);
+      if (settings.scale === 'mercury' || settings.scale === 'index') {
+        scaleCap.innerHTML = elapsedStr + '<em>' + targetStr + '</em>';
+      } else {
+        scaleCap.textContent = target ? elapsedStr + ' / ' + targetStr : elapsedStr;
+      }
+    }
+    if (scaleMarks) {
+      Array.prototype.forEach.call(scaleMarks.querySelectorAll('b'), function (node) {
+        var station = parseFloat(node.style.left);
+        if (Number.isNaN(station)) station = 0;
+        node.classList.toggle('is-occluded', Math.abs(station - pct) < 6);
+      });
+    }
+  }
+
+  function cellPlan(elapsed, target) {
+    if (target <= MAX_CELLS) {
+      return { total: target, filled: Math.max(0, Math.min(Math.floor(elapsed / 1000), target)), unit: 1 };
+    }
+    var unit = Math.ceil(target / MAX_CELLS);
+    var total = Math.ceil(target / unit);
+    return { total: total, filled: Math.max(0, Math.min(total, Math.floor(elapsed / (unit * 1000)))), unit: unit };
+  }
+
+  function renderChart(u) {
+    var target = effectiveTarget();
+    var show = target > 0 && layerOn('chart');
+    if (progressEl) progressEl.hidden = !show;
+    if (!show || !vizEl) return;
+    var pct = settings.mode === 'limit'
+      ? (100 - (u.remaining / target) * 100)
+      : Math.min(100, (u.elapsed / target) * 100);
+    var kind = CHARTS[settings.chart] ? settings.chart : 'dots';
+    vizEl.className = 'viz viz-' + kind;
+    if (kind === 'bar') {
+      vizEl.innerHTML = '<div class="fill" style="width:' + pct.toFixed(1) + '%"></div>';
+      vizEl.className = 'viz viz-bar';
+    } else if (kind === 'ticks') {
+      var ticks = '';
+      for (var t = 0; t < 24; t++) {
+        var on = (t / 24) * 100 < pct;
+        ticks += '<i class="cell' + (t % 6 === 0 ? ' major' : '') + (on ? ' on' : '') + '"></i>';
+      }
+      vizEl.innerHTML = ticks;
+    } else if (kind === 'ring') {
+      var r = 15.9155;
+      var circ = 2 * Math.PI * r;
+      var off = circ * (1 - pct / 100);
+      vizEl.className = 'viz viz-ring-mini';
+      vizEl.innerHTML = '<svg viewBox="0 0 36 36"><circle class="track" cx="18" cy="18" r="' + r + '"/><circle class="fill" cx="18" cy="18" r="' + r + '" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + off.toFixed(2) + '"/></svg>';
+    } else {
+      var plan = cellPlan(u.elapsed, Math.max(1, Math.floor(target / 60000) || Math.floor(target / 1000) || 24));
+      var cells = '';
+      for (var c = 0; c < plan.total; c++) {
+        cells += '<i class="cell' + (c < plan.filled ? ' on' : '') + '"></i>';
+      }
+      vizEl.innerHTML = cells;
+    }
+    if (vizMeta) {
+      vizMeta.textContent = formatClock(u.elapsed) + ' / ' + formatLimit(target) + '  ' + Math.round(pct) + '%';
+    }
+  }
+
+  function applyLayerControls() {
+    Array.prototype.forEach.call(document.querySelectorAll('.layer-sq'), function (btn) {
+      var layer = btn.getAttribute('data-layer');
+      var on = layerOn(layer);
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var row = btn.closest('fieldset');
+      if (row) row.classList.toggle('is-off', !on);
+    });
+    document.documentElement.setAttribute('data-show-ghost', layerOn('ghost') ? 'true' : 'false');
+    document.documentElement.setAttribute('data-show-target', layerOn('target') ? 'true' : 'false');
+    document.documentElement.setAttribute('data-show-chart', layerOn('chart') ? 'true' : 'false');
+    document.documentElement.setAttribute('data-show-scale', layerOn('scale') ? 'true' : 'false');
+  }
+
+  function applySettingsControls() {
+    var maps = {
+      layout: settings.layout, primary: settings.primary, font: settings.font,
+      faces: settings.faces, ui: settings.ui, figure: settings.figure,
+      chart: settings.chart, scale: settings.scale, reach: settings.reach,
+      ghost: settings.ghost, ghostWeight: settings.ghostWeight, ghostPlace: settings.ghostPlace,
+      hand: settings.hand, theme: settings.theme, density: settings.density
+    };
+    Object.keys(maps).forEach(function (name) {
+      Array.prototype.forEach.call(document.querySelectorAll('input[name="' + name + '"]'), function (inp) {
+        inp.checked = inp.value === maps[name];
+      });
+    });
+    applyLayerControls();
+  }
+
+  function rollLook(settle) {
+    var theme = pickOne(THEMES);
+    var affinity = settle ? (LOOK_AFFINITY[theme] || {}) : {};
+    settings.theme = theme;
+    settings.ui = pickLookValue(affinity.ui, keysOf(UI_FONTS_WEB));
+    settings.font = pickLookValue(affinity.font, keysOf(FONT_ROLES));
+    settings.figure = pickLookValue(affinity.figure, keysOf(FIGURES));
+    settings.chart = pickLookValue(affinity.chart, keysOf(CHARTS));
+    settings.scale = pickLookValue(affinity.scale, keysOf(SCALES));
+    settings.reach = pickLookValue(affinity.reach, keysOf(REACH));
+    settings.layout = pickLookValue(affinity.layout, keysOf(LAYOUTS));
+    applySettingsControls();
+    applyChrome();
+    render();
+  }
+
+  function shuffleLooks() {
+    if (shuffleBusy) return;
+    shuffleBusy = true;
+    if (shuffleTimer) clearTimeout(shuffleTimer);
+    document.body.classList.remove('is-shuffling');
+    void document.body.offsetWidth;
+    document.body.classList.add('is-shuffling');
+    haptic([12, 30, 12, 30, 18]);
+    var step = 0;
+    function tick() {
+      rollLook(step === 3);
+      step += 1;
+      if (step < 4) shuffleTimer = setTimeout(tick, 95);
+      else {
+        saveSettings();
+        shuffleTimer = setTimeout(function () {
+          document.body.classList.remove('is-shuffling');
+          shuffleBusy = false;
+          shuffleTimer = null;
+        }, 420);
+      }
+    }
+    tick();
+  }
+
+  function renderFace(u) {
+    var primary = settings.primary;
+    if (settings.mode === 'limit') primary = 'remaining';
+    else if (settings.mode === 'splits') primary = 'elapsed';
+
+    if (settings.mode === 'limit') {
+      if (u.limit && u.elapsed === 0 && u.runState === 'idle') {
+        faceTime.textContent = formatClock(u.limit);
+        faceSub.textContent = '';
+        setArc(0);
+      } else if (u.limit) {
+        faceTime.textContent = formatClock(u.remaining);
+        faceSub.textContent = u.done
+          ? ''
+          : formatClock(u.elapsed) + ' of ' + formatLimit(u.limit);
+        setArc(100 - (u.remaining / u.limit) * 100);
+      } else {
+        faceTime.textContent = formatClock(u.elapsed);
+        faceSub.textContent = 'set a limit';
+        setArc(0);
+      }
+    } else if (settings.mode === 'splits') {
+      faceTime.textContent = formatClock(u.elapsed);
+      var st = splitStats();
+      faceSub.textContent = st.count
+        ? (st.count === 1 ? '1 split' : st.count + ' splits')
+        : '';
+      setArc(u.limit ? (u.elapsed / u.limit) * 100 : 0);
+    } else {
+      var showRemaining = primary === 'remaining' && u.limit;
+      faceTime.textContent = showRemaining ? formatClock(u.remaining) : formatClock(u.elapsed);
+      if (u.limit) {
+        faceSub.textContent = showRemaining
+          ? formatClock(u.elapsed) + ' elapsed'
+          : formatLimit(Math.max(0, u.limit - u.elapsed)) + ' left';
+        setArc((u.elapsed / u.limit) * 100);
+      } else {
+        faceSub.textContent = '';
+        setArc(0);
+      }
+    }
+  }
+
+  function renderRecord(u) {
+    var show = settings.density === 'full';
+    var rows = [];
+
+    if (settings.mode === 'splits' && state.marks.length) {
+      recordTitle.textContent = 'splits';
+      recordHead.innerHTML = '<tr><th>#</th><th>split</th><th>total</th></tr>';
+      recordSum.hidden = false;
+      recordSum.innerHTML = 'total <b>' + formatClock(u.elapsed) + '</b>';
+      state.marks.slice().reverse().forEach(function (m, i) {
+        var n = state.marks.length - i;
+        rows.push(
+          '<tr class="' + (i === 0 && state.running ? 'is-latest' : '') + '">' +
+          '<td>' + n + (m.note ? '<span class="note">' + escapeHtml(m.note) + '</span>' : '') + '</td>' +
+          '<td class="split">' + formatClock(m.delta) + '</td>' +
+          '<td>' + formatClock(m.at) + '</td></tr>'
+        );
+      });
+      show = true;
+    } else if (settings.mode === 'duration' && state.segments.length) {
+      recordTitle.textContent = 'segments';
+      recordHead.innerHTML = '<tr><th>#</th><th>duration</th><th></th></tr>';
+      recordSum.hidden = false;
+      recordSum.innerHTML = 'total <b>' + formatClock(u.elapsed) + '</b>';
+      state.segments.slice().reverse().forEach(function (seg, i) {
+        var n = state.segments.length - i;
+        rows.push(
+          '<tr><td>' + n + (seg.note ? '<span class="note">' + escapeHtml(seg.note) + '</span>' : '') + '</td>' +
+          '<td class="split">' + formatClock(seg.duration) + '</td><td></td></tr>'
+        );
+      });
+      show = true;
+    } else {
+      recordSum.hidden = true;
+      recordHead.innerHTML = '';
+    }
+
+    recordBody.innerHTML = rows.join('');
+    recordEl.hidden = !show || !rows.length;
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderPresets() {
+    var u = uiState();
+    var show = layerOn('target') && !state.running && u.runState !== 'done';
+    if (settings.mode === 'limit') show = show || (!state.running && u.runState !== 'done');
+    presetsEl.hidden = !show;
+    Array.prototype.forEach.call(presetsEl.querySelectorAll('button'), function (btn) {
+      var ms = parseInt(btn.getAttribute('data-ms'), 10);
+      btn.classList.toggle('is-set', settings.target === ms);
+    });
+  }
+
+  function applyChrome() {
+    var uiMap = uiFontsMap();
+    var uiFont = uiMap[settings.ui] || uiMap.braun;
+    var faces = typeFacesMap();
+    var uiKey = (uiMap[settings.ui] ? settings.ui : 'braun');
+    var digitFont = (faces[uiKey] && faces[uiKey][settings.font]) || faces.braun.mono || faces.braun.sans;
+    document.documentElement.style.setProperty('--ui', uiFont);
+    document.documentElement.style.setProperty('--digits', digitFont);
+    document.documentElement.setAttribute('data-ui', settings.ui);
+    main.setAttribute('data-mode', settings.mode);
+    main.setAttribute('data-layout', settings.layout);
+    main.setAttribute('data-density', settings.density);
+    main.setAttribute('data-figure', settings.figure);
+    if (dialCore) dialCore.setAttribute('data-figure', settings.figure);
+    var reach = layerOn('reach') ? (REACH[settings.reach] ? settings.reach : 'wash') : 'none';
+    main.setAttribute('data-reach', reach);
+    applySettingsControls();
+    rebuildScaleChrome();
+    targetInput.value = settings.target > 0 ? formatTargetField(settings.target) : '';
+    applyLabelUi();
+    lapBtn.hidden = settings.mode !== 'splits';
+    Array.prototype.forEach.call(modeBtns, function (btn) {
+      var on = btn.getAttribute('data-mode') === settings.mode;
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.classList.toggle('is-live', on && state.running);
+    });
+    applyTheme(settings.theme);
+  }
+
+  function render(now) {
+    var u = uiState(now);
+    main.setAttribute('data-state', u.runState);
+    var canReset = u.elapsed > 0 || state.marks.length > 0 || state.segments.length > 0
+      || state.running || u.done;
+    main.toggleAttribute('data-can-reset', canReset);
+    main.toggleAttribute('data-has-elapsed', canReset);
+    renderFace(u);
+    renderRecord(u);
+    renderPresets();
+    renderChart(u);
+    updateScaleRail(u);
+    setProgressHand(u);
+    applyGhost(u);
+    runBtn.textContent = state.running ? 'pause' : (u.done ? 'again' : 'start');
+    runBtn.classList.toggle('is-running', state.running);
+    runBtn.setAttribute('aria-label', state.running ? 'pause timer' : (u.done ? 'start again' : 'start timer'));
+    if (u.done && !wasDone && layerOn('reach') && settings.reach !== 'none') {
+      haptic([30, 50, 30]);
+    }
+    wasDone = u.done;
+  }
+
+  function startTick() {
+    stopTick();
+    if (!state.running) return;
+    var ms = 100;
+    try {
+      if (document.hidden) ms = 1000;
+      else if (settings.mode === 'splits') ms = 50;
+    } catch (e) {}
+    tickTimer = setInterval(function () {
+      var u = uiState();
+      if (u.done && state.running) {
+        pause(true);
+      }
+      render();
+    }, ms);
+  }
+
+  function stopTick() {
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+  }
+
+  function start() {
+    var u = uiState();
+    if (u.done) {
+      reset(true);
+    }
+    if (state.running) return;
+    state.running = true;
+    state.startedAt = Date.now();
+    saveState();
+    startTick();
+    render();
+  }
+
+  function pause(fromDone) {
+    if (!state.running) return;
+    var e = elapsed();
+    state.accumulated = e;
+    state.running = false;
+    state.startedAt = null;
+    if (settings.mode === 'duration' && e > 0) {
+      var prior = state.segments.reduce(function (a, s) { return a + s.duration; }, 0);
+      var dur = e - prior;
+      if (dur > 250) {
+        state.segments.push({ duration: dur, note: effectiveLabel() });
+      }
+    }
+    saveState();
+    stopTick();
+    render();
+  }
+
+  function toggleRun() {
+    if (state.running) pause(false); else start();
+  }
+
+  function reset(full) {
+    stopTick();
+    if (full !== false) {
+      state.accumulated = 0;
+      state.marks = [];
+      state.segments = [];
+      state.label = settings.labelDefault || '';
+    } else {
+      state.accumulated = 0;
+    }
+    state.running = false;
+    state.startedAt = null;
+    wasDone = false;
+    saveState();
+    applyLabelUi();
+    render();
+  }
+
+  function addSplit() {
+    if (settings.mode !== 'splits') return;
+    var now = elapsed();
+    var prev = state.marks.length ? state.marks[state.marks.length - 1].at : 0;
+    state.marks.push({
+      at: now,
+      delta: now - prev,
+      note: effectiveLabel()
+    });
+    saveState();
+    render();
+    try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {}
+  }
+
+  function setMode(mode) {
+    if (settings.mode === mode) return;
+    if (state.running) pause(false);
+    settings.mode = mode;
+    state.accumulated = 0;
+    state.marks = [];
+    state.segments = [];
+    state.startedAt = null;
+    state.running = false;
+    wasDone = false;
+    if (mode === 'limit') {
+      settings.primary = 'remaining';
+      if (settings.target <= 0) settings.target = 1500000;
+    } else if (mode === 'splits') {
+      settings.primary = 'elapsed';
+    } else {
+      settings.primary = 'elapsed';
+    }
+    normalizeSettings();
+    saveSettings();
+    saveState();
+    applyChrome();
+    render();
+  }
+
+  function setTarget(ms, opts) {
+    opts = opts || {};
+    ms = Math.max(0, Math.floor(ms || 0));
+    settings.target = ms;
+    targetInput.value = ms > 0 ? formatTargetField(ms) : '';
+    if (settings.mode === 'limit' && opts.resetTimer !== false) {
+      state.accumulated = 0;
+      state.marks = [];
+      state.segments = [];
+      wasDone = false;
+    }
+    saveSettings();
+    if (opts.saveState !== false) saveState();
+    render();
+  }
+
+  function setLabelDefault(val) {
+    settings.labelDefault = String(val || '').trim();
+    if (labelDefaultInput) labelDefaultInput.value = settings.labelDefault;
+    if (!String(state.label || '').trim() && settings.labelDefault) {
+      state.label = settings.labelDefault;
+      applyLabelUi();
+      saveState();
+    } else {
+      applyLabelUi();
+    }
+    saveSettings();
+  }
+
+  function parseTargetField() {
+    var raw = targetInput.value.trim();
+    if (!raw) return 0;
+    return parseDuration(raw);
+  }
+
+  function cycleTheme() {
+    var i = THEMES.indexOf(settings.theme);
+    applyTheme(THEMES[(i + 1) % THEMES.length]);
+    saveSettings();
+  }
+
+  settingsToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    setSettingsOpen(settingsToggle.getAttribute('aria-expanded') !== 'true');
+  });
+  document.addEventListener('pointerdown', function (e) {
+    if (!document.body.classList.contains('settings-open')) return;
+    if (e.target.closest && e.target.closest('#settings, .dock, #settingsToggle, .masthead, .suite-nav')) return;
+    setSettingsOpen(false);
+  }, true);
+  themeBtn.addEventListener('click', cycleTheme);
+  if (shuffleBtn) shuffleBtn.addEventListener('click', shuffleLooks);
+  runBtn.addEventListener('click', toggleRun);
+  lapBtn.addEventListener('click', addSplit);
+  resetBtn.addEventListener('click', function () { reset(true); });
+
+  labelInput.addEventListener('input', function () {
+    state.label = labelInput.value;
+    saveState();
+  });
+
+  if (labelDefaultInput) {
+    labelDefaultInput.addEventListener('input', function () {
+      setLabelDefault(labelDefaultInput.value);
+    });
+    labelDefaultInput.addEventListener('change', function () {
+      setLabelDefault(labelDefaultInput.value);
+    });
+  }
+
+  function commitTarget() {
+    setTarget(parseTargetField());
+  }
+
+  targetInput.addEventListener('change', commitTarget);
+  targetInput.addEventListener('blur', commitTarget);
+  targetInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitTarget();
+      targetInput.blur();
+    }
+  });
+
+  Array.prototype.forEach.call(modeBtns, function (btn) {
+    btn.addEventListener('click', function () {
+      setMode(btn.getAttribute('data-mode'));
+    });
+  });
+
+  Array.prototype.forEach.call(presetsEl.querySelectorAll('button'), function (btn) {
+    btn.addEventListener('click', function () {
+      setTarget(parseInt(btn.getAttribute('data-ms'), 10));
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="ui"], input[name="font"], input[name="faces"], input[name="layout"], input[name="primary"], input[name="figure"], input[name="chart"], input[name="scale"], input[name="ghost"], input[name="ghostWeight"], input[name="ghostPlace"], input[name="hand"]'), function (inp) {
+    inp.addEventListener('change', function () {
+      if (!inp.checked) return;
+      settings[inp.name] = inp.value;
+      applyChrome();
+      saveSettings();
+      render();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="density"]'), function (inp) {
+    inp.addEventListener('change', function () {
+      if (!inp.checked) return;
+      settings.density = inp.value;
+      applyChrome();
+      saveSettings();
+      render();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="reach"]'), function (inp) {
+    inp.addEventListener('change', function () {
+      if (!inp.checked) return;
+      settings.reach = inp.value;
+      applyChrome();
+      saveSettings();
+      render();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name="theme"]'), function (inp) {
+    inp.addEventListener('change', function () {
+      if (!inp.checked) return;
+      applyTheme(inp.value);
+      saveSettings();
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.layer-sq'), function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var layer = btn.getAttribute('data-layer');
+      var key = LAYER_KEYS[layer];
+      if (!key) return;
+      settings[key] = !layerOn(layer);
+      applySettingsControls();
+      applyChrome();
+      saveSettings();
+      render();
+      haptic(8);
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    var tag = (e.target && e.target.tagName) || '';
+    var typing = tag === 'INPUT' || tag === 'TEXTAREA';
+    if (e.key === 'Escape') {
+      if (document.body.classList.contains('settings-open')) {
+        setSettingsOpen(false);
+        e.preventDefault();
+      }
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+      e.preventDefault();
+      setSettingsOpen(settingsToggle.getAttribute('aria-expanded') !== 'true');
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 't' || e.key === 'T')) {
+      e.preventDefault();
+      cycleTheme();
+      return;
+    }
+    if (typing) return;
+    if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); toggleRun(); }
+    if (e.key === 'l' || e.key === 'L') addSplit();
+    if (e.key === 'r' || e.key === 'R') reset(true);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (state.running) startTick();
+  });
+
+  function buildDialTicks() {
+    var g = el('dialTicks');
+    if (!g || g.childNodes.length) return;
+    var cx = 50, cy = 50, rOut = 46;
+    var html = '';
+    /* four cardinal marks — geometric, not decorative */
+    for (var i = 0; i < 4; i++) {
+      var a = (i / 4) * Math.PI * 2 - Math.PI / 2;
+      var r1 = 43.5;
+      var x1 = cx + Math.cos(a) * r1;
+      var y1 = cy + Math.sin(a) * r1;
+      var x2 = cx + Math.cos(a) * rOut;
+      var y2 = cy + Math.sin(a) * rOut;
+      html += '<line x1="' + x1.toFixed(2) + '" y1="' + y1.toFixed(2) + '" x2="' + x2.toFixed(2) + '" y2="' + y2.toFixed(2) + '" class="major"/>';
+    }
+    g.innerHTML = html;
+  }
+
+  loadAll();
+  buildDialTicks();
+  applyChrome();
+  applySettingsControls();
+  rebuildScaleChrome();
+  if (window.IBMTools) IBMTools.mountSuiteNav('timecount');
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1058,6 +1058,7 @@
   .seg::-webkit-scrollbar { display: none; }
   fieldset > .target-field,
   fieldset > .keys-hint,
+  fieldset > .about-copy,
   fieldset > .opts {
     flex: 1 1 auto;
     min-width: 0;
@@ -1789,6 +1790,27 @@
     color: var(--ink);
     white-space: nowrap;
   }
+  .about-info { margin-top: 2px; }
+  .about-copy {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--mute);
+    margin: 0 0 8px;
+    max-width: 36em;
+  }
+  .about-copy code { font-size: 11px; opacity: .85; }
+  .about-github {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: var(--mute);
+    opacity: .42;
+    transition: opacity .15s ease, color .15s ease;
+  }
+  .about-github:hover { opacity: .88; color: var(--ink); }
+  .about-github svg { width: 15px; height: 15px; }
   .ai-tool-hint {
     margin-top: auto;
     padding-top: 12px;
@@ -4165,6 +4187,14 @@
           </div>
           <button type="button" class="layer-sq is-on" data-layer="scale" aria-pressed="true" aria-label="show scale" title="show scale"></button>
         </fieldset>
+        <fieldset class="about-info">
+          <legend>how it works</legend>
+          <p class="about-copy">Counts run locally in your browser — nothing leaves this page unless you share. Words split on whitespace; sentences end at <code>. ! ? …</code>; paragraphs on blank lines. Reading time assumes 200 wpm; speaking 130 wpm; pages ~250 words.</p>
+          <p class="about-copy">Voice dictation uses your browser’s built-in speech recognition (Web Speech API). Audio is handled by the browser or your device — not sent to a server for transcription.</p>
+          <a class="about-github" href="https://github.com/mhsenkow/wordcounter" target="_blank" rel="noopener noreferrer" aria-label="source on GitHub" title="source on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          </a>
+        </fieldset>
         <fieldset>
           <legend>keys</legend>
           <p class="keys-hint">
@@ -4201,9 +4231,12 @@
   <dl id="metrics">
     <div data-metric="words" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>words</dt><dd>0</dd></div>
     <div data-metric="chars" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>characters</dt><dd>0</dd></div>
+    <div data-metric="charsNoSpaces" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>no spaces</dt><dd>0</dd></div>
     <div data-metric="sentences" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>sentences</dt><dd>0</dd></div>
     <div data-metric="paragraphs" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>paragraphs</dt><dd>0</dd></div>
     <div data-metric="reading"><dt>reading</dt><dd>0:00</dd></div>
+    <div data-metric="speaking"><dt>speaking</dt><dd>0:00</dd></div>
+    <div data-metric="pages"><dt>pages</dt><dd>0</dd></div>
   </dl>
 
   <div class="editor" id="editor">
@@ -4232,6 +4265,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
+<script src="lib/suite.js"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
@@ -4578,6 +4612,11 @@
       format: function (c) { return n.format(c.chars); },
       value: function (c) { return c.chars; }
     },
+    charsNoSpaces: {
+      label: function () { return 'no spaces'; },
+      format: function (c) { return n.format(c.charsNoSpaces); },
+      value: function (c) { return c.charsNoSpaces; }
+    },
     sentences: {
       label: function (v) { return v === 1 ? 'sentence' : 'sentences'; },
       format: function (c) { return n.format(c.sentences); },
@@ -4591,6 +4630,16 @@
     reading: {
       label: function () { return 'reading'; },
       format: function (c) { return clock(c.words); },
+      value: function (c) { return c.words; }
+    },
+    speaking: {
+      label: function () { return 'speaking'; },
+      format: function (c) { return speakClock(c.words); },
+      value: function (c) { return c.words; }
+    },
+    pages: {
+      label: function () { return 'pages'; },
+      format: function (c) { return n.format(pageEst(c.words)); },
       value: function (c) { return c.words; }
     }
   };
@@ -5055,10 +5104,18 @@
     } catch (e) {
       settings.theme = preferTheme();
     }
+    if (window.IBMTools) {
+      var shared = IBMTools.loadShared();
+      if (THEMES.indexOf(shared.theme) >= 0) settings.theme = shared.theme;
+      if (UI_FONTS_WEB[shared.ui] || UI_FONTS_LOCAL[shared.ui]) settings.ui = shared.ui;
+      if (FONT_ROLES[shared.font]) settings.font = shared.font;
+      if (FACES[shared.faces]) settings.faces = shared.faces;
+    }
   }
 
   function saveSettings() {
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+    if (window.IBMTools) IBMTools.pushSharedFrom(settings);
   }
 
   function scaleStations(kind) {
@@ -5405,18 +5462,44 @@
   }
 
   function count(s) {
-    var trimmed = s.trim();
+    if (window.__WC) return window.__WC.count(s);
+    var raw = String(s || '');
+    var trimmed = raw.trim();
     return {
       words: trimmed ? trimmed.split(/\s+/).length : 0,
-      chars: s.length,
+      chars: raw.length,
+      charsNoSpaces: raw.replace(/\s/g, '').length,
       sentences: (trimmed.match(/[^\s.!?…]+(?:[^.!?…]*[.!?…]+|[^.!?…]*$)/g) || []).length,
       paragraphs: trimmed ? trimmed.split(/\n\s*\n/).filter(function (p) { return p.trim(); }).length : 0
     };
   }
 
   function clock(words) {
+    if (window.__WC) return window.__WC.readingTime(words);
     var secs = Math.round(words / 200 * 60);
     return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  }
+
+  function speakClock(words) {
+    if (window.__WC) return window.__WC.speakingTime(words);
+    var secs = Math.round(words / 130 * 60);
+    return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+  }
+
+  function pageEst(words) {
+    if (window.__WC) return window.__WC.pageEstimate(words);
+    if (words <= 0) return 0;
+    return Math.round((words / 250) * 10) / 10;
+  }
+
+  function bootstrapFromUrl() {
+    if (!window.__WC || !window.__WC.parseCounterHandoff) return;
+    var handoff = window.__WC.parseCounterHandoff(location);
+    if (handoff.text) text.value = handoff.text;
+    if (handoff.target > 0) {
+      settings.target = handoff.target;
+      if (targetInput) targetInput.value = String(handoff.target);
+    }
   }
 
   function syncScroll() {
@@ -6269,7 +6352,14 @@
 
   loadSettings();
   applySettingsControls();
+  if (window.IBMTools) IBMTools.mountSuiteNav('wordcount');
   try { text.value = localStorage.getItem(TEXT_KEY) || ''; } catch (e) {}
+  import('./lib/count.mjs').then(function (WC) {
+    window.__WC = WC;
+    bootstrapFromUrl();
+    applySettingsControls();
+    render();
+  }).catch(function () {});
   setupVoice();
   setupGestures();
 

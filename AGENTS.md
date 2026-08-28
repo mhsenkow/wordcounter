@@ -1,25 +1,36 @@
 # Agent notes — Word Counter (`ibm.io/wordcount`)
 
-Static single-file app. No build, no package manager, no framework.
+Static single-file apps. No build, no package manager, no framework.
+
+## Tools suite
+
+| Tool | Local path | Public URL |
+|---|---|---|
+| **Word counter** | `index.html` | `https://ibm.io/wordcount/` |
+| **Time counter** | `timecount/index.html` | `https://ibm.io/timecount/` |
+
+A surreptitious **tools menu** (top-right grid icon) links between apps. Theme, chrome, and font choices sync via `localStorage` key `ibm.tools.shared`.
 
 ## Live hosting (keep both in sync)
 
 | Surface | Where the files live | Who serves `/wordcount` |
 |---|---|---|
-| **GreenGeeks (origin)** | cPanel: `/home/mhsenkow/public_html/ibm.io/wordcount/index.html` | LiteSpeed on `chi202.greengeeks.net` (IP `184.154.70.198`) when a client still hits GG for apex `ibm.io` |
-| **Cloudflare Worker** | Portfolio repo: `portfolio/public/wordcount/index.html` → Worker `portfolio` | `ibm.io` / `www.ibm.io` / `portfolio.mhsenkow.workers.dev` when DNS is Cloudflare |
+| **GreenGeeks (origin)** | cPanel: `/home/mhsenkow/public_html/ibm.io/wordcount/index.html` (+ `timecount/index.html`, `lib/suite.js`) | LiteSpeed on `chi202.greengeeks.net` (IP `184.154.70.198`) when a client still hits GG for apex `ibm.io` |
+| **Cloudflare Worker** | Portfolio repo: `portfolio/public/wordcount/index.html` → Worker `portfolio` (+ mirror `timecount/` and `lib/`) | `ibm.io` / `www.ibm.io` / `portfolio.mhsenkow.workers.dev` when DNS is Cloudflare |
 
 **DNS stays on Cloudflare** (`dimitris.ns.cloudflare.com`, `tessa.ns.cloudflare.com`). Do **not** point nameservers back at GreenGeeks.
 
-Public URL: `https://ibm.io/wordcount/` (and `https://www.ibm.io/wordcount/`).
+Public URLs: `https://ibm.io/wordcount/`, `https://ibm.io/timecount/` (and `www` variants).
 
 Some local machines still resolve apex `ibm.io` to the GreenGeeks IP (stale cache). That is why the GG copy must stay current — not only the Worker.
 
 ## How to update (checklist)
 
-1. Edit **`index.html`** in this repo (`/Users/powerox/wordcounter` or wherever this project lives).
-2. **GreenGeeks** — upload the same file to:
-   - Path: `public_html/ibm.io/wordcount/index.html`
+1. Edit **`index.html`** (word counter) and/or **`timecount/index.html`** in this repo.
+2. **GreenGeeks** — upload the same files to:
+   - Word counter: `public_html/ibm.io/wordcount/index.html`
+   - Time counter: `public_html/ibm.io/timecount/index.html`
+   - Suite script: `public_html/ibm.io/lib/suite.js` (or co-locate under each tool folder if preferred)
    - Via: GreenGeeks → hosting → cPanel → File Manager → Upload (overwrite), **or** FTP/SFTP to `chi202.greengeeks.net`, user `mhsenkow` (password from the GreenGeeks/cPanel panel — never commit it).
 3. **Cloudflare** — copy into the portfolio app and deploy:
    ```bash
