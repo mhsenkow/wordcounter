@@ -827,7 +827,7 @@
     z-index: 3;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     pointer-events: none;
@@ -1063,7 +1063,7 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  /* first settings row clears the floating support icons (host · tip · shuffle) */
+  /* first settings row clears the floating support icons */
   #settings .fields > fieldset:first-of-type {
     padding-right: 96px;
   }
@@ -1811,23 +1811,6 @@
   }
   .about-github:hover { opacity: .88; color: var(--ink); }
   .about-github svg { width: 15px; height: 15px; }
-  .ai-tool-hint {
-    margin-top: auto;
-    padding-top: 12px;
-    font-size: 11px;
-    color: var(--mute);
-    text-align: center;
-  }
-  .ai-tool-hint a {
-    color: var(--mute);
-    text-decoration: none;
-    border-bottom: 1px solid var(--hair);
-  }
-  .ai-tool-hint a:hover,
-  .ai-tool-hint a:focus-visible {
-    color: var(--ink);
-    border-bottom-color: var(--rule);
-  }
 
   /* ---- instrument strip: count as readout, not a billboard ---- */
   .hero {
@@ -4006,6 +3989,49 @@
       <div class="sheet-grip" aria-hidden="true"></div>
       <div class="support" aria-label="support">
         <a
+          id="linkHome"
+          href="https://ibm.io/"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-tip="ibm.io · home"
+          aria-label="ibm.io home"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 7.2 8 2.8l5.5 4.4"/>
+            <path d="M4 6.8v6.2h8V6.8"/>
+            <path d="M6.6 13V9.2h2.8V13"/>
+          </svg>
+        </a>
+        <a
+          id="linkPortfolio"
+          href="https://ibm.io/projects"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-tip="portfolio · work"
+          aria-label="portfolio"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="4.5" width="11" height="8.5" rx="1.2"/>
+            <path d="M5.5 4.5V3.6c0-.6.5-1.1 1.1-1.1h2.8c.6 0 1.1.5 1.1 1.1v.9"/>
+            <path d="M2.5 8h11"/>
+          </svg>
+        </a>
+        <a
+          id="linkMcp"
+          href="https://wordcount-mcp.mhsenkow.workers.dev/demo"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-tip="ChatGPT · Claude"
+          aria-label="use in ChatGPT or Claude"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3.2 4.2h7.2c.9 0 1.6.7 1.6 1.6v3.2c0 .9-.7 1.6-1.6 1.6H7.1L4.6 13v-2.4H3.2c-.9 0-1.6-.7-1.6-1.6V5.8c0-.9.7-1.6 1.6-1.6z"/>
+            <circle cx="5.6" cy="7.4" r=".55" fill="currentColor" stroke="none"/>
+            <circle cx="8" cy="7.4" r=".55" fill="currentColor" stroke="none"/>
+            <circle cx="10.4" cy="7.4" r=".55" fill="currentColor" stroke="none"/>
+          </svg>
+        </a>
+        <a
           id="linkHost"
           href="https://www.greengeeks.com/track/senkowm"
           target="_blank"
@@ -4252,9 +4278,6 @@
       <textarea id="text" placeholder="type or paste text." spellcheck="false" autofocus></textarea>
     </div>
   </div>
-  <p class="ai-tool-hint">
-    <a href="https://wordcount-mcp.mhsenkow.workers.dev/demo" target="_blank" rel="noopener noreferrer">Use in ChatGPT or Claude</a>
-  </p>
 </main>
 
 <aside class="scale-rail" id="scaleRail" aria-hidden="true" data-scale="rule">
@@ -4270,7 +4293,10 @@
 (function () {
   var TEXT_KEY = 'wordcounter.text';
   var SETTINGS_KEY = 'wordcounter.settings';
-  // Paste your real links — tree → GreenGeeks affiliate, coffee → tip
+  var LINK_HOME = 'https://ibm.io/';
+  var LINK_PORTFOLIO = 'https://ibm.io/projects';
+  var LINK_MCP = 'https://wordcount-mcp.mhsenkow.workers.dev/demo';
+  // tree → GreenGeeks affiliate, coffee → tip
   var LINK_HOST = 'https://www.greengeeks.com/track/senkowm';
   var LINK_TIP = 'https://venmo.com/u/Michael-Senkow?txn=pay&note=word%20counter';
   var THEMES = ['light', 'dark', 'contrast', 'paper', 'glass', 'frost', 'brutal', 'loom', 'tank', 'nes'];
@@ -4572,9 +4598,15 @@
   var undoBuffer = null;
   var undoTimer = null;
   var undoArmed = false;
+  var linkHome = el('linkHome');
+  var linkPortfolio = el('linkPortfolio');
+  var linkMcp = el('linkMcp');
   var linkHost = el('linkHost');
   var linkTip = el('linkTip');
   var shuffleLooksBtn = el('shuffleLooks');
+  if (linkHome && LINK_HOME) linkHome.href = LINK_HOME;
+  if (linkPortfolio && LINK_PORTFOLIO) linkPortfolio.href = LINK_PORTFOLIO;
+  if (linkMcp && LINK_MCP) linkMcp.href = LINK_MCP;
   if (linkHost && LINK_HOST) linkHost.href = LINK_HOST;
   if (linkTip && LINK_TIP) linkTip.href = LINK_TIP;
   var shuffleTimer = null;

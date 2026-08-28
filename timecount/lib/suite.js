@@ -52,15 +52,20 @@
     return segments.length ? '/' + segments.join('/') : '';
   }
 
-  function isDevSuiteRoot() {
+  function isProductionHost() {
+    var host = (global.location && global.location.hostname) || '';
+    return /(^|\.)ibm\.io$/i.test(host) || /\.workers\.dev$/i.test(host);
+  }
+
+  function hasWordcountPath() {
     var path = (global.location && global.location.pathname) || '/';
-    return path.indexOf('/wordcount') < 0 && path.indexOf('/wordcounter') < 0;
+    return /\/(wordcount|wordcounter)(\/|$)/.test(path);
   }
 
   function toolHref(tool) {
     var loc = global.location || {};
+    var path = loc.pathname || '';
     if (loc.protocol === 'file:') {
-      var path = loc.pathname || '';
       var inSub = TOOLS.some(function (t) {
         return t.id !== tool.id && t.paths.some(function (p) {
           return path.indexOf('/' + p + '/') >= 0;
@@ -71,17 +76,23 @@
       }
       return inSub ? 'index.html' : 'timecount/index.html';
     }
-    if (isDevSuiteRoot()) {
-      var here = detectToolId();
-      if (tool.id === 'wordcount') {
-        return here === 'timecount' ? '../index.html' : './';
-      }
-      return here === 'timecount' ? './' : 'timecount/';
+    // Live ibm.io / workers — always absolute tool URLs
+    if (isProductionHost()) {
+      return '/' + tool.paths[0] + '/';
     }
-    var root = suiteRoot();
-    var pathSeg = tool.paths[0];
-    if (!root || root === '/') return '/' + pathSeg + '/';
-    return root + '/' + pathSeg + '/';
+    // Local mirror of prod layout (.../wordcount/, .../timecount/)
+    if (hasWordcountPath()) {
+      var root = suiteRoot();
+      var pathSeg = tool.paths[0];
+      if (!root || root === '/') return '/' + pathSeg + '/';
+      return root + '/' + pathSeg + '/';
+    }
+    // Local repo http.server: wordcount at /, timecount at /timecount/
+    var here = detectToolId();
+    if (tool.id === 'wordcount') {
+      return here === 'timecount' ? '../' : './';
+    }
+    return here === 'timecount' ? './' : 'timecount/';
   }
 
   function injectStyles() {

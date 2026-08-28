@@ -385,7 +385,27 @@
     display: flex; align-items: center; justify-content: flex-end;
     gap: 8px; margin-bottom: 4px; padding-right: 2px;
   }
-  .settings-head .support { display: flex; gap: 6px; align-items: center; }
+  .settings-head .support {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .settings-head .support a,
+  .settings-head .support .shuffle-looks {
+    width: 22px; height: 22px; padding: 0; border: 0; background: none;
+    color: var(--mute); cursor: pointer; opacity: .35;
+    display: inline-flex; align-items: center; justify-content: center;
+    text-decoration: none;
+  }
+  .settings-head .support a:hover,
+  .settings-head .support a:focus-visible,
+  .settings-head .support .shuffle-looks:hover,
+  .settings-head .support .shuffle-looks:focus-visible {
+    opacity: .85; color: var(--ink); outline: none;
+  }
+  .settings-head .support a:focus-visible,
+  .settings-head .support .shuffle-looks:focus-visible {
+    outline: 1px solid var(--accent); outline-offset: 3px;
+  }
+  .settings-head .support svg { width: 13px; height: 13px; display: block; }
   .shuffle-looks {
     width: 22px; height: 22px; padding: 0; border: 0; background: none;
     color: var(--mute); cursor: pointer; opacity: .35;
@@ -1310,7 +1330,19 @@
     <div class="inner">
       <div class="fields">
         <div class="settings-head">
-          <div class="support">
+          <div class="support" aria-label="support">
+            <a id="linkHome" href="https://ibm.io/" target="_blank" rel="noopener noreferrer" title="ibm.io · home" aria-label="ibm.io home">
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.2 8 2.8l5.5 4.4"/><path d="M4 6.8v6.2h8V6.8"/><path d="M6.6 13V9.2h2.8V13"/></svg>
+            </a>
+            <a id="linkPortfolio" href="https://ibm.io/projects" target="_blank" rel="noopener noreferrer" title="portfolio · work" aria-label="portfolio">
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="11" height="8.5" rx="1.2"/><path d="M5.5 4.5V3.6c0-.6.5-1.1 1.1-1.1h2.8c.6 0 1.1.5 1.1 1.1v.9"/><path d="M2.5 8h11"/></svg>
+            </a>
+            <a id="linkHost" href="https://www.greengeeks.com/track/senkowm" target="_blank" rel="sponsored noopener noreferrer" title="where this lives · affiliate" aria-label="where this lives, affiliate link">
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14.5V8.2"/><path d="M8 11.2c-2.4 0-4-1.5-4-3.4C4 5.4 5.6 3.5 8 2.5c2.4 1 4 2.9 4 5.3 0 1.9-1.6 3.4-4 3.4z"/><path d="M8 8.2c-1.2-.8-2-2.1-2-3.5"/><path d="M8 8.2c1.2-.8 2-2.1 2-3.5"/></svg>
+            </a>
+            <a id="linkTip" href="https://venmo.com/u/Michael-Senkow?txn=pay&note=time%20counter" target="_blank" rel="noopener noreferrer" title="coffee · if you like" aria-label="coffee, if you like, venmo tip">
+              <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h7.2v4.2c0 1.3-1.1 2.3-2.4 2.3H5.9c-1.3 0-2.4-1-2.4-2.3V6.5z"/><path d="M10.7 7.2h1.1c.9 0 1.7.8 1.7 1.7S12.7 10.6 11.8 10.6h-1.1"/><path d="M5.2 4.2c.4-.7 1-.9 1.5-.5.4.3.5.8.3 1.3"/><path d="M7.4 3.6c.4-.7 1-.9 1.5-.5.4.3.5.8.3 1.3"/></svg>
+            </a>
             <button id="shuffleLooks" class="shuffle-looks" type="button" aria-label="shuffle looks" title="shuffle looks">
               <svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><circle cx="5.5" cy="5.5" r=".75" fill="currentColor" stroke="none"/><circle cx="10.5" cy="5.5" r=".75" fill="currentColor" stroke="none"/><circle cx="8" cy="8" r=".75" fill="currentColor" stroke="none"/><circle cx="5.5" cy="10.5" r=".75" fill="currentColor" stroke="none"/><circle cx="10.5" cy="10.5" r=".75" fill="currentColor" stroke="none"/></svg>
             </button>
