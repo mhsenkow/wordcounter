@@ -85,6 +85,27 @@
           doc.querySelector('main input[type="number"][data-primary]') ||
           doc.querySelector('main input[type="number"]');
         const face = doc.querySelector('.face');
+        const stageEl = doc.getElementById('toolStage');
+
+        if (primary && stageEl && path !== 'ratio') {
+          const pe = win.getComputedStyle(stageEl).pointerEvents;
+          if (pe === 'none') {
+            row.ok = false;
+            row.notes.push('stage pointer-events none');
+          }
+          const before = primary.value;
+          const y0 = 120;
+          firePointer(stageEl, 'pointerdown', { clientX: 160, clientY: y0 });
+          for (let i = 1; i <= 6; i++) {
+            firePointer(stageEl, 'pointermove', { clientX: 160, clientY: y0 - i * 30 });
+          }
+          firePointer(stageEl, 'pointerup', { clientX: 160, clientY: y0 - 180 });
+          if (Number(primary.value) === Number(before)) {
+            row.ok = false;
+            row.notes.push('stage scrub no change');
+          }
+        }
+
         if (primary && face) {
           const before = primary.value;
           const y0 = 180;
@@ -135,8 +156,8 @@
       }
 
       const css = doc.querySelector('link[href*="number-tool.css"]');
-      if (css && !/v=23/.test(css.getAttribute('href') || '')) {
-        row.notes.push('css cache not v23');
+      if (css && !/v=24/.test(css.getAttribute('href') || '')) {
+        row.notes.push('css cache not v24');
       }
     } catch (err) {
       row.ok = false;

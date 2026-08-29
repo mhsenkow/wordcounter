@@ -684,6 +684,23 @@ button.linkish:hover { color: var(--ink); }
   --pad-b: 42vh;
   --pad-l: max(16px, 2vw);
 }
+/* Gestures: chart is a scrub surface. Main is pass-through except face/stack. */
+html[data-gestures="1"] .tool-stage {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: ns-resize;
+}
+html[data-gestures="1"] main {
+  pointer-events: none;
+}
+html[data-gestures="1"] main .face,
+html[data-gestures="1"] main .stack,
+html[data-gestures="1"] main .ratio-stage,
+html[data-gestures="1"] main .viz,
+html[data-gestures="1"] main .soon-badge,
+html[data-gestures="1"] main .note {
+  pointer-events: auto;
+}
 html[data-show-viz="false"] .tool-stage { display: none !important; }
 
 header.masthead,
@@ -1322,9 +1339,8 @@ body.is-soon .soon-badge { align-self: center; }
     padding: 12px 12px 14px;
     touch-action: pan-y;
   }
-  /* Face / stage invite vertical scrub on touch */
-  .face,
-  .tool-stage {
+  /* Face invites vertical scrub; stage enabled via data-gestures rules above */
+  .face {
     touch-action: none;
     cursor: ns-resize;
   }
