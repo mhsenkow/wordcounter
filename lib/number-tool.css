@@ -1331,12 +1331,16 @@ body.is-soon .soon-badge { align-self: center; }
   html[data-gestures="1"] label.row {
     touch-action: none;
   }
+  html[data-gestures="1"] label.row input[type="number"] {
+    touch-action: none;
+    caret-color: transparent;
+  }
   html[data-gestures="1"] label.row .value {
     cursor: ns-resize;
   }
-  /* While typing, allow normal caret / keyboard */
-  html[data-gestures="1"] label.row:focus-within {
-    touch-action: manipulation;
+  /* Typing: caret + normal text gestures once focused */
+  html[data-gestures="1"] label.row:focus-within input[type="number"] {
+    caret-color: var(--accent);
   }
   html[data-gestures="1"] label.row:focus-within .value {
     cursor: text;

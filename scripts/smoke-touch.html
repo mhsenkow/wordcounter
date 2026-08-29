@@ -99,6 +99,22 @@
           }
         }
 
+        /* Every number row must scrub its own field when dragged on the input */
+        const nums = Array.from(doc.querySelectorAll('main label.row input[type="number"]'));
+        for (const input of nums) {
+          const before = input.value;
+          const y0 = 220;
+          firePointer(input, 'pointerdown', { clientX: 280, clientY: y0 });
+          for (let i = 1; i <= 6; i++) {
+            firePointer(input, 'pointermove', { clientX: 280, clientY: y0 - i * 30 });
+          }
+          firePointer(input, 'pointerup', { clientX: 280, clientY: y0 - 180 });
+          if (Number(input.value) === Number(before)) {
+            row.ok = false;
+            row.notes.push('row scrub ' + (input.id || '?') + ' no change');
+          }
+        }
+
         const spin = doc.querySelector('.spin-btn');
         if (spin) {
           const hit = spin.getBoundingClientRect();
@@ -119,8 +135,8 @@
       }
 
       const css = doc.querySelector('link[href*="number-tool.css"]');
-      if (css && !/v=22/.test(css.getAttribute('href') || '')) {
-        row.notes.push('css cache not v22');
+      if (css && !/v=23/.test(css.getAttribute('href') || '')) {
+        row.notes.push('css cache not v23');
       }
     } catch (err) {
       row.ok = false;
