@@ -34,6 +34,7 @@ Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/sui
 | Surface | Vertical | Horizontal | Notes |
 |---|---|---|---|
 | Face / chart | `data-primary` | `data-axis-x` | Pinch → `data-pinch` or primary |
+| Chart `[data-scrub]` | that input | same | Mapped viz cell (e.g. envelope) |
 | Value row | that row’s input | same field | Tap (no drag) focuses to type |
 | Stack | scroll if mid-list | — | Wheel defers while scrollable |
 | Ratio stage | own drag | own drag | Skips shared scrub |

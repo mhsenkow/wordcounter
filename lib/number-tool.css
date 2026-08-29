@@ -685,10 +685,12 @@ button.linkish:hover { color: var(--ink); }
   --pad-l: max(16px, 2vw);
 }
 /* Gestures: chart is a scrub surface. Main is pass-through except face/stack. */
-html[data-gestures="1"] .tool-stage {
-  pointer-events: auto;
-  touch-action: none;
+html[data-gestures="1"] .tool-stage [data-scrub] {
   cursor: ns-resize;
+  touch-action: none;
+}
+html[data-gestures="1"] .tool-stage [data-scrub]:active {
+  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
 }
 html[data-gestures="1"] main {
   pointer-events: none;
@@ -1492,6 +1494,17 @@ body.is-soon .soon-badge { align-self: center; }
   body.is-kb-open .tool-stage {
     opacity: .35;
   }
+  body.is-kb-open .face {
+    padding-bottom: 4px;
+  }
+  body.tool-app {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  body.is-scrubbing,
+  body.is-scrubbing * {
+    -webkit-user-select: none;
+    user-select: none;
+  }
   #settings > .inner {
     max-height: min(62dvh, 520px);
     padding-bottom: max(16px, env(safe-area-inset-bottom));
@@ -1501,6 +1514,32 @@ body.is-soon .soon-badge { align-self: center; }
     display: inline-flex;
     align-items: center;
     padding: 10px 12px;
+  }
+}
+
+/* Short / landscape phones — keep instrument usable one-handed */
+@media (pointer: coarse) and (orientation: landscape), (max-height: 480px) {
+  .face {
+    padding: 4px 8px 6px;
+    gap: 4px;
+  }
+  .face-value {
+    font-size: clamp(1.7rem, 9vh, 2.6rem);
+  }
+  .face-sub {
+    font-size: 11px;
+    min-height: 0;
+  }
+  main .stack {
+    max-height: min(56dvh, 340px);
+    padding: 8px 10px 10px;
+    gap: 10px;
+  }
+  label.row {
+    min-height: 44px;
+  }
+  .tool-stage {
+    --pad-t: calc(var(--mast-h) + 8px);
   }
 }
 

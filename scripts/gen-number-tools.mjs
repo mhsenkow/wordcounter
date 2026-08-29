@@ -27,7 +27,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz }) {
 <meta name="description" content="${blurb}">
 <link rel="canonical" href="https://ibm.io/${id}/">
 <link id="webFonts" rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="../lib/number-tool.css?v=26">
+<link rel="stylesheet" href="../lib/number-tool.css?v=27">
 </head>
 <body class="tool-app${soon ? ' is-soon' : ''}" data-tool="${id}">
 <header class="masthead">
@@ -49,8 +49,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=26"></script>
-<script src="../lib/number-tool.js?v=26"></script>
+<script src="../lib/suite.js?v=27"></script>
+<script src="../lib/number-tool.js?v=27"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');
@@ -108,7 +108,7 @@ const tools = {
     /* Tip share of grand total — not raw tip% (which can fill the stage) */
     var tipH = Math.max(0, Math.min(92, (tipPct / (100 + Math.max(tipPct, 0))) * 100));
     var html = '<div class="person-cols">';
-    for (var i = 0; i < n; i++) html += '<b style="--tip:' + tipH.toFixed(1) + '%"></b>';
+    for (var i = 0; i < n; i++) html += '<b data-scrub="people" style="--tip:' + tipH.toFixed(1) + '%"></b>';
     html += '</div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
@@ -173,7 +173,7 @@ const tools = {
     var worked = Math.max(0, Math.min(slots, Math.round(hpd)));
     var html = '<div class="day-cols">';
     for (var i = 0; i < d; i++) {
-      html += '<div class="day">';
+      html += '<div class="day" data-scrub="days">';
       for (var s = 0; s < slots; s++) html += '<i class="' + (s < worked ? 'on' : '') + '"></i>';
       html += '</div>';
     }
@@ -897,7 +897,7 @@ const tools = {
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
       var pct = pot > 0 ? Math.max(0, Math.min(100, (p.amt / pot) * 100)) : 0;
-      html += '<div class="env" style="--fill:' + pct.toFixed(1) + '%"><em>' + p.label + '</em><i></i></div>';
+      html += '<div class="env" data-scrub="' + p.id + '" style="--fill:' + pct.toFixed(1) + '%"><em>' + p.label + '</em><i></i></div>';
     }
     html += '</div>';
     stage.innerHTML = html;
@@ -906,7 +906,7 @@ const tools = {
   function render(){
     var pot = Math.max(0, parseFloat(document.getElementById('pot').value) || 0);
     var parts = ENVS.map(function(e){
-      return { label: e.label, amt: Math.max(0, parseFloat(document.getElementById(e.id).value) || 0) };
+      return { id: e.id, label: e.label, amt: Math.max(0, parseFloat(document.getElementById(e.id).value) || 0) };
     });
     var used = parts.reduce(function(s, p){ return s + p.amt; }, 0);
     var left = pot - used;
@@ -1023,7 +1023,7 @@ const tools = {
     var n = Math.max(0, Math.min(52, Math.round(left)));
     var w = Math.max(0, Math.min(n, Math.round(want)));
     var html = '<div class="deal-grid" style="--cols:' + Math.min(13, Math.max(4, Math.ceil(Math.sqrt(n)))) + '">';
-    for (var i = 0; i < n; i++) html += '<i class="' + (i < w ? 'on' : '') + '"></i>';
+    for (var i = 0; i < n; i++) html += '<i class="' + (i < w ? 'on' : '') + '" data-scrub="' + (i < w ? 'want' : 'left') + '"></i>';
     html += '</div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
@@ -1084,8 +1084,8 @@ const tools = {
   function paint(run, p01){
     var n = Math.max(0, Math.min(24, Math.round(run)));
     var html = '<div class="streak-row">';
-    for (var i = 0; i < n; i++) html += '<i class="on"></i>';
-    if (n < 24) html += '<i class="next" style="--p:' + Math.round(p01 * 100) + '%"></i>';
+    for (var i = 0; i < n; i++) html += '<i class="on" data-scrub="run"></i>';
+    if (n < 24) html += '<i class="next" data-scrub="p" style="--p:' + Math.round(p01 * 100) + '%"></i>';
     html += '</div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
