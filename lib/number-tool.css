@@ -1543,8 +1543,17 @@ body.is-soon .soon-badge { align-self: center; }
   }
 }
 
-@media (max-width: 560px) {
-  h1 span { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  body.is-scrubbing,
+  body.is-scrubbing * {
+    cursor: auto !important;
+  }
+  .face-value.is-tick {
+    animation: none !important;
+  }
+  html[data-gestures="1"] .tool-stage [data-scrub]:active {
+    outline: 0;
+  }
 }
 
 /* Inline strip viz optional — hide when stage present for same tool */

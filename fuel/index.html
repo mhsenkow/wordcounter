@@ -10,7 +10,7 @@
 <meta name="description" content="mpg · trip cost">
 <link rel="canonical" href="https://ibm.io/fuel/">
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="../lib/number-tool.css?v=29">
+<link rel="stylesheet" href="../lib/number-tool.css?v=30">
 </head>
 <body class="tool-app" data-tool="fuel">
 <header class="masthead">
@@ -39,8 +39,8 @@
     </fieldset>
   </div>
 </main>
-<script src="../lib/suite.js?v=29"></script>
-<script src="../lib/number-tool.js?v=29"></script>
+<script src="../lib/suite.js?v=30"></script>
+<script src="../lib/number-tool.js?v=30"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('fuel');
@@ -69,9 +69,9 @@
     var gal = miles / mpg;
     var cost = gal * price;
     var l100 = 235.215 / mpg;
-    document.getElementById('out').textContent = '$' + cost.toFixed(2);
+    document.getElementById('out').textContent = IBMNumberTool.formatMoney(cost, { forceCents: true });
     document.getElementById('sub').textContent =
-      gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · $' + (price / mpg).toFixed(2) + '/mi';
+      gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · ' + IBMNumberTool.formatMoney(price / mpg, { forceCents: true }) + '/mi';
     paint(gal, miles);
   }
   ['miles','mpg','price'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });

@@ -27,7 +27,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz }) {
 <meta name="description" content="${blurb}">
 <link rel="canonical" href="https://ibm.io/${id}/">
 <link id="webFonts" rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="../lib/number-tool.css?v=29">
+<link rel="stylesheet" href="../lib/number-tool.css?v=30">
 </head>
 <body class="tool-app${soon ? ' is-soon' : ''}" data-tool="${id}">
 <header class="masthead">
@@ -49,8 +49,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=29"></script>
-<script src="../lib/number-tool.js?v=29"></script>
+<script src="../lib/suite.js?v=30"></script>
+<script src="../lib/number-tool.js?v=30"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');
@@ -97,7 +97,7 @@ const tools = {
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('bill');
-  function money(n){ return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+  function money(n){ return IBMNumberTool.formatMoney(n, { forceCents: true }); }
   function syncTipPresets(tipPct){
     document.querySelectorAll('#presets .preset').forEach(function(btn){
       btn.setAttribute('aria-pressed', String(Number(btn.getAttribute('data-tip')) === tipPct));
@@ -166,7 +166,7 @@ const tools = {
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('hourly');
-  function money(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  function money(n){ return IBMNumberTool.formatMoney(n); }
   function paint(days, hpd){
     var d = Math.max(0, Math.min(18, Math.round(days)));
     var slots = Math.max(1, Math.min(12, Math.round(hpd) || 1));
@@ -236,9 +236,9 @@ const tools = {
     var gal = miles / mpg;
     var cost = gal * price;
     var l100 = 235.215 / mpg;
-    document.getElementById('out').textContent = '$' + cost.toFixed(2);
+    document.getElementById('out').textContent = IBMNumberTool.formatMoney(cost, { forceCents: true });
     document.getElementById('sub').textContent =
-      gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · $' + (price / mpg).toFixed(2) + '/mi';
+      gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · ' + IBMNumberTool.formatMoney(price / mpg, { forceCents: true }) + '/mi';
     paint(gal, miles);
   }
   ['miles','mpg','price'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
@@ -789,7 +789,7 @@ const tools = {
     var n = Math.max(0, parseInt(document.getElementById('n').value, 10) || 0);
     var k = Math.max(0, parseInt(document.getElementById('k').value, 10) || 0);
     var ways = choose(n, k);
-    document.getElementById('out').textContent = ways.toLocaleString('en-US');
+    document.getElementById('out').textContent = IBMNumberTool.formatCount(ways);
     document.getElementById('sub').textContent = 'C(' + n + ', ' + k + ')';
     paint(n, k);
   }
@@ -888,10 +888,7 @@ const tools = {
     { id: 'move', label: 'move' },
     { id: 'fun', label: 'fun' }
   ];
-  function money(n){
-    var s = (Math.round(Math.abs(n) * 100) / 100).toFixed(Math.abs(n) % 1 ? 2 : 0);
-    return (n < 0 ? '−$' : '$') + s;
-  }
+  function money(n){ return IBMNumberTool.formatMoney(n); }
   function paint(pot, parts){
     var html = '<div class="env-cols">';
     for (var i = 0; i < parts.length; i++) {
