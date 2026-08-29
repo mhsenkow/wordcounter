@@ -16,10 +16,10 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | money | **fuel** | `fuel/` | `/fuel/` | live |
 | convert | **unit** | `unit/` | `/unit/` | live |
 | convert | **dose** | `dose/` | `/dose/` | live |
-| convert | **bandwidth** | `bitrate/` | `/bitrate/` | live |
-| convert | **scale** | `scalemap/` | `/scalemap/` | live |
+| convert | **bandwidth** | `bitrate/` | `/bitrate/` | live · labeled bandwidth |
+| convert | **scale** | `scalemap/` | `/scalemap/` | live · labeled scale |
 | form | **ratio** | `ratio/` | `/ratio/` | live |
-| form | **type** | `typescale/` | `/typescale/` | live |
+| form | **type** | `typescale/` | `/typescale/` | live · labeled type |
 | form | **exposure** | `exposure/` | `/exposure/` | live |
 | chance | **odds** | `odds/` | `/odds/` | live |
 | chance | **combo** | `combo/` | `/combo/` | live |

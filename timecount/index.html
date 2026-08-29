@@ -10,7 +10,10 @@
 <meta name="description" content="Track duration, countdown limits, and lap splits. Stays on this device.">
 <link rel="canonical" href="https://ibm.io/timecount/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cstyle%3Erect.bg%7Bfill%3A%23f4f4f4%7Dcircle.ink%7Bfill%3A%23161616%7Dcircle.ac%7Bfill%3A%230f62fe%7D%40media%20%28prefers-color-scheme%3Adark%29%7Brect.bg%7Bfill%3A%23161616%7Dcircle.ink%7Bfill%3A%23f4f4f4%7Dcircle.ac%7Bfill%3A%2378a9ff%7D%7D%3C%2Fstyle%3E%3Crect%20class%3D%22bg%22%20width%3D%2232%22%20height%3D%2232%22%2F%3E%3Ccircle%20class%3D%22ink%22%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%23161616%22%20stroke-width%3D%221%22%2F%3E%3Cpath%20class%3D%22ink%22%20d%3D%22M16%208v8l5%203%22%20fill%3D%22none%22%20stroke%3D%22%23161616%22%20stroke-width%3D%221%22%20stroke-linecap%3D%22butt%22%2F%3E%3Ccircle%20class%3D%22ac%22%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%221%22%2F%3E%3C%2Fsvg%3E">
-<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Press+Start+2P&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Press+Start+2P&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=JetBrains+Mono:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Press+Start+2P&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
 <style>
   :root, [data-theme="light"] {
     --bg: #f2f2f0; --face: #fafaf8; --ink: #111; --mute: #757575;
@@ -505,6 +508,13 @@
   .dial {
     position: relative; width: min(100%, 300px); aspect-ratio: 1;
     display: grid; place-items: center;
+    touch-action: none;
+    cursor: ns-resize;
+  }
+  .dial .label-input,
+  .dial .controls {
+    touch-action: manipulation;
+    cursor: text;
   }
   .done-tag {
     position: absolute; top: 14%; right: 12%; z-index: 3;
@@ -1636,6 +1646,7 @@
             <kbd>space</kbd> run · <kbd>l</kbd> split · <kbd>r</kbd> reset ·
             <kbd>esc</kbd> close · <kbd>⌘/ctrl</kbd>+<kbd>,</kbd> settings ·
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>t</kbd> theme
+            <br>drag or scroll the dial to nudge the limit · tap name to label the session
           </p>
         </fieldset>
         </div>
@@ -1655,7 +1666,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=30"></script>
+<script src="lib/suite.js?v=31"></script>
 <script>
 (function () {
   'use strict';
@@ -2863,6 +2874,67 @@
     if (e.key === 'l' || e.key === 'L') addSplit();
     if (e.key === 'r' || e.key === 'R') reset(true);
   });
+
+  /* Dial scrub — nudge limit like number-tool face scrub (does not reset the run) */
+  (function mountDialScrub() {
+    if (!dialEl) return;
+    var THRESH = 28;
+    var drag = null;
+    function nudge(dir, fast) {
+      var step = fast ? 5 * 60000 : 60000;
+      var cur = settings.target > 0 ? settings.target : 25 * 60000;
+      var next = Math.max(60000, Math.min(12 * 3600000, cur + dir * step));
+      setTarget(next, { resetTimer: false });
+    }
+    dialEl.addEventListener('wheel', function (e) {
+      if (document.body.classList.contains('settings-open')) return;
+      if (e.target && e.target.closest && e.target.closest('input, button')) return;
+      e.preventDefault();
+      var dy = e.deltaY;
+      if (Math.abs(dy) < 1) return;
+      nudge(dy < 0 ? 1 : -1, e.shiftKey);
+    }, { passive: false });
+    dialEl.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target && e.target.closest && e.target.closest('input, button, a')) return;
+      drag = { id: e.pointerId, lastY: e.clientY, accum: 0, moved: false };
+      try { dialEl.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    dialEl.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dy = e.clientY - drag.lastY;
+      drag.lastY = e.clientY;
+      drag.accum += dy;
+      if (!drag.moved && Math.abs(drag.accum) < 6) return;
+      drag.moved = true;
+      e.preventDefault();
+      while (Math.abs(drag.accum) >= THRESH) {
+        var dir = drag.accum < 0 ? 1 : -1;
+        drag.accum -= (drag.accum > 0 ? 1 : -1) * THRESH;
+        nudge(dir, e.shiftKey);
+      }
+    });
+    function endDrag(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      var moved = drag.moved;
+      var pid = drag.id;
+      drag = null;
+      try {
+        if (dialEl.hasPointerCapture && dialEl.hasPointerCapture(pid)) dialEl.releasePointerCapture(pid);
+      } catch (err) {}
+      if (moved) {
+        var block = function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          document.removeEventListener('click', block, true);
+        };
+        document.addEventListener('click', block, true);
+        setTimeout(function () { document.removeEventListener('click', block, true); }, 400);
+      }
+    }
+    dialEl.addEventListener('pointerup', endDrag);
+    dialEl.addEventListener('pointercancel', endDrag);
+  })();
 
   document.addEventListener('visibilitychange', function () {
     if (state.running) startTick();

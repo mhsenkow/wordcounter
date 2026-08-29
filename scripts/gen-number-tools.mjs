@@ -26,8 +26,11 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz }) {
 <title>${title} — ibm.io</title>
 <meta name="description" content="${blurb}">
 <link rel="canonical" href="https://ibm.io/${id}/">
-<link id="webFonts" rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="../lib/number-tool.css?v=30">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="webFonts" rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="${FONTS}"></noscript>
+<link rel="stylesheet" href="../lib/number-tool.css?v=31">
 </head>
 <body class="tool-app${soon ? ' is-soon' : ''}" data-tool="${id}">
 <header class="masthead">
@@ -49,8 +52,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=30"></script>
-<script src="../lib/number-tool.js?v=30"></script>
+<script src="../lib/suite.js?v=31"></script>
+<script src="../lib/number-tool.js?v=31"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');
@@ -859,7 +862,7 @@ const tools = {
   budget: {
     title: 'budget',
     blurb: 'week envelopes',
-    about: 'Split a weekly pot into envelopes. Face is what’s left unallocated — red when you overfill.',
+    about: 'Split a weekly pot into envelopes. Face is what is left unallocated — red when you overfill.',
     status: 'live',
     hasViz: true,
     body: `
@@ -1055,7 +1058,7 @@ const tools = {
   streak: {
     title: 'streak',
     blurb: 'coin bias',
-    about: 'Independent flips: a streak does not make the next toss “due.” Face is still p — not the fallacy.',
+    about: 'Independent flips: a streak does not make the next toss "due." Face is still p — not the fallacy.',
     status: 'live',
     hasViz: true,
     body: `

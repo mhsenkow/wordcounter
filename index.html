@@ -46,7 +46,10 @@
 }
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cstyle%3Erect.bg%7Bfill%3A%23f2f2f0%7Drect.ink%7Bfill%3A%23111%7Drect.ac%7Bfill%3A%23c45c26%7D%40media%20%28prefers-color-scheme%3Adark%29%7Brect.bg%7Bfill%3A%23161616%7Drect.ink%7Bfill%3A%23f0f0ee%7Drect.ac%7Bfill%3A%23e07a45%7D%7D%3C%2Fstyle%3E%3Crect%20class%3D%22bg%22%20width%3D%2232%22%20height%3D%2232%22%2F%3E%3Crect%20class%3D%22ink%22%20x%3D%227%22%20y%3D%229%22%20width%3D%2218%22%20height%3D%222%22%2F%3E%3Crect%20class%3D%22ink%22%20x%3D%227%22%20y%3D%2215%22%20width%3D%2218%22%20height%3D%222%22%2F%3E%3Crect%20class%3D%22ac%22%20x%3D%227%22%20y%3D%2221%22%20width%3D%2211%22%20height%3D%222%22%2F%3E%3C%2Fsvg%3E">
-<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&family=Manrope:wght@400;500;600&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&display=swap"></noscript>
 <style>
   @font-face {
     font-family: "OpenDyslexic";
@@ -4231,6 +4234,7 @@
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>m</kbd> voice ·
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>⌫</kbd> clear
             <span class="keys-swipe"> · swipe footer for settings · swipe theme · swipe count · pull settings shut · two-finger tap copies</span>
+            <br>tools grid (top right) jumps the suite · look settings sync with time and number tools
           </p>
         </fieldset>
       </div>
@@ -4288,7 +4292,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=30"></script>
+<script src="lib/suite.js?v=31"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
