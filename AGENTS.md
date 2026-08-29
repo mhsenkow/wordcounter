@@ -27,6 +27,24 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | chance | **sample** | `sample/` | `/sample/` | live |
 | chance | **streak** | `streak/` | `/streak/` | live |
 
+## Deploy sync
+
+```bash
+# Keep suite copies identical, mirror into portfolio/public
+scripts/sync-deploy.sh
+
+# Mirror + FTP GreenGeeks
+scripts/sync-deploy.sh --ftp
+
+# Mirror + Cloudflare Worker deploy
+scripts/sync-deploy.sh --cf
+
+# Everything
+scripts/sync-deploy.sh --all
+```
+
+`PORTFOLIO_PUBLIC` overrides the default `/Users/powerox/portfolio/portfolio/public`.
+
 Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers.
 
 ### Gesture vocabulary (number tools)

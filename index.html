@@ -3977,14 +3977,14 @@
       <button id="micBtn" class="icon-btn mic-btn" type="button" aria-label="voice dictation" aria-pressed="false" title="voice" hidden>
         <span class="mic-mark" aria-hidden="true"></span>
       </button>
-      <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+      <button id="settingsToggle" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="settings">settings</button>
       <button id="clear" type="button">clear</button>
       <button type="button" id="shareDraft" class="draft-action" hidden aria-label="share draft">share</button>
       <button type="button" id="copyDraft" class="draft-action" hidden aria-label="copy draft">copy</button>
     </div>
   </header>
 
-  <div id="settings" role="region" aria-label="settings" hidden>
+  <div id="settings" role="dialog" aria-modal="true" aria-label="settings" hidden>
     <div class="inner">
       <div class="sheet-grip" aria-hidden="true"></div>
       <div class="support" aria-label="support">
@@ -4288,7 +4288,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=6"></script>
+<script src="lib/suite.js?v=28"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
@@ -5652,14 +5652,44 @@
     render();
   }
 
+  var settingsFocusBefore = null;
+
+  function focusablesInSettings() {
+    if (!settingsPanel) return [];
+    return Array.prototype.slice.call(settingsPanel.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) {
+      if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') return false;
+      var style = window.getComputedStyle(el);
+      if (style.visibility === 'hidden' || style.display === 'none') return false;
+      return true;
+    });
+  }
+
+  function closeSuiteNav() {
+    if (window.IBMTools && typeof IBMTools.closeSuiteNav === 'function') IBMTools.closeSuiteNav();
+  }
+
   function setSettingsOpen(open) {
+    var wasOpen = document.body.classList.contains('settings-open');
     settingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     settingsToggle.textContent = open ? 'close' : 'settings';
     document.body.classList.toggle('settings-open', !!open);
     if (open) {
+      if (!wasOpen) settingsFocusBefore = document.activeElement;
+      closeSuiteNav();
       settingsPanel.hidden = false;
       settingsPanel.offsetHeight;
       settingsPanel.classList.add('open');
+      setTimeout(function () {
+        var list = focusablesInSettings();
+        var target = null;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] !== settingsToggle) { target = list[i]; break; }
+        }
+        target = target || settingsPanel;
+        try { target.focus(); } catch (err) {}
+      }, 0);
     } else {
       settingsPanel.classList.remove('open');
       var done = function (e) {
@@ -5676,6 +5706,13 @@
           settingsPanel.hidden = true;
         }
       }, 400);
+      if (wasOpen) {
+        var restore = settingsFocusBefore && document.contains(settingsFocusBefore)
+          ? settingsFocusBefore
+          : settingsToggle;
+        settingsFocusBefore = null;
+        try { restore.focus(); } catch (err2) {}
+      }
     }
   }
 
@@ -6408,7 +6445,6 @@
   });
 
   clearBtn.addEventListener('click', requestClear);
-  themeBtn.addEventListener('click', cycleTheme);
   micBtn.addEventListener('click', toggleVoice);
   voiceStop.addEventListener('click', onVoiceStopClick);
   if (copyDraftBtn) {
@@ -6443,15 +6479,39 @@
     if (settings.faces === 'auto') applySettingsControls();
   });
 
-  settingsToggle.addEventListener('click', function () {
+  settingsToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    closeSuiteNav();
     setSettingsOpen(settingsToggle.getAttribute('aria-expanded') !== 'true');
+  });
+
+  settingsPanel.addEventListener('keydown', function (e) {
+    if (!document.body.classList.contains('settings-open')) return;
+    if (e.key !== 'Tab') return;
+    var list = focusablesInSettings();
+    if (!list.length) return;
+    var first = list[0];
+    var last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   });
 
   document.addEventListener('pointerdown', function (e) {
     if (!document.body.classList.contains('settings-open')) return;
-    if (e.target.closest && e.target.closest('.dock')) return;
+    if (e.target.closest && e.target.closest('#settings, .dock, #settingsToggle, .suite-nav, .suite-chrome')) return;
     setSettingsOpen(false);
   }, true);
+
+  themeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    closeSuiteNav();
+    cycleTheme();
+  });
 
   // Keep typed number fields from zooming the page oddly on iOS (16px already),
   // and blur them so the dock stays reachable after picking a value.

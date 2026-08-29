@@ -27,7 +27,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz }) {
 <meta name="description" content="${blurb}">
 <link rel="canonical" href="https://ibm.io/${id}/">
 <link id="webFonts" rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="../lib/number-tool.css?v=27">
+<link rel="stylesheet" href="../lib/number-tool.css?v=28">
 </head>
 <body class="tool-app${soon ? ' is-soon' : ''}" data-tool="${id}">
 <header class="masthead">
@@ -49,8 +49,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=27"></script>
-<script src="../lib/number-tool.js?v=27"></script>
+<script src="../lib/suite.js?v=28"></script>
+<script src="../lib/number-tool.js?v=28"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');

@@ -980,6 +980,28 @@
     .actions { gap: 12px; }
   }
 
+  @media (pointer: coarse), (max-width: 560px) {
+    .mode-bar button,
+    .presets button,
+    .controls button {
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    .seg label span {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 12px;
+    }
+    #settings > .inner {
+      max-height: min(62dvh, 520px);
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    body.timecount-app {
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+  }
+
   /* ========== THEME INSTRUMENTS (match wordcounter depth) ========== */
 
   /* light — Braun precision */
@@ -1348,7 +1370,7 @@
     <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
       <span class="theme-orb" aria-hidden="true"></span>
     </button>
-    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-haspopup="dialog" aria-controls="settings">settings</button>
   </div>
 </header>
 <div id="stageGhost" class="stage-ghost" aria-hidden="true"></div>
@@ -1404,7 +1426,7 @@
 
   <footer class="dock">
     <div class="dock-inner">
-  <div id="settings" role="region" aria-label="settings" hidden>
+  <div id="settings" role="dialog" aria-modal="true" aria-label="settings" hidden>
     <div class="inner">
       <div class="fields">
         <div class="settings-head">
@@ -1633,7 +1655,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=6"></script>
+<script src="lib/suite.js?v=28"></script>
 <script>
 (function () {
   'use strict';
@@ -2013,16 +2035,46 @@
     seedLabelIfEmpty();
   }
 
+  var settingsFocusBefore = null;
+
+  function focusablesInSettings() {
+    if (!settingsPanel) return [];
+    return Array.prototype.slice.call(settingsPanel.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter(function (el) {
+      if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') return false;
+      var style = window.getComputedStyle(el);
+      if (style.visibility === 'hidden' || style.display === 'none') return false;
+      return true;
+    });
+  }
+
+  function closeSuiteNav() {
+    if (window.IBMTools && typeof IBMTools.closeSuiteNav === 'function') IBMTools.closeSuiteNav();
+  }
+
   function setSettingsOpen(open) {
+    var wasOpen = document.body.classList.contains('settings-open');
     settingsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     settingsToggle.textContent = open ? 'close' : 'settings';
     document.body.classList.toggle('settings-open', !!open);
     if (open) {
+      if (!wasOpen) settingsFocusBefore = document.activeElement;
+      closeSuiteNav();
       settingsPanel.hidden = false;
       settingsPanel.offsetHeight;
       settingsPanel.classList.add('open');
       var fields = settingsPanel.querySelector('.fields');
       if (fields) fields.scrollTop = 0;
+      setTimeout(function () {
+        var list = focusablesInSettings();
+        var target = null;
+        for (var i = 0; i < list.length; i++) {
+          if (list[i] !== settingsToggle) { target = list[i]; break; }
+        }
+        target = target || settingsPanel;
+        try { target.focus(); } catch (err) {}
+      }, 0);
     } else {
       settingsPanel.classList.remove('open');
       var done = function (e) {
@@ -2034,6 +2086,13 @@
       setTimeout(function () {
         if (!settingsPanel.classList.contains('open')) settingsPanel.hidden = true;
       }, 320);
+      if (wasOpen) {
+        var restore = settingsFocusBefore && document.contains(settingsFocusBefore)
+          ? settingsFocusBefore
+          : settingsToggle;
+        settingsFocusBefore = null;
+        try { restore.focus(); } catch (err2) {}
+      }
     }
   }
 
@@ -2656,14 +2715,34 @@
 
   settingsToggle.addEventListener('click', function (e) {
     e.stopPropagation();
+    closeSuiteNav();
     setSettingsOpen(settingsToggle.getAttribute('aria-expanded') !== 'true');
+  });
+  settingsPanel.addEventListener('keydown', function (e) {
+    if (!document.body.classList.contains('settings-open')) return;
+    if (e.key !== 'Tab') return;
+    var list = focusablesInSettings();
+    if (!list.length) return;
+    var first = list[0];
+    var last = list[list.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   });
   document.addEventListener('pointerdown', function (e) {
     if (!document.body.classList.contains('settings-open')) return;
-    if (e.target.closest && e.target.closest('#settings, .dock, #settingsToggle, .masthead, .suite-nav')) return;
+    if (e.target.closest && e.target.closest('#settings, .dock, #settingsToggle, .masthead, .suite-nav, .suite-chrome')) return;
     setSettingsOpen(false);
   }, true);
-  themeBtn.addEventListener('click', cycleTheme);
+  themeBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    closeSuiteNav();
+    cycleTheme();
+  });
   if (shuffleBtn) shuffleBtn.addEventListener('click', shuffleLooks);
   runBtn.addEventListener('click', toggleRun);
   lapBtn.addEventListener('click', addSplit);
