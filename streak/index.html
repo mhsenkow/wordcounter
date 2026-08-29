@@ -10,9 +10,9 @@
 <meta name="description" content="coin bias">
 <link rel="canonical" href="https://ibm.io/streak/">
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="../lib/number-tool.css?v=24">
+<link rel="stylesheet" href="../lib/number-tool.css?v=25">
 </head>
-<body class="tool-app is-soon" data-tool="streak">
+<body class="tool-app" data-tool="streak">
 <header class="masthead">
   <div class="masthead-start">
     <h1>streak</h1>
@@ -25,26 +25,69 @@
   </div>
 </header>
 <main>
-<p class="soon-badge">coming soon</p>
+
   <div class="face">
-    <div class="face-value" style="color:var(--mute)" role="status" aria-live="polite" aria-atomic="true">—</div>
-    <p class="face-sub">coin bias. Local instrument; not built yet.</p>
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">50%</div>
+    <p class="face-sub" id="sub">next toss</p>
   </div>
-  <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>coin</legend>
+      <label class="row"><span class="key">bias p</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="bias percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">streak</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="streak length"></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="streak presets">
+      <button type="button" class="preset" data-p="50" data-run="5">fair · 5</button>
+      <button type="button" class="preset" data-p="50" data-run="10">fair · 10</button>
+      <button type="button" class="preset" data-p="60" data-run="5">hot 60</button>
+      <button type="button" class="preset" data-p="40" data-run="5">cold 40</button>
+    </div>
+  </div>
 </main>
-<script src="../lib/suite.js?v=24"></script>
-<script src="../lib/number-tool.js?v=24"></script>
+<script src="../lib/suite.js?v=25"></script>
+<script src="../lib/number-tool.js?v=25"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('streak');
   window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'streak',
-    about: "Bias simulator for the gambler’s fallacy — coming soon.",
-    hasViz: false
+    about: "Independent flips: a streak does not make the next toss “due.” Face is still p — not the fallacy.",
+    hasViz: true
   });
-  document.body.classList.add('is-soon');
-  window.IBMNumberTool && IBMNumberTool.paintSoonGhost('streak');
 
+  var stage = IBMNumberTool.ensureStage('streak');
+  function paint(run, p01){
+    var n = Math.max(0, Math.min(24, Math.round(run)));
+    var html = '<div class="streak-row">';
+    for (var i = 0; i < n; i++) html += '<i class="on"></i>';
+    if (n < 24) html += '<i class="next" style="--p:' + Math.round(p01 * 100) + '%"></i>';
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var pct = Math.max(0, Math.min(100, parseFloat(document.getElementById('p').value) || 0));
+    var run = Math.max(0, parseInt(document.getElementById('run').value, 10) || 0);
+    var p01 = pct / 100;
+    var streakP = Math.pow(p01, run);
+    document.getElementById('out').textContent = (Math.round(pct * 10) / 10) + '%';
+    document.getElementById('sub').textContent =
+      'next still ' + pct + '% · P(run of ' + run + ') ' +
+      (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
+      ' · not “due”';
+    paint(run, p01);
+  }
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('p').value = btn.getAttribute('data-p');
+    document.getElementById('run').value = btn.getAttribute('data-run');
+    render();
+  });
+  ['p','run'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();
 })();
 </script>
 </body>

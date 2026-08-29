@@ -18,8 +18,11 @@
     { path: 'odds', primary: 'p', secondary: 'win' },
     { path: 'combo', primary: 'n', secondary: 'k' },
     { path: 'sample', primary: 'n', secondary: 'p' },
+    { path: 'budget', primary: 'pot', secondary: 'live' },
+    { path: 'exposure', primary: 'fnum', secondary: 'shut', pinchTarget: 'iso' },
+    { path: 'deal', primary: 'left', secondary: 'want' },
+    { path: 'streak', primary: 'p', secondary: 'run' },
   ];
-  const soon = ['budget', 'exposure', 'deal', 'streak'];
   const results = [];
 
   function loadFrame(path) {
@@ -134,26 +137,6 @@
           }
         }
       }
-    } catch (e) {
-      row.ok = false; row.notes.push(String(e && e.message || e));
-    }
-    if (iframe) iframe.remove();
-    results.push(row);
-  }
-
-  for (const s of soon) {
-    const row = { tool: s, ok: true, notes: [] };
-    let iframe;
-    try {
-      iframe = await loadFrame(s);
-      const doc = iframe.contentDocument;
-      if (!doc.body.classList.contains('is-soon')) {
-        row.ok = false; row.notes.push('not soon');
-      }
-      if (doc.documentElement.getAttribute('data-gestures') === '1') {
-        row.ok = false; row.notes.push('gestures mounted on soon');
-      }
-      doc.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -40 }));
     } catch (e) {
       row.ok = false; row.notes.push(String(e && e.message || e));
     }

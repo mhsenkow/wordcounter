@@ -1266,6 +1266,131 @@ body.is-soon .soon-badge { align-self: center; }
 .tool-stage[data-kind="budget"] .soon-ghost i:nth-child(2) {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
+.tool-stage[data-kind="budget"] .env-cols {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.tool-stage[data-kind="budget"] .env-cols .env {
+  flex: 1;
+  position: relative;
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--mute) 8%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+.tool-stage[data-kind="budget"] .env-cols .env em {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  color: var(--mute);
+  font-style: normal;
+  z-index: 1;
+}
+.tool-stage[data-kind="budget"] .env-cols .env i {
+  display: block;
+  width: 100%;
+  height: var(--fill, 0%);
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 40%, var(--rule));
+  transition: height var(--dur-slow) var(--ease-out);
+}
+
+.tool-stage[data-kind="exposure"] .exp-tri {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tool-stage[data-kind="exposure"] .exp-tri i {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: min(18vw, 90px) solid transparent;
+  border-right: min(18vw, 90px) solid transparent;
+  border-bottom: min(28vw, 140px) solid color-mix(in srgb, var(--accent) calc(var(--glow, .5) * 55%), var(--rule));
+  opacity: .85;
+}
+.tool-stage[data-kind="exposure"] .exp-tri i:nth-child(1) {
+  transform: translateY(8%);
+}
+.tool-stage[data-kind="exposure"] .exp-tri i:nth-child(2) {
+  border-left-width: min(12vw, 60px);
+  border-right-width: min(12vw, 60px);
+  border-bottom-width: min(18vw, 90px);
+  border-bottom-color: color-mix(in srgb, var(--mute) 22%, var(--bg));
+  transform: translateY(28%);
+  opacity: .7;
+}
+.tool-stage[data-kind="exposure"] .exp-tri i:nth-child(3) {
+  border-left-width: min(7vw, 36px);
+  border-right-width: min(7vw, 36px);
+  border-bottom-width: min(11vw, 55px);
+  border-bottom-color: color-mix(in srgb, var(--accent) calc(var(--glow, .5) * 80%), transparent);
+  transform: translateY(42%);
+}
+
+.tool-stage[data-kind="deal"] .deal-grid {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 8), minmax(0, 1fr));
+  gap: 5px;
+  align-content: center;
+  justify-content: center;
+  max-width: 420px;
+  left: 50%;
+  right: auto;
+  width: min(420px, calc(100% - var(--pad-l) - var(--pad-r)));
+  transform: translateX(-50%);
+}
+.tool-stage[data-kind="deal"] .deal-grid i {
+  aspect-ratio: 2.5 / 3.5;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--face) 60%, transparent);
+}
+.tool-stage[data-kind="deal"] .deal-grid i.on {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--rule));
+}
+
+.tool-stage[data-kind="streak"] .streak-row {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tool-stage[data-kind="streak"] .streak-row i {
+  width: min(7vw, 32px);
+  height: min(7vw, 32px);
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--mute) 12%, transparent);
+}
+.tool-stage[data-kind="streak"] .streak-row i.on {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--rule));
+}
+.tool-stage[data-kind="streak"] .streak-row i.next {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) var(--p, 50%), transparent);
+  opacity: .85;
+}
 .tool-stage[data-kind="deal"] .soon-ghost {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

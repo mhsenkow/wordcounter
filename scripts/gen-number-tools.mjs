@@ -27,7 +27,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz }) {
 <meta name="description" content="${blurb}">
 <link rel="canonical" href="https://ibm.io/${id}/">
 <link id="webFonts" rel="stylesheet" href="${FONTS}">
-<link rel="stylesheet" href="../lib/number-tool.css?v=24">
+<link rel="stylesheet" href="../lib/number-tool.css?v=25">
 </head>
 <body class="tool-app${soon ? ' is-soon' : ''}" data-tool="${id}">
 <header class="masthead">
@@ -49,8 +49,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=24"></script>
-<script src="../lib/number-tool.js?v=24"></script>
+<script src="../lib/suite.js?v=25"></script>
+<script src="../lib/number-tool.js?v=25"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');
@@ -859,38 +859,260 @@ const tools = {
   budget: {
     title: 'budget',
     blurb: 'week envelopes',
-    about: 'Envelope cash categories for the week — coming soon.',
-    status: 'soon',
-    hasViz: false,
-    body: '',
-    script: ''
+    about: 'Split a weekly pot into envelopes. Face is what’s left unallocated — red when you overfill.',
+    status: 'live',
+    hasViz: true,
+    body: `
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0</div>
+    <p class="face-sub" id="sub">left this week</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>week</legend>
+      <label class="row"><span class="key">pot</span><span class="value"><input id="pot" type="number" inputmode="decimal" min="0" step="10" value="600" data-primary data-axis="y" data-axis-x="live" data-step-fast="50" data-gesture="1" aria-label="weekly pot"></span></label>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>envelopes</legend>
+      <label class="row"><span class="key">live</span><span class="value"><input id="live" type="number" inputmode="decimal" min="0" step="10" value="280" data-step-fast="25" aria-label="live envelope"></span></label>
+      <label class="row"><span class="key">food</span><span class="value"><input id="food" type="number" inputmode="decimal" min="0" step="5" value="120" data-step-fast="20" aria-label="food envelope"></span></label>
+      <label class="row"><span class="key">move</span><span class="value"><input id="move" type="number" inputmode="decimal" min="0" step="5" value="80" data-step-fast="20" aria-label="move envelope"></span></label>
+      <label class="row"><span class="key">fun</span><span class="value"><input id="fun" type="number" inputmode="decimal" min="0" step="5" value="60" data-step-fast="20" aria-label="fun envelope"></span></label>
+    </fieldset>
+  </div>`,
+    script: `
+  var stage = IBMNumberTool.ensureStage('budget');
+  var ENVS = [
+    { id: 'live', label: 'live' },
+    { id: 'food', label: 'food' },
+    { id: 'move', label: 'move' },
+    { id: 'fun', label: 'fun' }
+  ];
+  function money(n){
+    var s = (Math.round(Math.abs(n) * 100) / 100).toFixed(Math.abs(n) % 1 ? 2 : 0);
+    return (n < 0 ? '−$' : '$') + s;
+  }
+  function paint(pot, parts){
+    var html = '<div class="env-cols">';
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      var pct = pot > 0 ? Math.max(0, Math.min(100, (p.amt / pot) * 100)) : 0;
+      html += '<div class="env" style="--fill:' + pct.toFixed(1) + '%"><em>' + p.label + '</em><i></i></div>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var pot = Math.max(0, parseFloat(document.getElementById('pot').value) || 0);
+    var parts = ENVS.map(function(e){
+      return { label: e.label, amt: Math.max(0, parseFloat(document.getElementById(e.id).value) || 0) };
+    });
+    var used = parts.reduce(function(s, p){ return s + p.amt; }, 0);
+    var left = pot - used;
+    document.getElementById('out').textContent = money(left);
+    document.getElementById('out').style.color = left < 0 ? 'var(--mark, var(--accent))' : '';
+    document.getElementById('sub').textContent =
+      left < 0
+        ? 'over by ' + money(Math.abs(left)) + ' · used ' + money(used)
+        : money(used) + ' allocated · ' + (pot ? Math.round((used / pot) * 100) : 0) + '%';
+    paint(pot, parts);
+  }
+  ['pot','live','food','move','fun'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();`
   },
+
   exposure: {
     title: 'exposure',
     blurb: 'iso · shutter',
-    about: 'Stops triangle for photographers — coming soon.',
-    status: 'soon',
-    hasViz: false,
-    body: '',
-    script: ''
+    about: 'Exposure value from ISO, aperture, and shutter. Sunny 16 sits near EV 15 at ISO 100.',
+    status: 'live',
+    hasViz: true,
+    body: `
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">EV 0</div>
+    <p class="face-sub" id="sub">exposure value</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>triangle</legend>
+      <label class="row"><span class="key">ISO</span><span class="value"><input id="iso" type="number" inputmode="numeric" min="25" step="25" value="100" data-step-fast="100" aria-label="ISO"></span></label>
+      <label class="row"><span class="key">ƒ</span><span class="value"><input id="fnum" type="number" inputmode="decimal" min="0.5" step="0.1" value="8" data-primary data-axis="y" data-axis-x="shut" data-pinch="iso" data-step-fast="1" data-gesture="1" aria-label="aperture"></span></label>
+      <label class="row"><span class="key">shutter</span><span class="value"><input id="shut" type="number" inputmode="numeric" min="1" step="1" value="125" data-step-fast="25" aria-label="shutter denominator"><span class="unit">1/n</span></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="sunny 16 presets">
+      <button type="button" class="preset" data-iso="100" data-f="16" data-shut="125">sunny</button>
+      <button type="button" class="preset" data-iso="100" data-f="11" data-shut="125">haze</button>
+      <button type="button" class="preset" data-iso="400" data-f="5.6" data-shut="250">shade</button>
+      <button type="button" class="preset" data-iso="800" data-f="2.8" data-shut="60">dim</button>
+    </div>
+  </div>`,
+    script: `
+  var stage = IBMNumberTool.ensureStage('exposure');
+  function paint(ev){
+    var t = Math.max(0.2, Math.min(1, (ev + 2) / 18));
+    var html = '<div class="exp-tri" style="--glow:' + t.toFixed(3) + '"><i></i><i></i><i></i></div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var iso = Math.max(25, parseFloat(document.getElementById('iso').value) || 100);
+    var f = Math.max(0.5, parseFloat(document.getElementById('fnum').value) || 1);
+    var shutN = Math.max(1, parseFloat(document.getElementById('shut').value) || 1);
+    var t = 1 / shutN;
+    var ev = Math.log((f * f) / t) / Math.LN2 - Math.log(iso / 100) / Math.LN2;
+    var sunnyDelta = ev - 15;
+    document.getElementById('out').textContent = 'EV ' + (Math.round(ev * 10) / 10);
+    document.getElementById('sub').textContent =
+      'ƒ/' + f + ' · 1/' + shutN + ' · ISO ' + iso +
+      (Math.abs(sunnyDelta) < 0.15
+        ? ' · sunny 16'
+        : ' · ' + (sunnyDelta > 0 ? '+' : '') + (Math.round(sunnyDelta * 10) / 10) + ' from sunny 16');
+    paint(ev);
+    document.querySelectorAll('#presets .preset').forEach(function(btn){
+      var match =
+        Number(btn.getAttribute('data-iso')) === iso &&
+        Number(btn.getAttribute('data-f')) === f &&
+        Number(btn.getAttribute('data-shut')) === shutN;
+      btn.setAttribute('aria-pressed', String(match));
+    });
+  }
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('iso').value = btn.getAttribute('data-iso');
+    document.getElementById('fnum').value = btn.getAttribute('data-f');
+    document.getElementById('shut').value = btn.getAttribute('data-shut');
+    render();
+  });
+  ['iso','fnum','shut'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();`
   },
+
   deal: {
     title: 'deal',
     blurb: 'deck left',
-    about: 'Cards remaining / odds of drawing X — coming soon.',
-    status: 'soon',
-    hasViz: false,
-    body: '',
-    script: ''
+    about: 'Cards still in the deck vs favorable ones left. Face is chance the next card is favorable.',
+    status: 'live',
+    hasViz: true,
+    body: `
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0%</div>
+    <p class="face-sub" id="sub">next card</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>deck</legend>
+      <label class="row"><span class="key">left</span><span class="value"><input id="left" type="number" inputmode="numeric" min="1" max="52" step="1" value="40" data-primary data-axis="y" data-axis-x="want" data-step-fast="5" data-gesture="1" aria-label="cards left"></span></label>
+      <label class="row"><span class="key">want</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="favorable left"></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="deck presets">
+      <button type="button" class="preset" data-left="52" data-want="4">aces</button>
+      <button type="button" class="preset" data-left="52" data-want="13">suit</button>
+      <button type="button" class="preset" data-left="52" data-want="16">faces+</button>
+      <button type="button" class="preset" data-left="20" data-want="3">late</button>
+    </div>
+  </div>`,
+    script: `
+  var stage = IBMNumberTool.ensureStage('deal');
+  function paint(left, want){
+    var n = Math.max(0, Math.min(52, Math.round(left)));
+    var w = Math.max(0, Math.min(n, Math.round(want)));
+    var html = '<div class="deal-grid" style="--cols:' + Math.min(13, Math.max(4, Math.ceil(Math.sqrt(n)))) + '">';
+    for (var i = 0; i < n; i++) html += '<i class="' + (i < w ? 'on' : '') + '"></i>';
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var left = Math.max(1, parseInt(document.getElementById('left').value, 10) || 1);
+    var want = Math.max(0, parseInt(document.getElementById('want').value, 10) || 0);
+    if (want > left) {
+      want = left;
+      document.getElementById('want').value = String(want);
+    }
+    var p = want / left;
+    var pct = Math.round(p * 1000) / 10;
+    document.getElementById('out').textContent = pct + '%';
+    document.getElementById('sub').textContent =
+      want + ' of ' + left + ' · odds 1∶' + (want ? (Math.round((left / want) * 10) / 10) : '∞');
+    paint(left, want);
+  }
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('left').value = btn.getAttribute('data-left');
+    document.getElementById('want').value = btn.getAttribute('data-want');
+    render();
+  });
+  ['left','want'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();`
   },
+
   streak: {
     title: 'streak',
     blurb: 'coin bias',
-    about: 'Bias simulator for the gambler’s fallacy — coming soon.',
-    status: 'soon',
-    hasViz: false,
-    body: '',
-    script: ''
+    about: 'Independent flips: a streak does not make the next toss “due.” Face is still p — not the fallacy.',
+    status: 'live',
+    hasViz: true,
+    body: `
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">50%</div>
+    <p class="face-sub" id="sub">next toss</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>coin</legend>
+      <label class="row"><span class="key">bias p</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="bias percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">streak</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="streak length"></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="streak presets">
+      <button type="button" class="preset" data-p="50" data-run="5">fair · 5</button>
+      <button type="button" class="preset" data-p="50" data-run="10">fair · 10</button>
+      <button type="button" class="preset" data-p="60" data-run="5">hot 60</button>
+      <button type="button" class="preset" data-p="40" data-run="5">cold 40</button>
+    </div>
+  </div>`,
+    script: `
+  var stage = IBMNumberTool.ensureStage('streak');
+  function paint(run, p01){
+    var n = Math.max(0, Math.min(24, Math.round(run)));
+    var html = '<div class="streak-row">';
+    for (var i = 0; i < n; i++) html += '<i class="on"></i>';
+    if (n < 24) html += '<i class="next" style="--p:' + Math.round(p01 * 100) + '%"></i>';
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var pct = Math.max(0, Math.min(100, parseFloat(document.getElementById('p').value) || 0));
+    var run = Math.max(0, parseInt(document.getElementById('run').value, 10) || 0);
+    var p01 = pct / 100;
+    var streakP = Math.pow(p01, run);
+    document.getElementById('out').textContent = (Math.round(pct * 10) / 10) + '%';
+    document.getElementById('sub').textContent =
+      'next still ' + pct + '% · P(run of ' + run + ') ' +
+      (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
+      ' · not “due”';
+    paint(run, p01);
+  }
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('p').value = btn.getAttribute('data-p');
+    document.getElementById('run').value = btn.getAttribute('data-run');
+    render();
+  });
+  ['p','run'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();`
   }
 };
 

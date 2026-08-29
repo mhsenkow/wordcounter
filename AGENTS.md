@@ -12,7 +12,7 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | desk | **time** | `timecount/index.html` | `/timecount/` | live |
 | money | **bill** | `bill/` | `/bill/` | live |
 | money | **hourly** | `hourly/` | `/hourly/` | live |
-| money | **budget** | `budget/` | `/budget/` | soon |
+| money | **budget** | `budget/` | `/budget/` | live |
 | money | **fuel** | `fuel/` | `/fuel/` | live |
 | convert | **unit** | `unit/` | `/unit/` | live |
 | convert | **dose** | `dose/` | `/dose/` | live |
@@ -20,12 +20,12 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | convert | **scale** | `scalemap/` | `/scalemap/` | live |
 | form | **ratio** | `ratio/` | `/ratio/` | live |
 | form | **type** | `typescale/` | `/typescale/` | live |
-| form | **exposure** | `exposure/` | `/exposure/` | soon |
+| form | **exposure** | `exposure/` | `/exposure/` | live |
 | chance | **odds** | `odds/` | `/odds/` | live |
 | chance | **combo** | `combo/` | `/combo/` | live |
-| chance | **deal** | `deal/` | `/deal/` | soon |
+| chance | **deal** | `deal/` | `/deal/` | live |
 | chance | **sample** | `sample/` | `/sample/` | live |
-| chance | **streak** | `streak/` | `/streak/` | soon |
+| chance | **streak** | `streak/` | `/streak/` | live |
 
 Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers.
 

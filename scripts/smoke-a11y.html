@@ -85,12 +85,13 @@
 
   iframe = await load('budget');
   doc = iframe.contentDocument;
-  check('soon-face-live', !!doc.querySelector('.face-value[aria-live="polite"]'));
-  check('soon-is-soon', doc.body.classList.contains('is-soon'));
+  check('budget-face-live', !!doc.querySelector('#out[aria-live="polite"]'));
+  check('budget-not-soon', !doc.body.classList.contains('is-soon'));
+  check('budget-gestures', doc.documentElement.getAttribute('data-gestures') === '1');
   iframe.remove();
 
   // live tools face-live spot check
-  for (const p of ['hourly', 'unit', 'combo']) {
+  for (const p of ['hourly', 'unit', 'combo', 'exposure', 'deal', 'streak']) {
     iframe = await load(p);
     check(p + '-face-live', iframe.contentDocument.getElementById('out').getAttribute('aria-live') === 'polite');
     iframe.remove();

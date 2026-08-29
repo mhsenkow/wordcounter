@@ -10,9 +10,9 @@
 <meta name="description" content="week envelopes">
 <link rel="canonical" href="https://ibm.io/budget/">
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
-<link rel="stylesheet" href="../lib/number-tool.css?v=24">
+<link rel="stylesheet" href="../lib/number-tool.css?v=25">
 </head>
-<body class="tool-app is-soon" data-tool="budget">
+<body class="tool-app" data-tool="budget">
 <header class="masthead">
   <div class="masthead-start">
     <h1>budget</h1>
@@ -25,26 +25,77 @@
   </div>
 </header>
 <main>
-<p class="soon-badge">coming soon</p>
+
   <div class="face">
-    <div class="face-value" style="color:var(--mute)" role="status" aria-live="polite" aria-atomic="true">—</div>
-    <p class="face-sub">week envelopes. Local instrument; not built yet.</p>
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0</div>
+    <p class="face-sub" id="sub">left this week</p>
   </div>
-  <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>week</legend>
+      <label class="row"><span class="key">pot</span><span class="value"><input id="pot" type="number" inputmode="decimal" min="0" step="10" value="600" data-primary data-axis="y" data-axis-x="live" data-step-fast="50" data-gesture="1" aria-label="weekly pot"></span></label>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>envelopes</legend>
+      <label class="row"><span class="key">live</span><span class="value"><input id="live" type="number" inputmode="decimal" min="0" step="10" value="280" data-step-fast="25" aria-label="live envelope"></span></label>
+      <label class="row"><span class="key">food</span><span class="value"><input id="food" type="number" inputmode="decimal" min="0" step="5" value="120" data-step-fast="20" aria-label="food envelope"></span></label>
+      <label class="row"><span class="key">move</span><span class="value"><input id="move" type="number" inputmode="decimal" min="0" step="5" value="80" data-step-fast="20" aria-label="move envelope"></span></label>
+      <label class="row"><span class="key">fun</span><span class="value"><input id="fun" type="number" inputmode="decimal" min="0" step="5" value="60" data-step-fast="20" aria-label="fun envelope"></span></label>
+    </fieldset>
+  </div>
 </main>
-<script src="../lib/suite.js?v=24"></script>
-<script src="../lib/number-tool.js?v=24"></script>
+<script src="../lib/suite.js?v=25"></script>
+<script src="../lib/number-tool.js?v=25"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('budget');
   window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'budget',
-    about: "Envelope cash categories for the week — coming soon.",
-    hasViz: false
+    about: "Split a weekly pot into envelopes. Face is what’s left unallocated — red when you overfill.",
+    hasViz: true
   });
-  document.body.classList.add('is-soon');
-  window.IBMNumberTool && IBMNumberTool.paintSoonGhost('budget');
 
+  var stage = IBMNumberTool.ensureStage('budget');
+  var ENVS = [
+    { id: 'live', label: 'live' },
+    { id: 'food', label: 'food' },
+    { id: 'move', label: 'move' },
+    { id: 'fun', label: 'fun' }
+  ];
+  function money(n){
+    var s = (Math.round(Math.abs(n) * 100) / 100).toFixed(Math.abs(n) % 1 ? 2 : 0);
+    return (n < 0 ? '−$' : '$') + s;
+  }
+  function paint(pot, parts){
+    var html = '<div class="env-cols">';
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i];
+      var pct = pot > 0 ? Math.max(0, Math.min(100, (p.amt / pot) * 100)) : 0;
+      html += '<div class="env" style="--fill:' + pct.toFixed(1) + '%"><em>' + p.label + '</em><i></i></div>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var pot = Math.max(0, parseFloat(document.getElementById('pot').value) || 0);
+    var parts = ENVS.map(function(e){
+      return { label: e.label, amt: Math.max(0, parseFloat(document.getElementById(e.id).value) || 0) };
+    });
+    var used = parts.reduce(function(s, p){ return s + p.amt; }, 0);
+    var left = pot - used;
+    document.getElementById('out').textContent = money(left);
+    document.getElementById('out').style.color = left < 0 ? 'var(--mark, var(--accent))' : '';
+    document.getElementById('sub').textContent =
+      left < 0
+        ? 'over by ' + money(Math.abs(left)) + ' · used ' + money(used)
+        : money(used) + ' allocated · ' + (pot ? Math.round((used / pot) * 100) : 0) + '%';
+    paint(pot, parts);
+  }
+  ['pot','live','food','move','fun'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();
 })();
 </script>
 </body>
