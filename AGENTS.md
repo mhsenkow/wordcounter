@@ -29,6 +29,18 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 
 Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers.
 
+### Gesture vocabulary (number tools)
+
+| Surface | Vertical | Horizontal | Notes |
+|---|---|---|---|
+| Face / chart | `data-primary` | `data-axis-x` | Pinch → `data-pinch` or primary |
+| Value row | that row’s input | same field | Tap (no drag) focuses to type |
+| Stack | scroll if mid-list | — | Wheel defers while scrollable |
+| Ratio stage | own drag | own drag | Skips shared scrub |
+| Steppers | ± hold | — | Independent of scrub |
+
+Attrs on inputs: `data-primary`, `data-axis-x`, `data-pinch`, `data-step-fast`.
+
 ## Live hosting (keep both in sync)
 
 | Surface | Where the files live | Who serves `/wordcount` |
