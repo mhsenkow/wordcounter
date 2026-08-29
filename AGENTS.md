@@ -60,6 +60,23 @@ Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/sui
 
 Attrs on inputs: `data-primary`, `data-axis-x`, `data-pinch`, `data-step-fast`.
 
+### Persistence
+
+| Key | Scope | Fields |
+|---|---|---|
+| `ibm.tools.shared` | suite-wide | `theme`, `ui`, `font`, `faces`, `recent` |
+| `ibm.tool.<id>.settings` | one number tool | look + `showViz` |
+| `wordcounter.settings` / `wordcounter.text` | words | desk-local |
+| timecount local keys | time | desk-local |
+
+### Product boundaries
+
+- In-page tools stay local / offline-first. No accounts, export suites, or AI inside the static pages.
+- MCP connector is a separate Worker (`mcp/`) for agents that want counts via API — linked from words settings, not embedded in the instrument UI.
+- Suite identity stays quiet: no marketing landing; the tools grid is the map.
+
+Look settings prefer `ibm.tools.shared` on load so theme/chrome stay aligned across tools.
+
 ## Live hosting (keep both in sync)
 
 | Surface | Where the files live | Who serves `/wordcount` |
