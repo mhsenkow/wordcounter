@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>hourly — ibm.io</title>
+<meta name="description" content="rate · project">
+<link rel="canonical" href="https://ibm.io/hourly/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="hourly">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>hourly</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0</div>
+    <p class="face-sub" id="sub">project total</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>rate</legend>
+      <label class="row"><span class="key">$ / hour</span><span class="value"><input id="rate" type="number" inputmode="decimal" min="0" step="1" value="125" data-step-fast="10" aria-label="hourly rate"></span></label>
+      <label class="row"><span class="key">hours / day</span><span class="value"><input id="hpd" type="number" inputmode="decimal" min="0" step="0.5" value="6" aria-label="hours per day"></span></label>
+      <label class="row"><span class="key">days</span><span class="value"><input id="days" type="number" inputmode="decimal" min="0" step="0.5" value="10" data-primary data-axis="y" data-axis-x="hpd" data-pinch="rate" data-step-fast="5" data-gesture="1" aria-label="days"></span></label>
+    </fieldset>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('hourly');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'hourly',
+    about: "Hourly ↔ day rate ↔ project total. Day columns fill with worked hours.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('hourly');
+  function money(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+  function paint(days, hpd){
+    var d = Math.max(0, Math.min(18, Math.round(days)));
+    var slots = Math.max(1, Math.min(12, Math.round(hpd) || 1));
+    var worked = Math.max(0, Math.min(slots, Math.round(hpd)));
+    var html = '<div class="day-cols">';
+    for (var i = 0; i < d; i++) {
+      html += '<div class="day">';
+      for (var s = 0; s < slots; s++) html += '<i class="' + (s < worked ? 'on' : '') + '"></i>';
+      html += '</div>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var rate = Math.max(0, parseFloat(document.getElementById('rate').value) || 0);
+    var hpd = Math.max(0, parseFloat(document.getElementById('hpd').value) || 0);
+    var days = Math.max(0, parseFloat(document.getElementById('days').value) || 0);
+    var hours = hpd * days;
+    var total = rate * hours;
+    var dayRate = rate * hpd;
+    document.getElementById('out').textContent = money(total);
+    document.getElementById('sub').textContent =
+      'day rate ' + money(dayRate) + (hours ? ' · ' + hours + 'h' : '');
+    paint(days, hpd);
+  }
+  ['rate','hpd','days'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  render();
+})();
+</script>
+</body>
+</html>

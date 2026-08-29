@@ -147,26 +147,28 @@ Layout: masthead (modes left, limit presets + theme + settings right) → dial f
 
 ## Tools suite
 
-Top-right grid switches between [wordcount](https://ibm.io/wordcount/) and [timecount](https://ibm.io/timecount/). Theme / chrome / font sync via `localStorage` key `ibm.tools.shared`.
+Top-right **panel** (icons + micro titles) links the desk apps and number instruments: bill, hourly, fuel, unit, dose, bandwidth (/bitrate/), scale, ratio, type, odds, combo, sample — plus coming-soon slots for budget, exposure, deal, streak. Theme / chrome / font sync via `localStorage` key `ibm.tools.shared`. Regenerate number pages with `node scripts/gen-number-tools.mjs`.
 
 ## File layout
 
 ```
 wordcounter/
-├── index.html       # Word counter UI
-├── timecount/
-│   └── index.html   # Time counter — stopwatch, countdown, laps
+├── index.html           # Word counter
+├── timecount/           # Time counter
+├── bill/ hourly/ fuel/ …  # Number instruments (each index.html)
 ├── lib/
-│   ├── count.mjs    # Shared text metrics
-│   ├── time.mjs     # Shared time metrics
-│   └── suite.js     # Top-right tools switcher + shared theme
+│   ├── count.mjs
+│   ├── time.mjs
+│   └── suite.js         # Panel nav + shared theme
+├── scripts/
+│   └── gen-number-tools.mjs
 ├── README.md
-└── AGENTS.md        # Deploy / hosting notes for agents
+└── AGENTS.md
 ```
 
 ## Production
 
-Live at [ibm.io/wordcount](https://ibm.io/wordcount/) and [ibm.io/timecount](https://ibm.io/timecount/). Deploy steps (GreenGeeks + Cloudflare) are in `AGENTS.md`.
+Live desk apps at [ibm.io/wordcount](https://ibm.io/wordcount/) and [ibm.io/timecount](https://ibm.io/timecount/); number tools at sibling paths (`/bill/`, `/unit/`, …). Deploy steps in `AGENTS.md`.
 
 ## License
 

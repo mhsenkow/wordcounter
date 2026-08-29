@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>ratio — ibm.io</title>
+<meta name="description" content="aspect · gold">
+<link rel="canonical" href="https://ibm.io/ratio/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="ratio">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>ratio</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="ratio-stage" id="stage" tabindex="0" aria-label="adjust aspect"><div class="box" id="box"></div></div>
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">1.618</div>
+    <p class="face-sub" id="sub">width ÷ height</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>size</legend>
+      <label class="row"><span class="key">width</span><span class="value"><input id="w" type="number" inputmode="numeric" min="1" step="1" value="1618" data-primary data-axis="y" data-step-fast="10" data-gesture="1" aria-label="width"></span></label>
+      <label class="row"><span class="key">height</span><span class="value"><input id="h" type="number" inputmode="numeric" min="1" step="1" value="1000" data-step-fast="10" aria-label="height"></span></label>
+    </fieldset>
+    <div class="presets" role="group" aria-label="aspect presets">
+      <button type="button" class="preset" data-r="1.618">gold</button>
+      <button type="button" class="preset" data-r="1.777">16:9</button>
+      <button type="button" class="preset" data-r="1.333">4:3</button>
+      <button type="button" class="preset" data-r="1">1:1</button>
+      <button type="button" class="preset" data-r="0.707">√2</button>
+    </div>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('ratio');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'ratio',
+    about: "Drag the rectangle; width÷height updates. The stage is the instrument.",
+    hasViz: true
+  });
+
+  IBMNumberTool.ensureStage('ratio');
+  var box = document.getElementById('box');
+  var stage = document.getElementById('stage');
+  function syncPresets(r){
+    document.querySelectorAll('.presets .preset').forEach(function(btn){
+      var v = parseFloat(btn.getAttribute('data-r'));
+      btn.setAttribute('aria-pressed', String(Math.abs(v - r) < 0.01));
+    });
+  }
+  function syncBox(){
+    var w = Math.max(1, parseFloat(document.getElementById('w').value) || 1);
+    var h = Math.max(1, parseFloat(document.getElementById('h').value) || 1);
+    var r = w / h;
+    document.getElementById('out').textContent = r.toFixed(3);
+    document.getElementById('sub').textContent = Math.round(w) + ' × ' + Math.round(h);
+    var pct = Math.min(76, Math.max(18, 12 + r * 28));
+    box.style.width = pct + '%';
+    syncPresets(r);
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function setRatio(r){
+    var h = Math.max(1, parseFloat(document.getElementById('h').value) || 1000);
+    document.getElementById('w').value = Math.round(h * r);
+    syncBox();
+  }
+  ['w','h'].forEach(function(id){ document.getElementById(id).addEventListener('input', syncBox); });
+  document.querySelector('.presets').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-r]');
+    if (btn) setRatio(parseFloat(btn.getAttribute('data-r')));
+  });
+  stage.addEventListener('pointerdown', function(e){
+    if (e.target.closest && e.target.closest('input,button,a')) return;
+    stage.setPointerCapture(e.pointerId);
+    function move(ev){
+      var rect = stage.getBoundingClientRect();
+      var x = Math.min(0.88, Math.max(0.18, (ev.clientX - rect.left) / rect.width));
+      var h = Math.max(1, parseFloat(document.getElementById('h').value) || 1000);
+      var r = Math.max(0.4, Math.min(3.2, (x - 0.12) / 0.28));
+      document.getElementById('w').value = Math.round(h * r);
+      syncBox();
+    }
+    function up(){ stage.releasePointerCapture(e.pointerId); stage.removeEventListener('pointermove', move); stage.removeEventListener('pointerup', up); }
+    stage.addEventListener('pointermove', move);
+    stage.addEventListener('pointerup', up);
+    move(e);
+  });
+  stage.addEventListener('keydown', function(e){
+    if (document.body.classList.contains('settings-open')) return;
+    var wEl = document.getElementById('w');
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (window.IBMNumberTool && IBMNumberTool.stepAmount) IBMNumberTool.stepAmount(wEl, 1, { fast: e.shiftKey });
+      else { wEl.value = String(Math.max(1, (parseFloat(wEl.value) || 1) + (e.shiftKey ? 10 : 1))); wEl.dispatchEvent(new Event('input', { bubbles: true })); }
+      syncBox();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (window.IBMNumberTool && IBMNumberTool.stepAmount) IBMNumberTool.stepAmount(wEl, -1, { fast: e.shiftKey });
+      else { wEl.value = String(Math.max(1, (parseFloat(wEl.value) || 1) - (e.shiftKey ? 10 : 1))); wEl.dispatchEvent(new Event('input', { bubbles: true })); }
+      syncBox();
+    }
+  });
+  /* Trackpad: wheel nudges aspect (width); pinch scales both preserving ratio */
+  (function(){
+    var acc = 0;
+    var T = 40;
+    stage.addEventListener('wheel', function(e){
+      if (document.body.classList.contains('settings-open')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      var wEl = document.getElementById('w');
+      var hEl = document.getElementById('h');
+      if (e.ctrlKey || e.metaKey) {
+        acc += e.deltaY;
+        while (Math.abs(acc) >= T) {
+          var dir = acc < 0 ? 1 : -1;
+          acc -= (acc > 0 ? 1 : -1) * T;
+          var w0 = Math.max(1, parseFloat(wEl.value) || 1);
+          var h0 = Math.max(1, parseFloat(hEl.value) || 1);
+          var scale = dir > 0 ? 1.05 : 1 / 1.05;
+          wEl.value = String(Math.max(1, Math.round(w0 * scale)));
+          hEl.value = String(Math.max(1, Math.round(h0 * scale)));
+          syncBox();
+        }
+        return;
+      }
+      acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      while (Math.abs(acc) >= T) {
+        var d = acc < 0 ? 1 : -1;
+        acc -= (acc > 0 ? 1 : -1) * T;
+        if (window.IBMNumberTool && IBMNumberTool.stepAmount) {
+          IBMNumberTool.stepAmount(wEl, d, { fast: e.shiftKey });
+        } else {
+          wEl.value = String(Math.max(1, (parseFloat(wEl.value) || 1) + d));
+          wEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        syncBox();
+      }
+    }, { passive: false });
+  })();
+  syncBox();
+})();
+</script>
+</body>
+</html>

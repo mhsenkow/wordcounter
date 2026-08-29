@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>bill — ibm.io</title>
+<meta name="description" content="tip · split">
+<link rel="canonical" href="https://ibm.io/bill/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="bill">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>bill</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0.00</div>
+    <p class="face-sub" id="sub">per person</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>receipt</legend>
+      <label class="row"><span class="key">total</span><span class="value"><input id="total" type="number" inputmode="decimal" min="0" step="0.01" value="86.40" aria-label="receipt total"></span></label>
+      <label class="row"><span class="key">tip</span><span class="value"><input id="tip" type="number" inputmode="decimal" min="0" step="1" value="20" data-primary data-axis="y" data-axis-x="people" data-step-fast="5" data-gesture="1" aria-label="tip percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">people</span><span class="value"><input id="people" type="number" inputmode="numeric" min="1" step="1" value="2" aria-label="people"></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="tip presets">
+      <button type="button" class="preset" data-tip="15" aria-pressed="false">15%</button>
+      <button type="button" class="preset" data-tip="18" aria-pressed="false">18%</button>
+      <button type="button" class="preset" data-tip="20" aria-pressed="true">20%</button>
+      <button type="button" class="preset" data-tip="25" aria-pressed="false">25%</button>
+    </div>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('bill');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'bill',
+    about: "Receipt total → tip → per person. Person columns show tip share of the grand total.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('bill');
+  function money(n){ return '$' + (Math.round(n * 100) / 100).toFixed(2); }
+  function syncTipPresets(tipPct){
+    document.querySelectorAll('#presets .preset').forEach(function(btn){
+      btn.setAttribute('aria-pressed', String(Number(btn.getAttribute('data-tip')) === tipPct));
+    });
+  }
+  function paint(people, tipPct){
+    var n = Math.max(1, Math.min(12, people));
+    /* Tip share of grand total — not raw tip% (which can fill the stage) */
+    var tipH = Math.max(0, Math.min(92, (tipPct / (100 + Math.max(tipPct, 0))) * 100));
+    var html = '<div class="person-cols">';
+    for (var i = 0; i < n; i++) html += '<b style="--tip:' + tipH.toFixed(1) + '%"></b>';
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var total = Math.max(0, parseFloat(document.getElementById('total').value) || 0);
+    var tipPct = Math.max(0, parseFloat(document.getElementById('tip').value) || 0);
+    var people = Math.max(1, parseInt(document.getElementById('people').value, 10) || 1);
+    var tip = total * tipPct / 100;
+    var grand = total + tip;
+    var each = grand / people;
+    document.getElementById('out').textContent = money(each);
+    document.getElementById('sub').textContent =
+      (people === 1 ? 'you pay' : 'per person') + ' · tip ' + money(tip) + ' · total ' + money(grand);
+    paint(people, tipPct);
+    syncTipPresets(tipPct);
+    try { localStorage.setItem('ibm.tool.bill', JSON.stringify({ total: total, tip: tipPct, people: people })); } catch(e){}
+  }
+  ['total','tip','people'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('[data-tip]');
+    if (!btn) return;
+    document.getElementById('tip').value = btn.getAttribute('data-tip');
+    render();
+  });
+  try {
+    var saved = JSON.parse(localStorage.getItem('ibm.tool.bill') || 'null');
+    if (saved) {
+      if (saved.total != null) document.getElementById('total').value = saved.total;
+      if (saved.tip != null) document.getElementById('tip').value = saved.tip;
+      if (saved.people != null) document.getElementById('people').value = saved.people;
+    }
+  } catch(e){}
+  render();
+})();
+</script>
+</body>
+</html>

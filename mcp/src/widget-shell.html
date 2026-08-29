@@ -27,6 +27,14 @@
         <fieldset class="layer-row"><legend>ghost</legend><div class="opts"><div class="seg" data-setting="ghost"><label><input type="radio" name="ghost" value="primary" checked><span>primary</span></label><label><input type="radio" name="ghost" value="words"><span>words</span></label><label><input type="radio" name="ghost" value="chars"><span>chars</span></label></div><div class="seg" data-setting="ghostWeight"><label><input type="radio" name="ghostWeight" value="whisper" checked><span>whisper</span></label><label><input type="radio" name="ghostWeight" value="soft"><span>soft</span></label><label><input type="radio" name="ghostWeight" value="firm"><span>firm</span></label></div><div class="seg" data-setting="ghostPlace"><label><input type="radio" name="ghostPlace" value="se" checked><span>se</span></label><label><input type="radio" name="ghostPlace" value="sw"><span>sw</span></label><label><input type="radio" name="ghostPlace" value="ne"><span>ne</span></label><label><input type="radio" name="ghostPlace" value="nw"><span>nw</span></label></div></div><button type="button" class="layer-sq is-on" data-layer="ghost" aria-pressed="true" title="show ghost"></button></fieldset>
         <fieldset class="layer-row"><legend>target</legend><div class="target-field"><input id="targetInput" type="number" min="1" step="1" inputmode="numeric" placeholder="word goal"><em>words</em></div><button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" title="show target"></button></fieldset>
         <fieldset class="layer-row"><legend>chart</legend><div class="seg" data-setting="chart"><label><input type="radio" name="chart" value="dots" checked><span>dots</span></label><label><input type="radio" name="chart" value="squares"><span>squares</span></label><label><input type="radio" name="chart" value="ticks"><span>ticks</span></label><label><input type="radio" name="chart" value="bar"><span>bar</span></label><label><input type="radio" name="chart" value="ring"><span>ring</span></label></div><button type="button" class="layer-sq is-on" data-layer="chart" aria-pressed="true" title="show chart"></button></fieldset>
+        <fieldset class="about-info">
+          <legend>how it works</legend>
+          <p class="about-copy">Counts run locally in your browser — nothing is sent to a server. Words split on whitespace; sentences end at <code>. ! ? …</code>; paragraphs on blank lines. Reading time assumes 200 wpm; speaking 130 wpm; pages ~250 words.</p>
+          <p class="about-copy">Voice dictation uses your browser’s built-in speech recognition (Web Speech API). Audio is processed by the browser or OS — not by OpenAI or this app.</p>
+          <a class="about-github" href="https://github.com/mhsenkow/wordcounter" target="_blank" rel="noopener noreferrer" aria-label="source on GitHub" title="source on GitHub">
+            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+          </a>
+        </fieldset>
       </div>
     </div>
   </div>
@@ -34,7 +42,7 @@
   <section class="wc-hero">
     <div class="wc-primary" id="primaryBlock" data-figure="pair" aria-live="polite">
       <b id="primaryValue">0</b>
-      <span class="primary-notes"><span id="primaryLabel">words</span><span id="goalHint" class="goal-hint" hidden></span></span>
+      <span class="primary-notes"><span id="primaryLabel">words</span><span id="goalHint" class="goal-hint" hidden></span><span id="selectHint" class="select-hint" hidden></span></span>
     </div>
     <div id="progress" class="wc-progress" hidden aria-label="goal progress">
       <div id="viz" class="viz viz-dots"></div>
@@ -45,9 +53,12 @@
   <dl class="wc-metrics" id="metrics">
     <div data-metric="words"><dt>words</dt><dd id="m-words">0</dd></div>
     <div data-metric="chars"><dt>chars</dt><dd id="m-chars">0</dd></div>
+    <div data-metric="charsNoSpaces"><dt>no spaces</dt><dd id="m-charsNoSpaces">0</dd></div>
     <div data-metric="sentences"><dt>sentences</dt><dd id="m-sentences">0</dd></div>
     <div data-metric="paragraphs"><dt>paragraphs</dt><dd id="m-paragraphs">0</dd></div>
     <div data-metric="reading"><dt>reading</dt><dd id="m-reading">0:00</dd></div>
+    <div data-metric="speaking"><dt>speaking</dt><dd id="m-speaking">0:00</dd></div>
+    <div data-metric="pages"><dt>pages</dt><dd id="m-pages">0</dd></div>
   </dl>
 
   <div class="wc-editor" id="editor">

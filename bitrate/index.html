@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>bandwidth — ibm.io</title>
+<meta name="description" content="size ÷ speed">
+<link rel="canonical" href="https://ibm.io/bitrate/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="bitrate">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>bandwidth</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0:00</div>
+    <p class="face-sub" id="sub">estimate</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>transfer</legend>
+      <label class="row"><span class="key">size</span><span class="value"><input id="size" type="number" inputmode="decimal" min="0" step="10" value="1500" data-primary data-axis="y" data-axis-x="speed" data-step-fast="100" data-gesture="1" aria-label="file size"><span class="unit">MB</span></span></label>
+      <label class="row"><span class="key">speed</span><span class="value"><input id="speed" type="number" inputmode="decimal" min="0.01" step="1" value="100" data-step-fast="10" aria-label="bandwidth"><span class="unit">Mbps</span></span></label>
+    </fieldset>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('bitrate');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'bitrate',
+    about: "Rough wall-clock download time. Grid = MB chunks; dial = duration.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('bitrate');
+  var CIRC = 2 * Math.PI * 46;
+  function fmt(sec){
+    sec = Math.max(0, Math.round(sec));
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    var s = sec % 60;
+    if (h) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    return m + ':' + String(s).padStart(2,'0');
+  }
+  function paint(mb, sec){
+    var maxCells = 120;
+    var scale = mb > maxCells ? mb / maxCells : 1;
+    var cells = Math.max(0, Math.min(maxCells, Math.round(mb / scale)));
+    var ref = 3600;
+    var frac = Math.max(0, Math.min(1, sec / ref));
+    var arc = CIRC * frac;
+    stage.innerHTML =
+      '<div class="time-dial"><svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<circle class="track" cx="50" cy="50" r="46"/>' +
+      '<circle class="arc" cx="50" cy="50" r="46" style="stroke-dasharray:' + arc.toFixed(2) + ' ' + CIRC.toFixed(2) + '"/>' +
+      '</svg></div><div class="stage-grid is-sq" id="bwGrid"></div>';
+    IBMNumberTool.paintCells(document.getElementById('bwGrid'), {
+      count: cells, on: cells, shape: 'sq', cols: Math.ceil(Math.sqrt(cells)) || 1, rawCount: mb
+    });
+  }
+  function render(){
+    var mb = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
+    var mbps = Math.max(0.01, parseFloat(document.getElementById('speed').value) || 0.01);
+    var sec = (mb * 8) / mbps;
+    document.getElementById('out').textContent = fmt(sec);
+    document.getElementById('sub').textContent = mb + ' MB @ ' + mbps + ' Mbps';
+    paint(mb, sec);
+  }
+  ['size','speed'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  render();
+})();
+</script>
+</body>
+</html>

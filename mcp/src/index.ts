@@ -1,11 +1,19 @@
 import { McpServer } from '@modelcontextprotocol/server';
 import { createMcpHandler } from 'agents/mcp/server';
 import { z } from 'zod';
-import { countWithReading } from '../../lib/count.mjs';
+import {
+  countFull,
+  limitCheck,
+  countDelta,
+  formatSummary,
+  buildFullCounterUrl
+} from '../../lib/count.mjs';
 // @ts-expect-error wrangler Text module rule
 import widgetShell from './widget-shell.html';
 // @ts-expect-error wrangler Text module rule (.css must be .txt — esbuild treats .css as a module object)
-import widgetCss from './widget-styles.txt';
+import widgetStyles from './widget-styles.txt';
+// @ts-expect-error wrangler Text module rule
+import countBundle from './count-bundle.txt';
 // @ts-expect-error wrangler Text module rule
 import widgetScript from './widget-script.txt';
 // @ts-expect-error wrangler Text module rule
@@ -22,56 +30,128 @@ const WIDGET_URI = 'ui://widget/wordcount-v2.html';
 const WIDGET_MIME = 'text/html+skybridge';
 
 const widgetHtml =
-  '<style>' + widgetCss + '</style>' + widgetShell + '<script>' + widgetScript + '<\/script>';
+  '<style>' +
+  widgetStyles +
+  '</style>' +
+  widgetShell +
+  '<script>' +
+  countBundle +
+  widgetScript +
+  '<\/script>';
 
-function widgetDocument(seedText?: string) {
-  var seed = '';
-  if (seedText !== undefined) {
-    var escaped = JSON.stringify(seedText);
-    seed =
-      '<script>window.openai={toolInput:{text:' +
+type WidgetSeed = { text?: string; target?: number };
+
+function widgetDocument(seed?: WidgetSeed) {
+  let seedScript = '';
+  if (seed !== undefined) {
+    const input: Record<string, unknown> = {};
+    if (seed.text !== undefined) input.text = seed.text;
+    if (seed.target != null && seed.target > 0) input.target = seed.target;
+    const escaped = JSON.stringify(input);
+    seedScript =
+      '<script>window.openai={toolInput:' +
       escaped +
-      '},toolOutput:{text:' +
+      ',toolOutput:' +
       escaped +
       '}};<\/script>';
   }
   return (
     '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1"></head><body>' +
-    seed +
+    seedScript +
     widgetHtml +
     '</body></html>'
   );
 }
 
 const COUNT_DESCRIPTION =
-  'Count words, characters, sentences, paragraphs, and estimated reading time in text. ' +
+  'Count words, characters, characters without spaces, sentences, paragraphs, reading time, speaking time, and page estimate in text. ' +
   'Opens an interactive editor widget where the user can type or paste and see live counts alongside the chat. ' +
-  'Use when the user asks to count words, characters, sentences, paragraphs, or reading time in a draft, essay, or passage.';
+  'Use when the user asks to count words, characters, sentences, paragraphs, reading time, or check a word limit in a draft, essay, or passage.';
 
 const OPEN_COUNTER_DESCRIPTION =
-  'Open the interactive word counter editor in chat with an optional starting draft. ' +
+  'Open the interactive word counter editor in chat with an optional starting draft and word goal. ' +
   'The user can type, paste, and edit while counts update live. Use when they want to write or revise text with a word counter, ' +
   'not just a one-shot count of text they already pasted in chat.';
 
-const textSchema = {
-  text: z.string().describe('The text to analyze')
+const countInputSchema = {
+  text: z.string().describe('The text to analyze'),
+  target: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Optional word goal shown in the widget progress chart'),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Optional word limit — response includes overBy/underBy when set')
 };
 
-function formatSummary(c: ReturnType<typeof countWithReading>) {
-  return (
-    `${c.words} word${c.words === 1 ? '' : 's'}, ` +
-    `${c.chars} character${c.chars === 1 ? '' : 's'}, ` +
-    `${c.sentences} sentence${c.sentences === 1 ? '' : 's'}, ` +
-    `${c.paragraphs} paragraph${c.paragraphs === 1 ? '' : 's'}, ` +
-    `reading time ${c.reading}`
-  );
+const limitResultSchema = z.object({
+  limit: z.number(),
+  metric: z.string(),
+  value: z.number(),
+  overBy: z.number(),
+  underBy: z.number(),
+  met: z.boolean(),
+  status: z.enum(['over', 'under', 'exact'])
+});
+
+const countOutputSchema = z.object({
+  words: z.number(),
+  chars: z.number(),
+  charsNoSpaces: z.number(),
+  sentences: z.number(),
+  paragraphs: z.number(),
+  reading: z.string(),
+  speaking: z.string(),
+  pages: z.number(),
+  text: z.string(),
+  target: z.number().optional(),
+  limit: limitResultSchema.optional()
+});
+
+const countStatsSchema = z.object({
+  words: z.number(),
+  chars: z.number(),
+  charsNoSpaces: z.number(),
+  sentences: z.number(),
+  paragraphs: z.number(),
+  reading: z.string(),
+  speaking: z.string(),
+  pages: z.number()
+});
+
+const compareOutputSchema = z.object({
+  before: countStatsSchema,
+  after: countStatsSchema,
+  delta: z.object({
+    words: z.number(),
+    chars: z.number(),
+    charsNoSpaces: z.number(),
+    sentences: z.number(),
+    paragraphs: z.number()
+  })
+});
+
+const fullCounterOutputSchema = z.object({
+  url: z.string()
+});
+
+function limitSummaryLine(check: ReturnType<typeof limitCheck>) {
+  if (!check) return '';
+  if (check.status === 'over') return ` (${check.overBy} over ${check.limit}-word limit)`;
+  if (check.status === 'under') return ` (${check.underBy} under ${check.limit}-word limit)`;
+  return ` (exactly at ${check.limit}-word limit)`;
 }
 
 function createServer() {
   const server = new McpServer({
     name: 'ibm.io-wordcount',
-    version: '1.0.0'
+    version: '1.1.0'
   });
 
   server.registerResource(
@@ -100,22 +180,34 @@ function createServer() {
     ui: { resourceUri: WIDGET_URI, prefersBorder: true }
   };
 
-  async function runCount(text: string) {
-    const result = countWithReading(text);
+  async function runCount(
+    text: string,
+    opts?: { target?: number; limit?: number }
+  ) {
+    const result = countFull(text);
+    const structured: Record<string, unknown> = { ...result, text };
+    if (opts?.target != null && opts.target > 0) structured.target = opts.target;
+    const check = opts?.limit != null && opts.limit > 0 ? limitCheck(result, opts.limit) : null;
+    if (check) structured.limit = check;
     return {
-      content: [{ type: 'text' as const, text: formatSummary(result) }],
-      structuredContent: { ...result, text },
+      content: [
+        {
+          type: 'text' as const,
+          text: formatSummary(result) + limitSummaryLine(check)
+        }
+      ],
+      structuredContent: structured,
       _meta: { ui: { resourceUri: WIDGET_URI } }
     };
   }
 
-  // Primary tool — always renders the in-chat widget in ChatGPT Apps SDK
   server.registerTool(
     'count_text',
     {
       title: 'Count text',
       description: COUNT_DESCRIPTION,
-      inputSchema: textSchema,
+      inputSchema: countInputSchema,
+      outputSchema: countOutputSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -123,26 +215,7 @@ function createServer() {
       },
       _meta: widgetToolMeta
     },
-    async ({ text }) => runCount(text)
-  );
-
-  // Alias kept for older prompts / docs that name this tool explicitly
-  server.registerTool(
-    'count_text_with_ui',
-    {
-      title: 'Count text with widget',
-      description:
-        COUNT_DESCRIPTION +
-        ' Same interactive editor widget as count_text.',
-      inputSchema: textSchema,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        openWorldHint: false
-      },
-      _meta: widgetToolMeta
-    },
-    async ({ text }) => runCount(text)
+    async ({ text, target, limit }) => runCount(text, { target, limit })
   );
 
   server.registerTool(
@@ -154,8 +227,15 @@ function createServer() {
         text: z
           .string()
           .optional()
-          .describe('Optional draft to pre-fill in the editor (omit for a blank counter)')
+          .describe('Optional draft to pre-fill in the editor (omit for a blank counter)'),
+        target: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe('Optional word goal for the progress chart')
       },
+      outputSchema: countOutputSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -163,7 +243,7 @@ function createServer() {
       },
       _meta: widgetToolMeta
     },
-    async ({ text }) => runCount(text ?? '')
+    async ({ text, target }) => runCount(text ?? '', { target })
   );
 
   server.registerTool(
@@ -171,26 +251,75 @@ function createServer() {
     {
       title: 'Open full word counter',
       description:
-        'Return the URL to the full offline word counter at ibm.io/wordcount. ' +
-        'Use when the user wants to edit, set a word goal, or count privately in the browser.',
+        'Return a deep link to the full offline word counter at ibm.io/wordcount with optional draft text and word goal. ' +
+        'Use when the user wants to edit, set a word goal, use voice dictation, or count privately in the browser.',
       inputSchema: {
-        text: z.string().optional().describe('Optional draft text (not sent to the server; user opens the site locally)')
+        text: z.string().optional().describe('Optional draft to pre-fill on the full site'),
+        target: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe('Optional word goal to pre-set on the full site')
       },
+      outputSchema: fullCounterOutputSchema,
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
         openWorldHint: true
       }
     },
-    async () => ({
-      content: [
-        {
-          type: 'text',
-          text: `Open the full word counter at ${FULL_COUNTER_URL} — your draft stays on your device.`
-        }
-      ],
-      structuredContent: { url: FULL_COUNTER_URL }
-    })
+    async ({ text, target }) => {
+      const url = buildFullCounterUrl({ text, target });
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `Open the full word counter at ${url} — your draft stays on your device.` +
+              (text ? ' Draft text is included in the link.' : '')
+          }
+        ],
+        structuredContent: { url }
+      };
+    }
+  );
+
+  server.registerTool(
+    'compare_text',
+    {
+      title: 'Compare text versions',
+      description:
+        'Count two text versions (before and after) and return the delta in words, characters, sentences, and paragraphs. ' +
+        'Use when the user asks how much they added, removed, or changed between drafts.',
+      inputSchema: {
+        before: z.string().describe('Original or earlier text'),
+        after: z.string().describe('Revised or later text')
+      },
+      outputSchema: compareOutputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false
+      }
+    },
+    async ({ before, after }) => {
+      const result = countDelta(before, after);
+      const d = result.delta;
+      const sign = (n: number) => (n > 0 ? '+' + n : String(n));
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `Delta: ${sign(d.words)} words, ${sign(d.chars)} characters, ` +
+              `${sign(d.sentences)} sentences, ${sign(d.paragraphs)} paragraphs. ` +
+              `After: ${formatSummary(result.after)}`
+          }
+        ],
+        structuredContent: result
+      };
+    }
   );
 
   return server;
@@ -223,7 +352,11 @@ export default {
 
     if (url.pathname === '/preview') {
       const text = url.searchParams.get('text') ?? '';
-      return new Response(widgetDocument(text), {
+      const targetRaw = url.searchParams.get('target');
+      const target = targetRaw ? parseInt(targetRaw, 10) : undefined;
+      const seed: WidgetSeed = { text };
+      if (target != null && target > 0) seed.target = target;
+      return new Response(widgetDocument(seed), {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Content-Security-Policy': "default-src 'self' 'unsafe-inline'; connect-src *"
@@ -260,6 +393,7 @@ export default {
       return new Response(
         JSON.stringify({
           name: 'ibm.io Word Counter MCP',
+          version: '1.1.0',
           mcp: `${url.origin}/mcp`,
           demo: `${url.origin}/demo`,
           demoChat: `${url.origin}/demo/chat`,
@@ -267,7 +401,7 @@ export default {
           privacy: `${url.origin}/privacy`,
           terms: `${url.origin}/terms`,
           site: FULL_COUNTER_URL,
-          tools: ['count_text', 'count_text_with_ui', 'open_word_counter', 'open_full_counter']
+          tools: ['count_text', 'open_word_counter', 'open_full_counter', 'compare_text']
         }),
         {
           headers: {

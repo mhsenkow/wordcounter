@@ -8,9 +8,10 @@ Remote MCP (Model Context Protocol) server for [ibm.io/wordcount](https://ibm.io
 
 | Tool | Description |
 |---|---|
-| `count_text` | Returns words, characters, sentences, paragraphs, reading time |
-| `count_text_with_ui` | Same counts + ChatGPT Apps SDK widget |
-| `open_full_counter` | Returns URL to the full offline editor |
+| `count_text` | Returns words, characters, characters without spaces, sentences, paragraphs, reading/speaking time, pages + widget |
+| `open_word_counter` | Blank or pre-filled editor widget with optional word goal |
+| `open_full_counter` | Deep link to full offline editor (optional draft + target in URL) |
+| `compare_text` | Before/after delta for two text versions |
 
 Text is processed in memory for the request only — nothing is stored.
 
@@ -54,7 +55,7 @@ node ../test.mjs
 1. Enable **Developer Mode** in ChatGPT settings.
 2. Add MCP server URL: `https://wordcount-mcp.mhsenkow.workers.dev/mcp`
 3. Prompt: *“Count words in: The quick brown fox jumps over the lazy dog.”*
-4. Expect `count_text_with_ui` + widget when visual output is appropriate.
+4. Expect `count_text` + widget when visual output is appropriate.
 
 **Submit for directory listing:** see [SUBMISSION.md](./SUBMISSION.md) and [OpenAI plugin submission portal](https://developers.openai.com/apps-sdk/deploy/submission).
 

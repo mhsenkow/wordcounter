@@ -77,7 +77,7 @@ The model should invoke tools when users ask to:
 - get reading time or length of a draft
 - check essay or article length
 
-Prefer `count_text_with_ui` when a visual summary helps; `count_text` for plain answers; `open_full_counter` when the user wants to edit or count privately offline.
+Prefer `count_text` when a visual summary helps; `open_full_counter` when the user wants voice dictation, themes, or private offline editing; `compare_text` for before/after deltas.
 
 ## Icon
 

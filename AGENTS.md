@@ -4,12 +4,30 @@ Static single-file apps. No build, no package manager, no framework.
 
 ## Tools suite
 
-| Tool | Local path | Public URL |
-|---|---|---|
-| **Word counter** | `index.html` | `https://ibm.io/wordcount/` |
-| **Time counter** | `timecount/index.html` | `https://ibm.io/timecount/` |
+Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. Theme/chrome/font sync via `localStorage` key `ibm.tools.shared` (`lib/suite.js`).
 
-A surreptitious **tools menu** (top-right grid icon) links between apps. Theme, chrome, and font choices sync via `localStorage` key `ibm.tools.shared`.
+| Group | Tool | Path | URL | Status |
+|---|---|---|---|---|
+| desk | **words** | `index.html` | `/wordcount/` | live |
+| desk | **time** | `timecount/index.html` | `/timecount/` | live |
+| money | **bill** | `bill/` | `/bill/` | live |
+| money | **hourly** | `hourly/` | `/hourly/` | live |
+| money | **budget** | `budget/` | `/budget/` | soon |
+| money | **fuel** | `fuel/` | `/fuel/` | live |
+| convert | **unit** | `unit/` | `/unit/` | live |
+| convert | **dose** | `dose/` | `/dose/` | live |
+| convert | **bandwidth** | `bitrate/` | `/bitrate/` | live |
+| convert | **scale** | `scalemap/` | `/scalemap/` | live |
+| form | **ratio** | `ratio/` | `/ratio/` | live |
+| form | **type** | `typescale/` | `/typescale/` | live |
+| form | **exposure** | `exposure/` | `/exposure/` | soon |
+| chance | **odds** | `odds/` | `/odds/` | live |
+| chance | **combo** | `combo/` | `/combo/` | live |
+| chance | **deal** | `deal/` | `/deal/` | soon |
+| chance | **sample** | `sample/` | `/sample/` | live |
+| chance | **streak** | `streak/` | `/streak/` | soon |
+
+Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers.
 
 ## Live hosting (keep both in sync)
 
@@ -27,28 +45,25 @@ Some local machines still resolve apex `ibm.io` to the GreenGeeks IP (stale cach
 ## How to update (checklist)
 
 1. Edit **`index.html`** (word counter) and/or **`timecount/index.html`** in this repo.
-2. **GreenGeeks** — upload the same files to:
-   - Word counter: `public_html/ibm.io/wordcount/index.html`
-   - Time counter: `public_html/ibm.io/timecount/index.html`
-   - Suite script: `public_html/ibm.io/lib/suite.js` (or co-locate under each tool folder if preferred)
-   - Via: GreenGeeks → hosting → cPanel → File Manager → Upload (overwrite), **or** FTP/SFTP to `chi202.greengeeks.net`, user `mhsenkow` (password from the GreenGeeks/cPanel panel — never commit it).
-3. **Cloudflare** — copy into the portfolio app and deploy:
+2. **GreenGeeks** — upload to `public_html/ibm.io/`:
+   - `wordcount/index.html`, `timecount/index.html` (+ `timecount/lib/suite.js`)
+   - Sibling tool folders (`bill/`, `hourly/`, …) and shared `lib/suite.js`
+   - Via cPanel File Manager or FTP/SFTP to `chi202.greengeeks.net`, user `mhsenkow` (password from panel — never commit it).
+3. **Cloudflare** — mirror into the portfolio app and deploy:
    ```bash
+   # words + time + suite + number tools → portfolio/public/
    cp index.html /path/to/portfolio/portfolio/public/wordcount/index.html
+   # …also sync timecount/, lib/, bill/, unit/, etc.
    cd /path/to/portfolio/portfolio
    npm run deploy   # opennextjs-cloudflare build + deploy
    ```
    Wrangler account used previously: Cloudflare account owning Worker `portfolio` (custom domains `ibm.io`, `www.ibm.io`).
-4. **Verify both**:
+4. **Verify**:
    ```bash
-   # Cloudflare edge
    curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://www.ibm.io/wordcount/
-   curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://portfolio.mhsenkow.workers.dev/wordcount/
-
-   # GreenGeeks origin (Host header)
-   curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" -H "Host: ibm.io" http://184.154.70.198/wordcount/
+   curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://www.ibm.io/bill/
+   curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" -H "Host: ibm.io" http://184.154.70.198/bill/
    ```
-   Sizes should match local `wc -c index.html`.
 
 ## Do not
 

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>type — ibm.io</title>
+<meta name="description" content="modular scale">
+<link rel="canonical" href="https://ibm.io/typescale/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="typescale">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>type</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">16</div>
+    <p class="face-sub" id="sub">base px</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>scale</legend>
+      <label class="row"><span class="key">base</span><span class="value"><input id="base" type="number" inputmode="decimal" min="8" step="1" value="16" data-primary data-axis="y" data-axis-x="steps" data-step-fast="4" data-gesture="1" aria-label="base size"><span class="unit">px</span></span></label>
+      <label class="row"><span class="key">ratio</span><span class="value">
+        <select id="ratio" aria-label="scale ratio">
+          <option value="1.125">major second</option>
+          <option value="1.2">minor third</option>
+          <option value="1.25" selected>major third</option>
+          <option value="1.333">perfect fourth</option>
+          <option value="1.414">augmented fourth</option>
+          <option value="1.5">perfect fifth</option>
+          <option value="1.618">golden</option>
+        </select>
+      </span></label>
+      <label class="row"><span class="key">steps</span><span class="value"><input id="steps" type="number" inputmode="numeric" min="3" max="12" step="1" value="6" aria-label="steps"></span></label>
+    </fieldset>
+    <ul class="list" id="list"></ul>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('typescale');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'typescale',
+    about: "Base size × ratio → modular steps. Large Aa samples fill the stage.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('typescale');
+  function render(){
+    var base = Math.max(1, parseFloat(document.getElementById('base').value) || 16);
+    var ratio = parseFloat(document.getElementById('ratio').value) || 1.25;
+    var steps = Math.max(3, Math.min(12, parseInt(document.getElementById('steps').value, 10) || 6));
+    document.getElementById('out').textContent = String(Math.round(base));
+    document.getElementById('sub').textContent = 'base · ×' + ratio;
+    var html = '';
+    var field = '';
+    var stageSteps = [];
+    for (var i = -2; i < steps - 2; i++) {
+      var px = base * Math.pow(ratio, i);
+      var rem = px / base;
+      html += '<li><span style="font-size:' + Math.min(40, px) + 'px">Aa ' + (i >= 0 ? '+' : '') + i + '</span><span>' + px.toFixed(1) + 'px · ' + rem.toFixed(3) + 'rem</span></li>';
+      stageSteps.push(px);
+    }
+    /* Stage shows up to 5 large samples; list keeps full precision */
+    var pick = stageSteps.length <= 5 ? stageSteps : stageSteps.filter(function(_, idx){
+      return idx === 0 || idx === stageSteps.length - 1 || idx % Math.ceil(stageSteps.length / 4) === 0;
+    }).slice(0, 5);
+    pick.forEach(function(px){
+      var show = Math.min(110, Math.max(28, px * 2.1));
+      field += '<span style="font-size:' + show + 'px">Aa</span>';
+    });
+    document.getElementById('list').innerHTML = html;
+    stage.innerHTML = '<div class="type-field">' + field + '</div>';
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  ['base','ratio','steps'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

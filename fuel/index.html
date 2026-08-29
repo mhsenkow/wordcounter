@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>fuel — ibm.io</title>
+<meta name="description" content="mpg · trip cost">
+<link rel="canonical" href="https://ibm.io/fuel/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="fuel">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>fuel</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0</div>
+    <p class="face-sub" id="sub">trip fuel cost</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>trip</legend>
+      <label class="row"><span class="key">miles</span><span class="value"><input id="miles" type="number" inputmode="decimal" min="0" step="5" value="320" data-primary data-axis="y" data-axis-x="mpg" data-pinch="price" data-step-fast="25" data-gesture="1" aria-label="miles"></span></label>
+      <label class="row"><span class="key">mpg</span><span class="value"><input id="mpg" type="number" inputmode="decimal" min="0.1" step="0.1" value="28" aria-label="miles per gallon"></span></label>
+      <label class="row"><span class="key">$ / gal</span><span class="value"><input id="price" type="number" inputmode="decimal" min="0" step="0.01" value="3.89" data-step-fast="0.1" aria-label="dollars per gallon"></span></label>
+    </fieldset>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('fuel');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'fuel',
+    about: "Miles ÷ mpg × price. Bead tape = gallons along the trip.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('fuel');
+  function paint(gal, miles){
+    var raw = Math.max(0, gal);
+    var maxBeads = 48;
+    var scale = raw > maxBeads ? raw / maxBeads : 1;
+    var beads = Math.max(0, Math.min(maxBeads, Math.round(raw / scale)));
+    var html = '<div class="trip-tape">';
+    for (var i = 0; i < beads; i++) html += '<i class="on"></i>';
+    html += '<span class="cap">' + miles.toFixed(0) + ' mi</span></div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var miles = Math.max(0, parseFloat(document.getElementById('miles').value) || 0);
+    var mpg = Math.max(0.01, parseFloat(document.getElementById('mpg').value) || 0.01);
+    var price = Math.max(0, parseFloat(document.getElementById('price').value) || 0);
+    var gal = miles / mpg;
+    var cost = gal * price;
+    var l100 = 235.215 / mpg;
+    document.getElementById('out').textContent = '$' + cost.toFixed(2);
+    document.getElementById('sub').textContent =
+      gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · $' + (price / mpg).toFixed(2) + '/mi';
+    paint(gal, miles);
+  }
+  ['miles','mpg','price'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  render();
+})();
+</script>
+</body>
+</html>

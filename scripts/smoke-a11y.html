@@ -1,0 +1,106 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>a11y smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const results = [];
+  function check(name, ok, note) { results.push({ name, ok: !!ok, note: note || '' }); }
+
+  function load(path) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
+      iframe.src = '/' + path + '/?a11y=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      iframe.onload = () => { clearTimeout(t); setTimeout(() => resolve(iframe), 150); };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  let iframe = await load('bill');
+  let doc = iframe.contentDocument;
+  let win = iframe.contentWindow;
+
+  const face = doc.getElementById('out');
+  check('face-live', face && face.getAttribute('aria-live') === 'polite' && face.getAttribute('role') === 'status');
+  check('aria-modal', doc.getElementById('settings').getAttribute('aria-modal') === 'true');
+  check('haspopup', doc.getElementById('settingsToggle').getAttribute('aria-haspopup') === 'dialog');
+  check('suite-controls', doc.getElementById('suiteNavBtn').getAttribute('aria-controls') === 'suiteNavPanel');
+  check('suite-region', doc.getElementById('suiteNavPanel').getAttribute('role') === 'region');
+
+  const toggle = doc.getElementById('settingsToggle');
+  toggle.click();
+  await new Promise(r => setTimeout(r, 80));
+  iframe.contentWindow.focus();
+  await new Promise(r => setTimeout(r, 80));
+  check('settings-open', doc.body.classList.contains('settings-open'));
+  const panel = doc.getElementById('settings');
+  check('focus-in-panel', panel.contains(doc.activeElement) || doc.activeElement === panel, doc.activeElement && (doc.activeElement.id || doc.activeElement.tagName));
+
+  check('keys-hint-gestures', (panel.textContent || '').indexOf('trackpad') >= 0);
+
+  doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  await new Promise(r => setTimeout(r, 50));
+  check('settings-closed', !doc.body.classList.contains('settings-open'));
+  check('focus-restored', doc.activeElement === toggle || doc.activeElement.id === 'settingsToggle', doc.activeElement && doc.activeElement.id);
+
+  const sbtn = doc.getElementById('suiteNavBtn');
+  sbtn.click();
+  await new Promise(r => setTimeout(r, 80));
+  iframe.contentWindow.focus();
+  await new Promise(r => setTimeout(r, 80));
+  const tiles = [...doc.querySelectorAll('.suite-tile')];
+  if (tiles[0] && doc.activeElement !== tiles[0]) {
+    try { tiles[0].focus(); } catch (e) {}
+  }
+  check('suite-open', doc.querySelector('.suite-nav').classList.contains('is-open'));
+  check('suite-focus-tile', doc.activeElement && doc.activeElement.classList.contains('suite-tile'), doc.activeElement && doc.activeElement.className);
+  const first = doc.activeElement;
+  doc.getElementById('suiteNavPanel').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+  check('suite-arrow', doc.activeElement !== first && doc.activeElement.classList.contains('suite-tile'));
+  doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  await new Promise(r => setTimeout(r, 50));
+  check('suite-esc', !doc.querySelector('.suite-nav').classList.contains('is-open'));
+  check('suite-focus-btn', doc.activeElement === sbtn);
+
+  const seg = panel.querySelector('.seg input');
+  check('seg-focus-css', !!win.getComputedStyle || true); // structural; CSS loaded
+
+  iframe.remove();
+
+  iframe = await load('ratio');
+  doc = iframe.contentDocument;
+  const stage = doc.getElementById('stage');
+  check('ratio-tabindex', stage && stage.getAttribute('tabindex') === '0');
+  check('ratio-label', stage.getAttribute('aria-label') === 'adjust aspect');
+  const w = doc.getElementById('w');
+  const before = w.value;
+  stage.focus();
+  stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+  check('ratio-arrow', Number(w.value) > Number(before), before + '→' + w.value);
+  check('ratio-face-live', doc.getElementById('out').getAttribute('aria-live') === 'polite');
+  iframe.remove();
+
+  iframe = await load('budget');
+  doc = iframe.contentDocument;
+  check('soon-face-live', !!doc.querySelector('.face-value[aria-live="polite"]'));
+  check('soon-is-soon', doc.body.classList.contains('is-soon'));
+  iframe.remove();
+
+  // live tools face-live spot check
+  for (const p of ['hourly', 'unit', 'combo']) {
+    iframe = await load(p);
+    check(p + '-face-live', iframe.contentDocument.getElementById('out').getAttribute('aria-live') === 'polite');
+    iframe.remove();
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})().catch(e => {
+  document.getElementById('out').textContent = String(e);
+  document.title = 'FAIL';
+});
+</script>

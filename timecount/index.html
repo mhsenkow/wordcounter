@@ -195,16 +195,22 @@
 
   /* masthead — IBM product chrome: top, type-led */
   header.masthead {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 6;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 16px;
-    height: calc(var(--mast-h) + env(safe-area-inset-top));
-    padding:
-      env(safe-area-inset-top)
-      calc(max(var(--pad), env(safe-area-inset-right)) + 36px)
-      0
-      max(var(--pad), env(safe-area-inset-left));
-    background: var(--bg);
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: max(10px, env(safe-area-inset-left));
+    right: auto;
+    bottom: auto;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    height: auto;
+    min-height: 44px;
+    max-width: min(70vw, 420px);
+    padding: 0;
+    margin: 0;
+    background: transparent;
     pointer-events: none;
   }
   header.masthead h1,
@@ -212,12 +218,20 @@
   header.masthead .mode-bar,
   header.masthead .presets { pointer-events: auto; }
   .masthead-start {
-    display: flex; align-items: baseline; gap: 14px; min-width: 0;
+    display: flex; align-items: center; gap: 12px; min-width: 0;
+    padding: 6px 8px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
   }
   h1 {
-    font-size: 12px; font-weight: 400; letter-spacing: .02em;
-    text-transform: none; color: var(--ink); flex-shrink: 0;
+    font-size: 11px; font-weight: 400; letter-spacing: .04em;
+    text-transform: none; color: var(--mute); flex-shrink: 0;
+    opacity: .7;
   }
+  header.masthead:hover .masthead-start {
+    background: color-mix(in srgb, var(--face) 92%, var(--bg));
+  }
+  header.masthead:hover h1 { color: var(--ink); opacity: 1; }
   .actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
   .actions #settingsToggle {
     font-size: 12px; letter-spacing: .02em; text-transform: none;
@@ -947,8 +961,8 @@
     pointer-events: none;
   }
   body.settings-open .dock { z-index: 5; pointer-events: auto; }
-  body.settings-open header.masthead { z-index: 7; }
-  /* suite tools menu sits with top chrome */
+  body.settings-open .suite-nav { z-index: 8; }
+  /* suite tools + look chrome, top-right */
   .timecount-app .suite-nav {
     top: max(12px, env(safe-area-inset-top));
     right: max(10px, env(safe-area-inset-right));
@@ -1004,7 +1018,7 @@
       #e8eef8;
     background-attachment: fixed;
   }
-  [data-theme="glass"] header.masthead,
+  [data-theme="glass"] .masthead-start,
   [data-theme="glass"] .dock,
   [data-theme="glass"] #settings > .inner {
     background: rgba(255,255,255,.55);
@@ -1013,8 +1027,8 @@
     border-color: rgba(255,255,255,.7);
   }
   [data-theme="glass"] header.masthead {
-    border-bottom: 1px solid rgba(255,255,255,.55);
-    box-shadow: 0 8px 28px rgba(59,130,246,.08);
+    border-bottom: 0;
+    box-shadow: none;
   }
   [data-theme="glass"] #settings > .inner {
     border: 1px solid rgba(255,255,255,.7);
@@ -1057,7 +1071,7 @@
       #070b16;
     background-attachment: fixed;
   }
-  [data-theme="frost"] header.masthead,
+  [data-theme="frost"] .masthead-start,
   [data-theme="frost"] .dock,
   [data-theme="frost"] #settings > .inner {
     background: rgba(15,23,42,.72);
@@ -1090,8 +1104,8 @@
 
   /* brutal — neo-brutal hard edges */
   [data-theme="brutal"] body.timecount-app { background: #fff; }
-  [data-theme="brutal"] header.masthead {
-    border-bottom: 3px solid #000; box-shadow: 0 3px 0 #000;
+  [data-theme="brutal"] .masthead-start {
+    border: 2px solid #000; box-shadow: 2px 2px 0 #000;
   }
   [data-theme="brutal"] #settings > .inner {
     border: 3px solid #000; border-radius: 0; background: #fff;
@@ -1139,7 +1153,7 @@
       #0a0a0f;
     background-attachment: fixed;
   }
-  [data-theme="loom"] header.masthead,
+  [data-theme="loom"] .masthead-start,
   [data-theme="loom"] #settings > .inner {
     background: #12121a; border: 1px solid rgba(255,255,255,.05);
     box-shadow: 0 0 24px rgba(212,168,75,.06);
@@ -1191,11 +1205,10 @@
       linear-gradient(90deg, rgba(11,26,34,.35) 1px, transparent 1px);
     background-size: 4px 4px;
   }
-  [data-theme="tank"] header.masthead,
   [data-theme="tank"] main,
   [data-theme="tank"] .dock,
   [data-theme="tank"] .scale-rail { position: relative; z-index: 1; }
-  [data-theme="tank"] header.masthead,
+  [data-theme="tank"] .masthead-start,
   [data-theme="tank"] #settings > .inner {
     background: #163040; border: 2px solid #356379; border-radius: 0;
     box-shadow: 0 0 0 1px #0b1a22, 4px 4px 0 #1a120c;
@@ -1244,12 +1257,12 @@
     image-rendering: pixelated;
     -webkit-font-smoothing: none;
   }
-  [data-theme="nes"] header.masthead,
+  [data-theme="nes"] .masthead-start,
   [data-theme="nes"] #settings > .inner {
     background: #f8f8f8; border: 4px solid #000; border-radius: 0;
     box-shadow: inset -4px -4px 0 #adb5bd, inset 4px 4px 0 #fff, 4px 4px 0 #000;
   }
-  [data-theme="nes"] header.masthead { border-bottom: 4px solid #000; }
+  [data-theme="nes"] header.masthead { border-bottom: 0; }
   [data-theme="nes"] #settings > .inner { padding: 10px 12px; margin-bottom: 8px; }
   [data-theme="nes"] .dock {
     background: #f8f8f8; border-top: 4px solid #000; box-shadow: 0 -4px 0 #000;
@@ -1303,9 +1316,9 @@
   [data-theme="nes"] .layer-sq.is-on { background: #e4002b; }
 
   @media (prefers-reduced-motion: reduce) {
-    [data-theme="glass"] header.masthead,
+    [data-theme="glass"] .masthead-start,
     [data-theme="glass"] #settings > .inner,
-    [data-theme="frost"] header.masthead,
+    [data-theme="frost"] .masthead-start,
     [data-theme="frost"] #settings > .inner {
       backdrop-filter: none; -webkit-backdrop-filter: none;
     }
@@ -1617,7 +1630,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js"></script>
+<script src="lib/suite.js?v=6"></script>
 <script>
 (function () {
   'use strict';

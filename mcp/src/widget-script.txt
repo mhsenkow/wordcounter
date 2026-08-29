@@ -33,6 +33,7 @@
   var primaryValue = document.getElementById('primaryValue');
   var primaryLabel = document.getElementById('primaryLabel');
   var goalHint = document.getElementById('goalHint');
+  var selectHint = document.getElementById('selectHint');
   var progress = document.getElementById('progress');
   var viz = document.getElementById('viz');
   var vizMeta = document.getElementById('vizMeta');
@@ -43,30 +44,17 @@
   var METRICS = {
     words: { label: 'words', format: function (c) { return String(c.words); } },
     chars: { label: 'characters', format: function (c) { return String(c.chars); } },
+    charsNoSpaces: { label: 'no spaces', format: function (c) { return String(c.charsNoSpaces); } },
     sentences: { label: 'sentences', format: function (c) { return String(c.sentences); } },
     paragraphs: { label: 'paragraphs', format: function (c) { return String(c.paragraphs); } },
-    reading: { label: 'reading', format: function (c) { return c.reading; } }
+    reading: { label: 'reading', format: function (c) { return c.reading; } },
+    speaking: { label: 'speaking', format: function (c) { return c.speaking; } },
+    pages: { label: 'pages', format: function (c) { return String(c.pages); } }
   };
 
-  function count(s) {
-    var trimmed = String(s || '').trim();
-    return {
-      words: trimmed ? trimmed.split(/\s+/).length : 0,
-      chars: String(s || '').length,
-      sentences: (trimmed.match(/[^\s.!?…]+(?:[^.!?…]*[.!?…]+|[^.!?…]*$)/g) || []).length,
-      paragraphs: trimmed ? trimmed.split(/\n\s*\n/).filter(function (p) { return p.trim(); }).length : 0
-    };
-  }
-
-  function readingTime(words) {
-    var secs = Math.round(words / 200 * 60);
-    return Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
-  }
-
-  function countWithReading(s) {
-    var c = count(s);
-    return { words: c.words, chars: c.chars, sentences: c.sentences, paragraphs: c.paragraphs, reading: readingTime(c.words) };
-  }
+  var count = WCCount.count;
+  var countWithReading = WCCount.countWithReading;
+  var countFull = WCCount.countFull;
 
   function layerOn(name) {
     if (name === 'ghost') return settings.showGhost;
@@ -216,16 +204,41 @@
     }
   }
 
+  function selectionSlice() {
+    var a = draft.selectionStart;
+    var b = draft.selectionEnd;
+    if (a === b) return null;
+    return draft.value.slice(Math.min(a, b), Math.max(a, b));
+  }
+
+  function applyTargetFromInput(input) {
+    if (!input || typeof input.target !== 'number' || input.target <= 0) return;
+    settings.target = Math.floor(input.target);
+    if (targetInput) targetInput.value = String(settings.target);
+    saveSettings();
+  }
+
   function render() {
-    var c = countWithReading(draft.value);
+    var c = countFull(draft.value);
+    var sel = selectionSlice();
+    var selCount = sel ? countFull(sel) : null;
     var key;
     for (key in METRICS) {
       var node = document.getElementById('m-' + key);
       if (node) node.textContent = METRICS[key].format(c);
     }
     var primary = METRICS[settings.primary] || METRICS.words;
-    primaryValue.textContent = primary.format(c);
+    var show = selCount || c;
+    primaryValue.textContent = primary.format(show);
     primaryLabel.textContent = primary.label;
+    primaryBlock.classList.toggle('is-selecting', !!selCount);
+    if (selCount) {
+      selectHint.hidden = false;
+      selectHint.textContent = 'selection · ' + selCount.words + (selCount.words === 1 ? ' word' : ' words');
+    } else {
+      selectHint.hidden = true;
+      selectHint.textContent = '';
+    }
     var target = effectiveTarget();
     if (target > 0 && settings.primary === 'words') {
       goalHint.hidden = false;
@@ -352,6 +365,7 @@
   function seedFromHost() {
     var input = window.openai && window.openai.toolInput;
     var output = window.openai && window.openai.toolOutput;
+    applyTargetFromInput(input || output);
     if (input && typeof input.text === 'string' && input.text) { setDraft(input.text, false); return; }
     if (output && typeof output.text === 'string' && output.text) { setDraft(output.text, false); return; }
     if (output) render();
@@ -363,10 +377,15 @@
     scheduleSync();
   });
 
+  draft.addEventListener('select', render);
+  draft.addEventListener('keyup', render);
+  draft.addEventListener('mouseup', render);
+
   if (window.openai && typeof window.openai.openExternal === 'function') {
     document.getElementById('full-counter').addEventListener('click', function (e) {
       e.preventDefault();
-      window.openai.openExternal({ href: 'https://ibm.io/wordcount/' });
+      var url = WCCount.buildFullCounterUrl({ text: draft.value, target: settings.target });
+      window.openai.openExternal({ href: url });
     });
   }
   if (window.openai && typeof window.openai.requestDisplayMode === 'function') {
@@ -379,6 +398,7 @@
   window.addEventListener('openai:set_globals', function (event) {
     var globals = event.detail && event.detail.globals;
     if (!globals) return;
+    applyTargetFromInput(globals.toolInput || globals.toolOutput);
     if (globals.toolInput && typeof globals.toolInput.text === 'string') setDraft(globals.toolInput.text, false);
     else if (globals.toolOutput) {
       if (typeof globals.toolOutput.text === 'string') setDraft(globals.toolOutput.text, false);
@@ -392,10 +412,12 @@
     if (!message || message.jsonrpc !== '2.0' || !message.method) return;
     if (message.method === 'ui/notifications/tool-input') {
       var args = message.params || {};
+      applyTargetFromInput(args);
       if (typeof args.text === 'string') setDraft(args.text, false);
     } else if (message.method === 'ui/notifications/tool-result') {
       var sc = message.params && message.params.structuredContent;
       if (!sc) return;
+      applyTargetFromInput(sc);
       if (typeof sc.text === 'string') setDraft(sc.text, false);
       else render();
     }

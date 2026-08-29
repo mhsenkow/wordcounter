@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>dose — ibm.io</title>
+<meta name="description" content="mix · dilute">
+<link rel="canonical" href="https://ibm.io/dose/">
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="../lib/number-tool.css?v=21">
+</head>
+<body class="tool-app" data-tool="dose">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>dose</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
+    <p class="face-sub" id="sub">concentrate</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>mix</legend>
+      <label class="row"><span class="key">target</span><span class="value"><input id="want" type="number" inputmode="decimal" min="0" step="0.1" value="2" data-primary data-axis="y" data-axis-x="vol" data-pinch="have" data-step-fast="1" data-gesture="1" aria-label="target percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">stock</span><span class="value"><input id="have" type="number" inputmode="decimal" min="0.01" step="0.1" value="10" data-step-fast="1" aria-label="stock percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">batch</span><span class="value"><input id="vol" type="number" inputmode="decimal" min="0" step="1" value="1000" data-step-fast="100" aria-label="batch volume"><span class="unit">vol</span></span></label>
+    </fieldset>
+  </div>
+</main>
+<script src="../lib/suite.js?v=21"></script>
+<script src="../lib/number-tool.js?v=21"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('dose');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'dose',
+    about: "Kitchen / garden dilutions only. Background split = concentrate vs diluent.",
+    hasViz: true
+  });
+
+  var stage = IBMNumberTool.ensureStage('dose');
+  function paint(conc, water){
+    stage.innerHTML = '<div class="field-split"><div class="conc"></div><div class="dil"></div></div>';
+    var split = stage.querySelector('.field-split');
+    IBMNumberTool.setVars(split, {
+      '--a': String(conc || 0.0001),
+      '--b': String(water || 0.0001)
+    });
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var want = Math.max(0, parseFloat(document.getElementById('want').value) || 0);
+    var have = Math.max(0.0001, parseFloat(document.getElementById('have').value) || 0.0001);
+    var vol = Math.max(0, parseFloat(document.getElementById('vol').value) || 0);
+    var conc = vol * (want / have);
+    var water = Math.max(0, vol - conc);
+    document.getElementById('out').textContent = conc.toFixed(1);
+    document.getElementById('sub').textContent =
+      'concentrate · add ' + water.toFixed(1) + ' diluent (same units)';
+    paint(conc, water);
+  }
+  ['want','have','vol'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  render();
+})();
+</script>
+</body>
+</html>

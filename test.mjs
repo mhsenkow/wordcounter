@@ -7,7 +7,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { count, readingTime } from './lib/count.mjs';
+import {
+  count,
+  readingTime,
+  speakingTime,
+  pageEstimate,
+  countFull,
+  limitCheck,
+  countDelta,
+  buildFullCounterUrl,
+  parseCounterHandoff
+} from './lib/count.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -77,7 +87,7 @@ test('faces setting radios exist', () => {
 test('draft share + copy actions present', () => {
   assert.match(html, /id="copyDraft"/);
   assert.match(html, /id="shareDraft"/);
-  assert.match(html, /class="draft-actions"/);
+  assert.match(html, /class="draft-action"/);
 });
 
 test('TYPE_FACES_WEB and LOCAL both defined', () => {
@@ -99,7 +109,57 @@ test('undo / haptic / wake lock helpers wired', () => {
 
 // --- count ---
 test('count empty', () => {
-  assert.deepEqual(count(''), { words: 0, chars: 0, sentences: 0, paragraphs: 0 });
+  assert.deepEqual(count(''), {
+    words: 0,
+    chars: 0,
+    charsNoSpaces: 0,
+    sentences: 0,
+    paragraphs: 0
+  });
+});
+
+test('count chars without spaces', () => {
+  assert.equal(count('a b c').charsNoSpaces, 3);
+  assert.equal(count('hello\nworld').charsNoSpaces, 10);
+});
+
+test('limitCheck over and under', () => {
+  const c = count('one two three four five');
+  const over = limitCheck(c, 3);
+  assert.equal(over.overBy, 2);
+  assert.equal(over.underBy, 0);
+  assert.equal(over.status, 'over');
+  const under = limitCheck(count('hi there'), 10);
+  assert.equal(under.underBy, 8);
+  assert.equal(under.status, 'under');
+});
+
+test('countDelta', () => {
+  const d = countDelta('hello world', 'hello brave new world');
+  assert.ok(d.delta.words > 0);
+  assert.equal(d.before.words, 2);
+});
+
+test('speakingTime and pages', () => {
+  assert.equal(speakingTime(130), '1:00');
+  assert.equal(pageEstimate(250), 1);
+  assert.equal(pageEstimate(0), 0);
+});
+
+test('countFull includes extended metrics', () => {
+  const f = countFull('word');
+  assert.ok(f.reading);
+  assert.ok(f.speaking);
+  assert.equal(f.pages, 0);
+});
+
+test('buildFullCounterUrl and parse handoff', () => {
+  const url = buildFullCounterUrl({ text: 'hello', target: 500 });
+  assert.match(url, /target=500/);
+  assert.match(url, /text=hello/);
+  const parsed = parseCounterHandoff(new URL(url));
+  assert.equal(parsed.text, 'hello');
+  assert.equal(parsed.target, 500);
 });
 
 test('count words and sentences', () => {

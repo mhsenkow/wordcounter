@@ -1,0 +1,168 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>gesture smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const tools = [
+    { path: 'bill', primary: 'tip', secondary: 'people' },
+    { path: 'hourly', primary: 'days', secondary: 'hpd', pinchTarget: 'rate' },
+    { path: 'fuel', primary: 'miles', secondary: 'mpg', pinchTarget: 'price' },
+    { path: 'unit', primary: 'amount' },
+    { path: 'dose', primary: 'want', secondary: 'vol', pinchTarget: 'have' },
+    { path: 'bitrate', primary: 'size', secondary: 'speed' },
+    { path: 'scalemap', primary: 'measure', secondary: 'real' },
+    { path: 'ratio', primary: 'w' },
+    { path: 'typescale', primary: 'base', secondary: 'steps' },
+    { path: 'odds', primary: 'p', secondary: 'win' },
+    { path: 'combo', primary: 'n', secondary: 'k' },
+    { path: 'sample', primary: 'n', secondary: 'p' },
+  ];
+  const soon = ['budget', 'exposure', 'deal', 'streak'];
+  const results = [];
+
+  function loadFrame(path) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
+      iframe.src = '/' + path + '/?smoke=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      iframe.onload = () => {
+        clearTimeout(t);
+        setTimeout(() => resolve(iframe), 120);
+      };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  function fireWheel(doc, opts) {
+    const e = new WheelEvent('wheel', Object.assign({
+      bubbles: true, cancelable: true, deltaMode: 0
+    }, opts));
+    doc.dispatchEvent(e);
+    return e.defaultPrevented;
+  }
+
+  for (const t of tools) {
+    const row = { tool: t.path, ok: true, notes: [] };
+    let iframe;
+    try {
+      iframe = await loadFrame(t.path);
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      if (doc.documentElement.getAttribute('data-gestures') !== '1') {
+        row.ok = false; row.notes.push('data-gestures missing');
+      }
+      const primary = doc.getElementById(t.primary);
+      if (!primary || !primary.hasAttribute('data-primary')) {
+        row.ok = false; row.notes.push('primary attr');
+      }
+      if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
+
+      const before = primary.value;
+      for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0 });
+      if (Number(primary.value) <= Number(before)) {
+        row.ok = false; row.notes.push('vertical no increase ' + before + '→' + primary.value);
+      }
+
+      if (t.secondary) {
+        const sec = doc.getElementById(t.secondary);
+        const sb = sec.value;
+        for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: 0, deltaX: 40 });
+        if (primary.getAttribute('data-axis-x') === t.secondary && Number(sec.value) === Number(sb)) {
+          row.ok = false; row.notes.push('horizontal no change');
+        }
+        sec.focus();
+        const s2 = sec.value;
+        const p2 = primary.value;
+        for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0 });
+        if (Number(sec.value) <= Number(s2)) {
+          row.ok = false; row.notes.push('focused secondary not driven');
+        }
+        if (Number(primary.value) !== Number(p2)) {
+          row.ok = false; row.notes.push('primary moved while secondary focused');
+        }
+        sec.blur();
+      }
+
+      const pinchEl = doc.getElementById(t.pinchTarget || t.primary);
+      if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
+      const pb = pinchEl.value;
+      for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0, ctrlKey: true });
+      if (Number(pinchEl.value) === Number(pb)) {
+        row.ok = false; row.notes.push('pinch no change');
+      }
+
+      doc.body.classList.add('settings-open');
+      const freeze = primary.value;
+      for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0 });
+      if (primary.value !== freeze) {
+        row.ok = false; row.notes.push('settings still adjusts');
+      }
+      doc.body.classList.remove('settings-open');
+
+      if (t.path === 'ratio') {
+        const stage = doc.getElementById('stage');
+        const w = doc.getElementById('w');
+        const h = doc.getElementById('h');
+        const wb = w.value, hb = h.value;
+        for (let i = 0; i < 3; i++) {
+          stage.dispatchEvent(new WheelEvent('wheel', {
+            bubbles: true, cancelable: true, deltaY: -40, ctrlKey: true, deltaMode: 0
+          }));
+        }
+        if (Number(w.value) === Number(wb) && Number(h.value) === Number(hb)) {
+          row.ok = false; row.notes.push('ratio pinch no scale');
+        }
+      }
+
+      // Long stacks (typescale): mid-list scroll must not nudge values
+      if (t.path === 'typescale') {
+        const stack = doc.querySelector('main .stack');
+        const max = stack ? stack.scrollHeight - stack.clientHeight : 0;
+        if (stack && max > 40) {
+          stack.scrollTop = Math.floor(max / 2);
+          if (stack.scrollTop > 15 && stack.scrollTop < max - 15) {
+            const midVal = primary.value;
+            stack.dispatchEvent(new WheelEvent('wheel', {
+              bubbles: true, cancelable: true, deltaY: 40, deltaX: 0, deltaMode: 0
+            }));
+            if (primary.value !== midVal) {
+              row.ok = false; row.notes.push('mid-stack hijacked');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e && e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  for (const s of soon) {
+    const row = { tool: s, ok: true, notes: [] };
+    let iframe;
+    try {
+      iframe = await loadFrame(s);
+      const doc = iframe.contentDocument;
+      if (!doc.body.classList.contains('is-soon')) {
+        row.ok = false; row.notes.push('not soon');
+      }
+      if (doc.documentElement.getAttribute('data-gestures') === '1') {
+        row.ok = false; row.notes.push('gestures mounted on soon');
+      }
+      doc.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -40 }));
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e && e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})();
+</script>
