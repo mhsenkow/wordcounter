@@ -328,7 +328,7 @@ label.row {
   grid-template-columns: minmax(0, 1fr) minmax(5.5rem, 42%);
   align-items: center;
   gap: 16px;
-  min-height: 44px;
+  min-height: 48px;
   margin: 0;
   padding: 0;
   border-bottom: 1px solid var(--hair);
@@ -337,6 +337,7 @@ label.row {
   letter-spacing: .01em;
   color: var(--mute);
   cursor: text;
+  touch-action: pan-y;
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
@@ -456,7 +457,8 @@ select {
   appearance: none;
   font: inherit;
   font-family: var(--digits);
-  font-size: 15px;
+  /* ≥16px prevents iOS Safari focus-zoom */
+  font-size: 16px;
   font-variant-numeric: tabular-nums lining-nums;
   letter-spacing: -.01em;
   color: var(--ink);
@@ -468,10 +470,12 @@ select {
   padding: 12px 0;
   min-width: 0;
   width: 100%;
+  max-width: 100%;
   text-align: right;
   line-height: 1.2;
   caret-color: var(--accent);
   transition: color var(--dur-fast) var(--ease-out);
+  touch-action: manipulation;
 }
 
 input[type="number"]::-webkit-outer-spin-button,
@@ -530,7 +534,7 @@ button.preset,
 .seg.presets .linkish {
   font: inherit;
   font-family: var(--digits);
-  font-size: 12px;
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   letter-spacing: .02em;
   color: var(--mute);
@@ -538,11 +542,12 @@ button.preset,
   border: 0;
   border-right: 1px solid var(--hair);
   margin: 0;
-  padding: 11px 14px;
-  min-height: 40px;
+  padding: 10px 14px;
+  min-height: 44px;
   cursor: pointer;
   text-align: center;
   flex: 1 1 auto;
+  touch-action: manipulation;
   transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
 }
 
@@ -1286,10 +1291,76 @@ body.is-soon .soon-badge { align-self: center; }
 @media (max-width: 480px) {
   .tool-stage {
     --pad-r: 44px;
+    --pad-l: max(12px, env(safe-area-inset-left));
   }
   main .stack {
-    max-height: min(46dvh, 420px);
+    max-height: min(50dvh, 460px);
   }
+}
+
+/* —— Touch / phone instrument pass —— */
+@media (pointer: coarse), (max-width: 560px) {
+  body.tool-app {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: calc(max(14px, env(safe-area-inset-right)) + 8px);
+  }
+  .face {
+    padding: 8px 10px 10px;
+  }
+  .face-value {
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
+  }
+  label.row {
+    grid-template-columns: minmax(0, 1fr) minmax(7rem, 48%);
+    min-height: 52px;
+    gap: 12px;
+  }
+  label.row .value {
+    gap: 4px;
+  }
+  .stack {
+    padding: 12px 12px 14px;
+    touch-action: pan-y;
+  }
+  /* Face / stage invite vertical scrub on touch */
+  .face,
+  .tool-stage {
+    touch-action: none;
+    cursor: ns-resize;
+  }
+  html[data-gestures="1"] label.row {
+    touch-action: none;
+  }
+  html[data-gestures="1"] label.row .value {
+    cursor: ns-resize;
+  }
+  /* While typing, allow normal caret / keyboard */
+  html[data-gestures="1"] label.row:focus-within {
+    touch-action: manipulation;
+  }
+  html[data-gestures="1"] label.row:focus-within .value {
+    cursor: text;
+  }
+  body.is-kb-open main .stack {
+    max-height: min(38dvh, 320px);
+  }
+  body.is-kb-open .tool-stage {
+    opacity: .35;
+  }
+  #settings > .inner {
+    max-height: min(62dvh, 520px);
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .seg label span {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  h1 span { display: none; }
 }
 
 /* Inline strip viz optional — hide when stage present for same tool */
@@ -1455,7 +1526,3 @@ body.settings-open #settings { transform: none; }
 [data-theme="nes"] .face-value { image-rendering: pixelated; }
 [data-theme="contrast"] .face-value { color: #ff0; }
 [data-theme="paper"] .face-sub { font-style: italic; }
-
-@media (max-width: 560px) {
-  h1 span { display: none; }
-}

@@ -452,8 +452,9 @@
   }
   .target-field { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .target-field input {
-    width: 4.5rem; font: inherit; font-size: 14px; color: var(--ink);
-    background: transparent; border: 0; padding: 2px 0;
+    width: 4.5rem; font: inherit; font-size: 16px; color: var(--ink);
+    background: transparent; border: 0; padding: 6px 0;
+    touch-action: manipulation;
   }
   .target-field em { font-size: 10px; color: var(--mute); font-style: normal; }
   fieldset .opts { display: flex; flex-direction: column; gap: 8px; }
@@ -485,8 +486,9 @@
     display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
   }
   .field-row input {
-    width: 4.5rem; font: inherit; font-size: 14px; color: var(--ink);
-    background: transparent; border: 0; padding: 2px 0;
+    width: 4.5rem; font: inherit; font-size: 16px; color: var(--ink);
+    background: transparent; border: 0; padding: 6px 0;
+    touch-action: manipulation;
   }
   .field-row em { font-size: 10px; color: var(--mute); font-style: normal; }
   .keys-hint { font-size: 10px; color: var(--mute); line-height: 1.65; }
@@ -581,10 +583,11 @@
     gap: 8px; text-align: center; max-width: 72%;
   }
   .dial-core .label-input {
-    width: 100%; font: inherit; font-size: 12px; letter-spacing: .01em;
+    width: 100%; font: inherit; font-size: 16px; letter-spacing: .01em;
     text-transform: none; text-align: center; color: var(--mute);
     background: transparent; border: 0; border-bottom: 1px solid transparent;
-    padding: 2px 4px;
+    padding: 6px 4px;
+    touch-action: manipulation;
   }
   .dial-core .label-input:hover,
   .dial-core .label-input:focus {
@@ -1362,7 +1365,7 @@
       </svg>
       <div class="dial-core" id="dialCore" data-figure="stack">
         <input id="labelInput" class="label-input" type="text" maxlength="64"
-          placeholder="name this" spellcheck="true" aria-label="session name">
+          placeholder="name this" spellcheck="true" autocomplete="off" enterkeyhint="done" aria-label="session name">
         <div class="face-stack">
           <div class="face-time" id="faceTime" role="timer" aria-live="polite" aria-atomic="true">0:00</div>
           <p class="face-sub" id="faceSub"></p>
@@ -1427,7 +1430,7 @@
         <fieldset class="layer-row" data-layer="target">
           <legend>limit</legend>
           <div class="target-field">
-            <input id="targetInput" type="text" inputmode="numeric" placeholder="25m" aria-label="time limit">
+            <input id="targetInput" type="text" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="25m" aria-label="time limit">
             <em>goal · presets</em>
           </div>
           <button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" aria-label="show limit"></button>
@@ -1595,7 +1598,7 @@
         <fieldset>
           <legend>default name</legend>
           <div class="field-row">
-            <input id="labelDefaultInput" type="text" maxlength="64" placeholder="session name" aria-label="default session name" spellcheck="true">
+            <input id="labelDefaultInput" type="text" maxlength="64" placeholder="session name" autocomplete="off" enterkeyhint="done" aria-label="default session name" spellcheck="true">
             <em>optional</em>
           </div>
         </fieldset>
