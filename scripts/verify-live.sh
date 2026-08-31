@@ -3,7 +3,7 @@
 set -euo pipefail
 BASE="${VERIFY_BASE:-https://www.ibm.io}"
 GG_IP="${GG_IP:-184.154.70.198}"
-CACHE_V=44
+CACHE_V=45
 fail=0
 
 check() {
