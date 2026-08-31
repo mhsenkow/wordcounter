@@ -1,0 +1,24 @@
+{
+  "name": "ibm.io tools",
+  "short_name": "ibm tools",
+  "description": "Local instruments for words, time, money, convert, form, and chance.",
+  "start_url": "/tools/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f2f0",
+  "theme_color": "#f2f2f0",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

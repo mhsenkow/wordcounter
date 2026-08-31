@@ -7,13 +7,15 @@
 <meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <title>streak — ibm.io</title>
-<meta name="description" content="coin bias">
+<meta name="description" content="next flip">
 <link rel="canonical" href="https://ibm.io/streak/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="streak">
 <header class="masthead">
@@ -36,35 +38,56 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>coin</legend>
-      <label class="row"><span class="key">bias p</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="bias percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">streak</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="streak length"></span></label>
+      <label class="row"><span class="key">chance</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="chance of heads percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">run</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="streak length"></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="streak presets">
       <button type="button" class="preset" data-p="50" data-run="5">fair · 5</button>
       <button type="button" class="preset" data-p="50" data-run="10">fair · 10</button>
-      <button type="button" class="preset" data-p="60" data-run="5">hot 60</button>
-      <button type="button" class="preset" data-p="40" data-run="5">cold 40</button>
+      <button type="button" class="preset" data-p="60" data-run="5">60% · 5</button>
+      <button type="button" class="preset" data-p="40" data-run="5">40% · 5</button>
     </div>
+    <p class="note">past flips do not change the next one</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('streak');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'streak',
-    about: "Independent flips: a streak does not make the next toss \"due.\" Face is still p — not the fallacy.",
-    hasViz: true
+    about: "Independent flips: a run of heads does not make tails \"due.\" The next toss still has the same chance — the streak itself was just unlikely.",
+    hasViz: true,
+    extra: {"defaults":{"view":"dual"},"fieldsHtml":"<fieldset><legend>view</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"streak view\"><label><input type=\"radio\" name=\"view\" value=\"dual\"><span>dual</span></label><label><input type=\"radio\" name=\"view\" value=\"run\"><span>run</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('streak');
-  function paint(run, p01){
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function paint(run, p01, streakP){
+    var view = S().view || 'dual';
     var n = Math.max(0, Math.min(24, Math.round(run)));
-    var html = '<div class="streak-row">';
+    var html = '<div class="streak-tracks" data-view="' + view + '">';
+    html += '<div class="streak-row is-run">';
     for (var i = 0; i < n; i++) html += '<i class="on" data-scrub="run"></i>';
-    if (n < 24) html += '<i class="next" data-scrub="p" style="--p:' + Math.round(p01 * 100) + '%"></i>';
     html += '</div>';
+    if (view === 'dual') {
+      html += '<div class="streak-row is-myth">';
+      for (var j = 0; j < n; j++) {
+        var fade = Math.max(0.12, 1 - j / Math.max(n, 1));
+        html += '<i class="myth" style="opacity:' + fade.toFixed(2) + '"></i>';
+      }
+      html += '<i class="next" data-scrub="p" style="--p:' + Math.round(p01 * 100) + '%"></i>';
+      html += '</div>';
+    } else if (n < 24) {
+      html += '<div class="streak-row"><i class="next" data-scrub="p" style="--p:' + Math.round(p01 * 100) + '%"></i></div>';
+    }
+    html += '<div class="streak-cap">chance of this run ' +
+      (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
+      '</div></div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
@@ -75,11 +98,12 @@
     var streakP = Math.pow(p01, run);
     document.getElementById('out').textContent = (Math.round(pct * 10) / 10) + '%';
     document.getElementById('sub').textContent =
-      'next still ' + pct + '% · P(run of ' + run + ') ' +
+      'next still ' + pct + '% · this run was ' +
       (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
       ' · not “due”';
-    paint(run, p01);
+    paint(run, p01, streakP);
   }
+  window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){
     var btn = e.target.closest('.preset');
     if (!btn) return;

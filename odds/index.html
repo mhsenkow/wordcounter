@@ -7,13 +7,15 @@
 <meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <title>odds — ibm.io</title>
-<meta name="description" content="chance · ev">
+<meta name="description" content="chance · payoff">
 <link rel="canonical" href="https://ibm.io/odds/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="odds">
 <header class="masthead">
@@ -31,41 +33,61 @@
 
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
-    <p class="face-sub" id="sub">expected value</p>
+    <p class="face-sub" id="sub">average outcome</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
       <legend>bet</legend>
-      <label class="row"><span class="key">chance</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12" data-primary data-axis="y" data-axis-x="win" data-step-fast="1" data-gesture="1" aria-label="chance percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">$ if win</span><span class="value"><input id="win" type="number" inputmode="decimal" step="1" value="100" data-step-fast="10" aria-label="if win"></span></label>
-      <label class="row"><span class="key">$ if lose</span><span class="value"><input id="lose" type="number" inputmode="decimal" step="1" value="-20" aria-label="if lose"></span></label>
+      <label class="row"><span class="key">chance</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12" data-primary data-axis="y" data-axis-x="win" data-step-fast="1" data-gesture="1" aria-label="win chance percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">$ if win</span><span class="value"><input id="win" type="number" inputmode="decimal" step="1" value="100" data-step-fast="10" aria-label="dollars if win"></span></label>
+      <label class="row"><span class="key">$ if lose</span><span class="value"><input id="lose" type="number" inputmode="decimal" step="1" value="-20" aria-label="dollars if lose"></span></label>
     </fieldset>
+    <p class="note">positive means the bet pays on average</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('odds');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'odds',
-    about: "Expected value on a signed win/lose field. Dots in the win zone = chance.",
-    hasViz: true
+    about: "What a bet pays on average: win chance × win amount, plus lose chance × lose amount. The seesaw tips with that average.",
+    hasViz: true,
+    extra: {"defaults":{"frame":"seesaw"},"fieldsHtml":"<fieldset><legend>frame</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"odds frame\"><label><input type=\"radio\" name=\"frame\" value=\"seesaw\"><span>seesaw</span></label><label><input type=\"radio\" name=\"frame\" value=\"field\"><span>field</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('odds');
-  function paint(ev, p){
-    var span = Math.max(Math.abs(ev) * 2, 1);
-    var pct = 50 + (ev / span) * 45;
-    pct = Math.max(5, Math.min(95, pct));
-    var on = Math.round(Math.max(0, Math.min(100, p * 100)) / 10);
-    var dots = '';
-    for (var i = 0; i < 10; i++) dots += '<i class="' + (i < on ? 'on' : '') + '"></i>';
-    stage.innerHTML =
-      '<div class="signed-field"><div class="lose"></div><div class="win"></div>' +
-      '<div class="zero"></div>' +
-      '<div class="ev-mark' + (ev < 0 ? ' is-neg' : '') + '" style="left:' + pct + '%"></div>' +
-      '<div class="chance-dots">' + dots + '</div></div>';
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function paint(ev, p, win, lose){
+    var frame = S().frame || 'seesaw';
+    if (frame === 'field') {
+      var span = Math.max(Math.abs(ev) * 2, 1);
+      var pct = 50 + (ev / span) * 45;
+      pct = Math.max(5, Math.min(95, pct));
+      var on = Math.round(Math.max(0, Math.min(100, p * 100)) / 10);
+      var dots = '';
+      for (var i = 0; i < 10; i++) dots += '<i class="' + (i < on ? 'on' : '') + '"></i>';
+      stage.innerHTML =
+        '<div class="signed-field"><div class="lose" data-scrub="lose"></div><div class="win" data-scrub="win"></div>' +
+        '<div class="zero"></div>' +
+        '<div class="ev-mark' + (ev < 0 ? ' is-neg' : '') + '" style="left:' + pct + '%"></div>' +
+        '<div class="chance-dots" data-scrub="p">' + dots + '</div></div>';
+    } else {
+      var tilt = Math.max(-18, Math.min(18, ev * 2));
+      var weights = Math.max(1, Math.min(12, Math.round(p * 12)));
+      var html = '<div class="seesaw" style="--tilt:' + tilt.toFixed(1) + 'deg">';
+      html += '<div class="beam"><div class="plate lose" data-scrub="lose"><em>lose</em><span>' + lose + '</span></div>';
+      html += '<div class="fulcrum" data-scrub="p"></div>';
+      html += '<div class="plate win" data-scrub="win"><em>win</em><span>' + win + '</span><div class="weights">';
+      for (var w = 0; w < weights; w++) html += '<i></i>';
+      html += '</div></div></div>';
+      html += '<div class="ev-balance">' + (ev >= 0 ? '+' : '') + ev.toFixed(2) + '</div></div>';
+      stage.innerHTML = html;
+    }
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
@@ -76,8 +98,9 @@
     document.getElementById('out').textContent = (ev >= 0 ? '+' : '') + ev.toFixed(2);
     document.getElementById('sub').textContent =
       (p * 100).toFixed(1) + '% × ' + win + ' + ' + ((1 - p) * 100).toFixed(1) + '% × ' + lose;
-    paint(ev, p);
+    paint(ev, p, win, lose);
   }
+  window.__ibmToolRender = render;
   ['p','win','lose'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="bitrate">
 <header class="masthead">
@@ -41,19 +43,24 @@
     </fieldset>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('bitrate');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'bitrate',
-    about: "Rough wall-clock download time. Grid = MB chunks; dial = duration.",
-    hasViz: true
+    about: "Rough wall-clock download time. Transfer river of packets with an ETA clock.",
+    hasViz: true,
+    extra: {"defaults":{"clock":"end","packets":"blocks"},"fieldsHtml":"<fieldset><legend>clock</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"eta clock\"><label><input type=\"radio\" name=\"clock\" value=\"end\"><span>end</span></label><label><input type=\"radio\" name=\"clock\" value=\"ring\"><span>ring</span></label></div></fieldset><fieldset><legend>packets</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"packet style\"><label><input type=\"radio\" name=\"packets\" value=\"blocks\"><span>blocks</span></label><label><input type=\"radio\" name=\"packets\" value=\"stream\"><span>stream</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('bitrate');
   var CIRC = 2 * Math.PI * 46;
+  function S(){ return (toolUI && toolUI.settings) || {}; }
   function fmt(sec){
     sec = Math.max(0, Math.round(sec));
     var h = Math.floor(sec / 3600);
@@ -63,20 +70,33 @@
     return m + ':' + String(s).padStart(2,'0');
   }
   function paint(mb, sec){
-    var maxCells = 120;
+    var clock = S().clock || 'end';
+    var packets = S().packets || 'blocks';
+    var maxCells = packets === 'stream' ? 64 : 48;
     var scale = mb > maxCells ? mb / maxCells : 1;
     var cells = Math.max(0, Math.min(maxCells, Math.round(mb / scale)));
     var ref = 3600;
     var frac = Math.max(0, Math.min(1, sec / ref));
-    var arc = CIRC * frac;
-    stage.innerHTML =
-      '<div class="time-dial"><svg viewBox="0 0 100 100" aria-hidden="true">' +
-      '<circle class="track" cx="50" cy="50" r="46"/>' +
-      '<circle class="arc" cx="50" cy="50" r="46" style="stroke-dasharray:' + arc.toFixed(2) + ' ' + CIRC.toFixed(2) + '"/>' +
-      '</svg></div><div class="stage-grid is-sq" id="bwGrid"></div>';
-    IBMNumberTool.paintCells(document.getElementById('bwGrid'), {
-      count: cells, on: cells, shape: 'sq', cols: Math.ceil(Math.sqrt(cells)) || 1, rawCount: mb
-    });
+    var html = '<div class="xfer-river" data-clock="' + clock + '" data-packets="' + packets + '">';
+    html += '<div class="river" data-scrub="size">';
+    for (var i = 0; i < cells; i++) {
+      var done = i / Math.max(cells, 1) < frac;
+      html += '<i class="' + (done ? 'on' : '') + (packets === 'stream' ? ' is-stream' : '') + '"></i>';
+    }
+    html += '</div>';
+    if (clock === 'ring') {
+      var arc = CIRC * frac;
+      html +=
+        '<div class="time-dial" data-scrub="speed"><svg viewBox="0 0 100 100" aria-hidden="true">' +
+        '<circle class="track" cx="50" cy="50" r="46"/>' +
+        '<circle class="arc" cx="50" cy="50" r="46" style="stroke-dasharray:' + arc.toFixed(2) + ' ' + CIRC.toFixed(2) + '"/>' +
+        '</svg></div>';
+    } else {
+      html += '<div class="eta-cap" data-scrub="speed">' + fmt(sec) + '</div>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
     var mb = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
@@ -86,6 +106,7 @@
     document.getElementById('sub').textContent = mb + ' MB @ ' + mbps + ' Mbps';
     paint(mb, sec);
   }
+  window.__ibmToolRender = render;
   ['size','speed'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

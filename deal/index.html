@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="deal">
 <header class="masthead">
@@ -36,35 +38,48 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>deck</legend>
-      <label class="row"><span class="key">left</span><span class="value"><input id="left" type="number" inputmode="numeric" min="1" max="52" step="1" value="40" data-primary data-axis="y" data-axis-x="want" data-step-fast="5" data-gesture="1" aria-label="cards left"></span></label>
-      <label class="row"><span class="key">want</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="favorable left"></span></label>
+      <label class="row"><span class="key">left</span><span class="value"><input id="left" type="number" inputmode="numeric" min="1" max="52" step="1" value="40" data-primary data-axis="y" data-axis-x="want" data-step-fast="5" data-gesture="1" aria-label="cards left in deck"></span></label>
+      <label class="row"><span class="key">favor</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="favorable cards left"></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="deck presets">
-      <button type="button" class="preset" data-left="52" data-want="4">aces</button>
-      <button type="button" class="preset" data-left="52" data-want="13">suit</button>
-      <button type="button" class="preset" data-left="52" data-want="16">faces+</button>
-      <button type="button" class="preset" data-left="20" data-want="3">late</button>
+      <button type="button" class="preset" data-left="52" data-want="4">4 aces</button>
+      <button type="button" class="preset" data-left="52" data-want="13">1 suit</button>
+      <button type="button" class="preset" data-left="52" data-want="16">10+</button>
+      <button type="button" class="preset" data-left="20" data-want="3">late shoe</button>
     </div>
+    <p class="note">lit cards are the ones you want</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('deal');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'deal',
-    about: "Cards still in the deck vs favorable ones left. Face is chance the next card is favorable.",
-    hasViz: true
+    about: "Chance the next card is one you want. Set how many cards remain and how many of those are still favorable.",
+    hasViz: true,
+    extra: {"defaults":{"style":"poker","favor":"tint"},"fieldsHtml":"<fieldset><legend>style</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"deck style\"><label><input type=\"radio\" name=\"style\" value=\"poker\"><span>poker</span></label><label><input type=\"radio\" name=\"style\" value=\"shoe\"><span>shoe</span></label></div></fieldset><fieldset><legend>favor</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"favorable mark\"><label><input type=\"radio\" name=\"favor\" value=\"tint\"><span>tint</span></label><label><input type=\"radio\" name=\"favor\" value=\"pip\"><span>pip</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('deal');
+  function S(){ return (toolUI && toolUI.settings) || {}; }
   function paint(left, want){
     var n = Math.max(0, Math.min(52, Math.round(left)));
     var w = Math.max(0, Math.min(n, Math.round(want)));
-    var html = '<div class="deal-grid" style="--cols:' + Math.min(13, Math.max(4, Math.ceil(Math.sqrt(n)))) + '">';
-    for (var i = 0; i < n; i++) html += '<i class="' + (i < w ? 'on' : '') + '" data-scrub="' + (i < w ? 'want' : 'left') + '"></i>';
-    html += '</div>';
+    var style = S().style || 'poker';
+    var favor = S().favor || 'tint';
+    var thick = Math.max(6, Math.min(100, (n / 52) * 100));
+    var html = '<div class="deal-shoe" data-style="' + style + '" data-favor="' + favor + '">';
+    html += '<div class="shoe" data-scrub="left" style="--thick:' + thick.toFixed(1) + '%"><i></i><em>' + n + '</em></div>';
+    html += '<div class="deal-grid" style="--cols:' + Math.min(13, Math.max(4, Math.ceil(Math.sqrt(n)))) + '">';
+    for (var i = 0; i < n; i++) {
+      html += '<i class="' + (i < w ? 'on' : '') + '" data-scrub="' + (i < w ? 'want' : 'left') + '"></i>';
+    }
+    html += '</div></div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
@@ -75,13 +90,14 @@
       want = left;
       document.getElementById('want').value = String(want);
     }
-    var p = want / left;
-    var pct = Math.round(p * 1000) / 10;
+    var pp = want / left;
+    var pct = Math.round(pp * 1000) / 10;
     document.getElementById('out').textContent = pct + '%';
     document.getElementById('sub').textContent =
-      want + ' of ' + left + ' · odds 1∶' + (want ? (Math.round((left / want) * 10) / 10) : '∞');
+      want + ' of ' + left + ' left · about 1 in ' + (want ? (Math.round((left / want) * 10) / 10) : '∞');
     paint(left, want);
   }
+  window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){
     var btn = e.target.closest('.preset');
     if (!btn) return;

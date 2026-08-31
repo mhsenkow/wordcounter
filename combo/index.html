@@ -7,13 +7,15 @@
 <meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <title>combo — ibm.io</title>
-<meta name="description" content="n choose k">
+<meta name="description" content="pick k of n">
 <link rel="canonical" href="https://ibm.io/combo/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="combo">
 <header class="masthead">
@@ -31,29 +33,34 @@
 
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
-    <p class="face-sub" id="sub">ways</p>
+    <p class="face-sub" id="sub">ways to pick</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
       <legend>choose</legend>
-      <label class="row"><span class="key">n</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="n"></span></label>
-      <label class="row"><span class="key">k</span><span class="value"><input id="k" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="k"></span></label>
+      <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items"></span></label>
+      <label class="row"><span class="key">pick</span><span class="value"><input id="k" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="how many to pick"></span></label>
     </fieldset>
-    <p class="note">unordered combinations</p>
+    <p class="note">order does not matter</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('combo');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'combo',
-    about: "Unordered combinations C(n, k). Grid lights k of n cells.",
-    hasViz: true
+    about: "How many ways to pick k items from n when order does not matter — a poker hand, a lottery ticket, a team.",
+    hasViz: true,
+    extra: {"defaults":{"shape":"ring"},"fieldsHtml":"<fieldset><legend>shape</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"combo shape\"><label><input type=\"radio\" name=\"shape\" value=\"ring\"><span>ring</span></label><label><input type=\"radio\" name=\"shape\" value=\"grid\"><span>grid</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('combo');
+  function S(){ return (toolUI && toolUI.settings) || {}; }
   function choose(n, k){
     n = Math.floor(n); k = Math.floor(k);
     if (k < 0 || n < 0 || k > n) return 0;
@@ -63,25 +70,40 @@
     return Math.round(r);
   }
   function paint(n, k){
-    var maxN = 64;
-    var scale = n > maxN ? n / maxN : 1;
-    var cells = Math.max(0, Math.min(maxN, Math.round(n / scale)));
-    var on = Math.max(0, Math.min(cells, Math.round(k / scale)));
-    stage.innerHTML = '<div class="stage-grid is-sq" id="comboGrid"></div>';
-    IBMNumberTool.paintCells(document.getElementById('comboGrid'), {
-      count: cells, on: on, shape: 'sq',
-      cols: Math.ceil(Math.sqrt(cells)) || 1,
-      rawCount: n
-    });
+    var shape = S().shape || 'ring';
+    if (shape === 'grid' || (shape === 'auto' && n <= 16)) {
+      var maxN = 64;
+      var scale = n > maxN ? n / maxN : 1;
+      var cells = Math.max(0, Math.min(maxN, Math.round(n / scale)));
+      var on = Math.max(0, Math.min(cells, Math.round(k / scale)));
+      stage.innerHTML = '<div class="stage-grid is-sq" id="comboGrid"></div>';
+      IBMNumberTool.paintCells(document.getElementById('comboGrid'), {
+        count: cells, on: on, shape: 'sq',
+        cols: Math.ceil(Math.sqrt(cells)) || 1,
+        rawCount: n
+      });
+      return;
+    }
+    var seats = Math.max(3, Math.min(48, n || 3));
+    var lit = Math.max(0, Math.min(seats, k));
+    var html = '<div class="combo-ring" style="--n:' + seats + '">';
+    for (var i = 0; i < seats; i++) {
+      var ang = (i / seats) * 360;
+      html += '<i class="' + (i < lit ? 'on' : '') + '" data-scrub="' + (i < lit ? 'k' : 'n') + '" style="--a:' + ang.toFixed(2) + 'deg"></i>';
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
     var n = Math.max(0, parseInt(document.getElementById('n').value, 10) || 0);
     var k = Math.max(0, parseInt(document.getElementById('k').value, 10) || 0);
     var ways = choose(n, k);
     document.getElementById('out').textContent = IBMNumberTool.formatCount(ways);
-    document.getElementById('sub').textContent = 'C(' + n + ', ' + k + ')';
+    document.getElementById('sub').textContent = 'pick ' + k + ' of ' + n;
     paint(n, k);
   }
+  window.__ibmToolRender = render;
   ['n','k'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

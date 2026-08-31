@@ -147,28 +147,49 @@ Layout: masthead (modes left, limit presets + theme + settings right) → dial f
 
 ## Tools suite
 
-Top-right **panel** (icons + micro titles) links the desk apps and number instruments: bill, hourly, fuel, unit, dose, bandwidth (/bitrate/), scale, ratio, type, odds, combo, sample — plus coming-soon slots for budget, exposure, deal, streak. Theme / chrome / font sync via `localStorage` key `ibm.tools.shared`. Regenerate number pages with `node scripts/gen-number-tools.mjs`.
+Top-right **panel** (icons + micro titles) links every live instrument. Theme / chrome / font sync via `localStorage` key `ibm.tools.shared`. Regenerate number pages with `node scripts/gen-number-tools.mjs`. Quiet map: [`/tools/`](tools/).
+
+| Group | Tools |
+|---|---|
+| **desk** | words, time |
+| **money** | bill, hourly, budget, fuel, tax |
+| **convert** | unit, dose, bandwidth (`/bitrate/`), scale (`/scalemap/`), pace |
+| **form** | ratio, type (`/typescale/`), exposure, contrast |
+| **chance** | odds, combo, deal, sample, streak, bayes |
+
+Number tools share gestures, settings, stage viz, **copy** / **link** (URL field state), and print styles via `lib/number-tool.*`. Pure formulas for agents/tests: `lib/calc/index.mjs` (+ `lib/count.mjs`, `lib/time.mjs`).
 
 ## File layout
 
 ```
 wordcounter/
-├── index.html           # Word counter
-├── timecount/           # Time counter
-├── bill/ hourly/ fuel/ …  # Number instruments (each index.html)
+├── index.html              # Word counter
+├── timecount/              # Time counter
+├── tools/                  # Quiet suite map
+├── bill/ hourly/ budget/ … # Number instruments (each index.html)
+├── bandwidth/              # Redirect → /bitrate/
+├── icons/                  # PWA icons
+├── manifest.webmanifest
+├── sw.js                   # Offline shell for static assets
 ├── lib/
-│   ├── count.mjs
-│   ├── time.mjs
-│   └── suite.js         # Panel nav + shared theme
+│   ├── count.mjs           # Pure word metrics (pages + MCP + tests)
+│   ├── time.mjs            # Pure time metrics
+│   ├── calc/               # Shared number-tool formulas (MCP + tests)
+│   ├── suite.js            # Panel nav + shared theme
+│   ├── number-tool.js      # Settings, gestures, stage, share/URL
+│   └── number-tool.css
 ├── scripts/
-│   └── gen-number-tools.mjs
+│   ├── gen-number-tools.mjs
+│   ├── sync-deploy.sh
+│   └── smoke-*.html / run-smoke.sh
+├── mcp/                    # Cloudflare Worker MCP
 ├── README.md
 └── AGENTS.md
 ```
 
 ## Production
 
-Live desk apps at [ibm.io/wordcount](https://ibm.io/wordcount/) and [ibm.io/timecount](https://ibm.io/timecount/); number tools at sibling paths (`/bill/`, `/unit/`, …). Deploy steps in `AGENTS.md`.
+Live desk apps at [ibm.io/wordcount](https://ibm.io/wordcount/) and [ibm.io/timecount](https://ibm.io/timecount/); suite map at [ibm.io/tools](https://ibm.io/tools/); number tools at sibling paths (`/bill/`, `/unit/`, …). Deploy steps in `AGENTS.md`. Dual origin: Cloudflare Worker + GreenGeeks mirror.
 
 ## License
 

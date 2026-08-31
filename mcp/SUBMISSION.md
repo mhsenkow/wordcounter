@@ -53,13 +53,14 @@ Count words, characters, sentences, paragraphs, and reading time. Text is not st
 ### Long description
 
 ```
-Accurate word and character counts for drafts, essays, and snippets — using the same rules as ibm.io/wordcount.
+Accurate word and character counts for drafts, essays, and snippets — using the same rules as ibm.io/wordcount — plus quiet suite math (tax/tip, pace/ETA, contrast, combinations, Bayes).
 
 • Words, characters, sentences, paragraphs, reading time (~200 wpm)
 • In-chat widget for quick visual summary
 • Link to the full offline editor when you need goals, themes, or private local editing
+• Suite calcs: tax_tip, pace_eta, contrast_ratio, combinations, bayes_update, parse_duration
 
-Text is processed in memory for each request and is not stored on the server. For long private drafts, use open_full_counter to open the browser app where your text stays on your device.
+Text is processed in memory for each request and is not stored on the server. Browse the instrument map at https://ibm.io/tools/. For long private drafts, use open_full_counter to open the browser app where your text stays on your device.
 ```
 
 ### Tags / categories
@@ -69,6 +70,7 @@ Text is processed in memory for each request and is not stored on the server. Fo
 - word count
 - character count
 - utilities
+- calculators
 
 ### Tool discovery hints (already in server metadata)
 
@@ -76,8 +78,9 @@ The model should invoke tools when users ask to:
 - count words / characters / sentences / paragraphs
 - get reading time or length of a draft
 - check essay or article length
+- compute tip+tax, pace/ETA, WCAG contrast, combinations, or a Bayes update
 
-Prefer `count_text` when a visual summary helps; `open_full_counter` when the user wants voice dictation, themes, or private offline editing; `compare_text` for before/after deltas.
+Prefer `count_text` when a visual summary helps; `open_full_counter` when the user wants voice dictation, themes, or private offline editing; `compare_text` for before/after deltas; suite calc tools for the matching math.
 
 ## Icon
 

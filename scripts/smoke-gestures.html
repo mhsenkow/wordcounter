@@ -22,28 +22,32 @@
     { path: 'exposure', primary: 'fnum', secondary: 'shut', pinchTarget: 'iso' },
     { path: 'deal', primary: 'left', secondary: 'want' },
     { path: 'streak', primary: 'p', secondary: 'run' },
+    { path: 'tax', primary: 'subtotal', secondary: 'tip' },
+    { path: 'pace', primary: 'distance', secondary: 'pace' },
+    { path: 'contrast', primary: 'lift' },
+    { path: 'bayes', primary: 'prior', secondary: 'hit' },
   ];
   const results = [];
 
-  function loadFrame(path) {
+  function loadFrame(src) {
     return new Promise((resolve, reject) => {
       const iframe = document.createElement('iframe');
       iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
-      iframe.src = '/' + path + '/?smoke=' + Date.now();
-      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      iframe.src = src;
+      const t = setTimeout(() => reject(new Error('timeout ' + src)), 8000);
       iframe.onload = () => {
         clearTimeout(t);
-        setTimeout(() => resolve(iframe), 120);
+        setTimeout(() => resolve(iframe), 160);
       };
       document.body.appendChild(iframe);
     });
   }
 
-  function fireWheel(doc, opts) {
+  function fireWheel(target, opts) {
     const e = new WheelEvent('wheel', Object.assign({
       bubbles: true, cancelable: true, deltaMode: 0
     }, opts));
-    doc.dispatchEvent(e);
+    target.dispatchEvent(e);
     return e.defaultPrevented;
   }
 
@@ -51,9 +55,12 @@
     const row = { tool: t.path, ok: true, notes: [] };
     let iframe;
     try {
-      iframe = await loadFrame(t.path);
+      try {
+        localStorage.removeItem('ibm.tool.' + t.path + '.values');
+        if (t.path === 'bill') localStorage.removeItem('ibm.tool.bill');
+      } catch (err) {}
+      iframe = await loadFrame('/' + t.path + '/?smoke=' + Date.now());
       const doc = iframe.contentDocument;
-      const win = iframe.contentWindow;
       if (doc.documentElement.getAttribute('data-gestures') !== '1') {
         row.ok = false; row.notes.push('data-gestures missing');
       }
@@ -61,6 +68,16 @@
       if (!primary || !primary.hasAttribute('data-primary')) {
         row.ok = false; row.notes.push('primary attr');
       }
+      /* Chrome form-restore can leave fields at max from prior runs — snap to defaults */
+      function resetField(el) {
+        if (!el) return;
+        const attr = el.getAttribute('value');
+        el.value = attr != null ? attr : (el.defaultValue || '1');
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      resetField(primary);
+      if (t.secondary) resetField(doc.getElementById(t.secondary));
+      if (t.pinchTarget) resetField(doc.getElementById(t.pinchTarget));
       if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
 
       const before = primary.value;
@@ -136,6 +153,101 @@
             }
           }
         }
+      }
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e && e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  /* —— Desk: words primary cycle (trackpad twin of swipe) —— */
+  {
+    const row = { tool: 'words', ok: true, notes: [] };
+    let iframe;
+    try {
+      iframe = await loadFrame('/?smoke=' + Date.now());
+      const doc = iframe.contentDocument;
+      const block = doc.getElementById('primaryBlock');
+      const label = doc.getElementById('primaryLabel');
+      const draft = doc.getElementById('text') || doc.querySelector('textarea');
+      if (!block || !label) {
+        row.ok = false; row.notes.push('primaryBlock/label missing');
+      } else {
+        if (draft && draft.blur) draft.blur();
+        if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
+        const before = label.textContent.trim();
+        for (let i = 0; i < 4; i++) fireWheel(block, { deltaY: 0, deltaX: 60 });
+        await new Promise(r => setTimeout(r, 50));
+        const after = label.textContent.trim();
+        if (after === before) {
+          row.ok = false; row.notes.push('horizontal wheel no cycle ' + before);
+        }
+        doc.body.classList.add('settings-open');
+        const freeze = label.textContent.trim();
+        for (let i = 0; i < 4; i++) fireWheel(block, { deltaY: 0, deltaX: 60 });
+        if (label.textContent.trim() !== freeze) {
+          row.ok = false; row.notes.push('settings still cycles primary');
+        }
+        doc.body.classList.remove('settings-open');
+      }
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e && e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  /* —— Desk: time dial / chart scrub + arrow keys —— */
+  {
+    const row = { tool: 'time', ok: true, notes: [] };
+    let iframe;
+    try {
+      iframe = await loadFrame('/timecount/?smoke=' + Date.now());
+      const doc = iframe.contentDocument;
+      const dial = doc.getElementById('dial');
+      const target = doc.getElementById('targetInput');
+      const progress = doc.getElementById('progress');
+      if (!dial || !target) {
+        row.ok = false; row.notes.push('dial/target missing');
+      } else {
+        if (doc.activeElement && doc.activeElement.blur) doc.activeElement.blur();
+        /* Ensure a soft limit exists so scrub is enabled */
+        if (!target.value) {
+          target.value = '25m';
+          target.dispatchEvent(new Event('change', { bubbles: true }));
+          await new Promise(r => setTimeout(r, 40));
+        }
+        const before = target.value;
+        for (let i = 0; i < 3; i++) fireWheel(dial, { deltaY: -40, deltaX: 0 });
+        await new Promise(r => setTimeout(r, 40));
+        if (target.value === before) {
+          row.ok = false; row.notes.push('dial wheel no change ' + before);
+        }
+        if (progress) {
+          progress.hidden = false;
+          const mid = target.value;
+          for (let i = 0; i < 3; i++) fireWheel(progress, { deltaY: -40, deltaX: 0 });
+          await new Promise(r => setTimeout(r, 40));
+          if (target.value === mid) {
+            row.ok = false; row.notes.push('chart wheel no change');
+          }
+        }
+        const keyBefore = target.value;
+        doc.dispatchEvent(new KeyboardEvent('keydown', {
+          key: 'ArrowUp', bubbles: true, cancelable: true
+        }));
+        await new Promise(r => setTimeout(r, 40));
+        if (target.value === keyBefore) {
+          row.ok = false; row.notes.push('ArrowUp no nudge');
+        }
+        doc.body.classList.add('settings-open');
+        const freeze = target.value;
+        for (let i = 0; i < 3; i++) fireWheel(dial, { deltaY: -40, deltaX: 0 });
+        if (target.value !== freeze) {
+          row.ok = false; row.notes.push('settings still scrubs dial');
+        }
+        doc.body.classList.remove('settings-open');
       }
     } catch (e) {
       row.ok = false; row.notes.push(String(e && e.message || e));

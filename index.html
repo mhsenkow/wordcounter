@@ -10,6 +10,8 @@
 <meta name="description" content="Free online word counter. Count words, characters, sentences, paragraphs, and reading time in your browser. No account — your draft stays on this device.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://ibm.io/wordcount/">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ibm.io">
 <meta property="og:locale" content="en_US">
@@ -1880,6 +1882,11 @@
   }
   .primary .goal-hint[data-met="true"] { color: var(--mark); }
   .primary.is-selecting b { color: var(--accent); }
+  .primary.is-cycling b {
+    transition: transform .16s ease, opacity .16s ease;
+    transform: translateX(2px);
+    opacity: .88;
+  }
   .primary .select-hint {
     font-size: 10px;
     letter-spacing: 0.06em;
@@ -4265,6 +4272,7 @@
     <div data-metric="sentences" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>sentences</dt><dd>0</dd></div>
     <div data-metric="paragraphs" data-annotate tabindex="0" role="button" aria-pressed="false"><dt>paragraphs</dt><dd>0</dd></div>
     <div data-metric="reading"><dt>reading</dt><dd>0:00</dd></div>
+    <div data-metric="session" id="sessionHintRow" hidden><dt>session</dt><dd id="sessionHint">—</dd></div>
     <div data-metric="speaking"><dt>speaking</dt><dd>0:00</dd></div>
     <div data-metric="pages"><dt>pages</dt><dd>0</dd></div>
   </dl>
@@ -4292,7 +4300,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=31"></script>
+<script src="lib/suite.js?v=35"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
@@ -5061,6 +5069,83 @@
       right: function () { cyclePrimary(-1); }
     });
 
+    /* Desktop / trackpad twin of primary swipe — same cycle, never steals the draft */
+    (function mountPrimaryInstrument() {
+      if (!primaryBlock) return;
+      var THRESH = 48;
+      var accumX = 0;
+      var lastStep = 0;
+      var drag = null;
+      function gated() {
+        if (document.body.classList.contains('settings-open')) return true;
+        var a = document.activeElement;
+        if (a && (a === text || (a.closest && a.closest('#editor')))) return true;
+        return false;
+      }
+      function step(dir) {
+        var now = Date.now();
+        if (now - lastStep < 90) return;
+        lastStep = now;
+        cyclePrimary(dir);
+        primaryBlock.classList.add('is-cycling');
+        setTimeout(function () { primaryBlock.classList.remove('is-cycling'); }, 180);
+      }
+      primaryBlock.addEventListener('wheel', function (e) {
+        if (gated()) return;
+        var dx = e.deltaX;
+        var dy = e.deltaY;
+        /* Prefer horizontal; Shift+vertical also cycles */
+        var useX = Math.abs(dx) >= Math.abs(dy) || e.shiftKey;
+        if (!useX) return;
+        e.preventDefault();
+        accumX += e.shiftKey && Math.abs(dy) > Math.abs(dx) ? dy : dx;
+        while (Math.abs(accumX) >= THRESH) {
+          var dir = accumX > 0 ? -1 : 1;
+          accumX -= (accumX > 0 ? 1 : -1) * THRESH;
+          step(dir);
+        }
+      }, { passive: false });
+      primaryBlock.addEventListener('pointerdown', function (e) {
+        if (gated()) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (e.target && e.target.closest && e.target.closest('button, a, input')) return;
+        drag = { id: e.pointerId, x: e.clientX, accum: 0, moved: false };
+        try { primaryBlock.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      primaryBlock.addEventListener('pointermove', function (e) {
+        if (!drag || e.pointerId !== drag.id) return;
+        var dx = e.clientX - drag.x;
+        drag.x = e.clientX;
+        drag.accum += dx;
+        if (!drag.moved && Math.abs(drag.accum) < 10) return;
+        drag.moved = true;
+        e.preventDefault();
+        document.body.classList.add('is-scrubbing');
+        while (Math.abs(drag.accum) >= THRESH) {
+          var dir = drag.accum > 0 ? -1 : 1;
+          drag.accum -= (drag.accum > 0 ? 1 : -1) * THRESH;
+          step(dir);
+        }
+      });
+      function endPrimaryDrag(e) {
+        if (!drag || (e && e.pointerId !== drag.id)) return;
+        var moved = drag.moved;
+        drag = null;
+        document.body.classList.remove('is-scrubbing');
+        if (moved) {
+          var block = function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            document.removeEventListener('click', block, true);
+          };
+          document.addEventListener('click', block, true);
+          setTimeout(function () { document.removeEventListener('click', block, true); }, 350);
+        }
+      }
+      primaryBlock.addEventListener('pointerup', endPrimaryDrag);
+      primaryBlock.addEventListener('pointercancel', endPrimaryDrag);
+    })();
+
     // Whole dock: swipe up opens settings; L/R theme when sheet is closed.
     bindSwipe(dock, {
       ignoreButton: true,
@@ -5565,10 +5650,14 @@
     primaryValue.textContent = primary.format(show);
     primaryLabel.textContent = primary.label(primary.value(show));
     primaryBlock.classList.toggle('is-selecting', !!selCount);
+    refreshSessionHint();
     if (selCount) {
       selectHint.hidden = false;
       selectHint.textContent = 'selection · ' + n.format(selCount.words) +
-        (selCount.words === 1 ? ' word' : ' words');
+        (selCount.words === 1 ? ' word' : ' words') +
+        ' · ' + n.format(selCount.chars) + ' chars · ' +
+        n.format(selCount.sentences) +
+        (selCount.sentences === 1 ? ' sentence' : ' sentences');
     } else {
       selectHint.hidden = true;
       selectHint.textContent = '';
@@ -5672,6 +5761,7 @@
 
   function closeSuiteNav() {
     if (window.IBMTools && typeof IBMTools.closeSuiteNav === 'function') IBMTools.closeSuiteNav();
+    if (window.IBMTools && typeof IBMTools.closeHelp === 'function') IBMTools.closeHelp();
   }
 
   function setSettingsOpen(open) {
@@ -6376,6 +6466,10 @@
 
     if (e.key === 'Escape') {
       e.preventDefault();
+      if (window.IBMTools && typeof IBMTools.isHelpOpen === 'function' && IBMTools.isHelpOpen()) {
+        IBMTools.closeHelp();
+        return;
+      }
       if (listening || voiceState === 'wait' || voiceState === 'listen') stopVoice();
       else if (voiceState === 'prime' || voiceState === 'denied' || voiceState === 'error') {
         setVoiceUi('idle', '', '');
@@ -6425,7 +6519,43 @@
 
   loadSettings();
   applySettingsControls();
+
+  function formatSessionMs(ms) {
+    ms = Math.max(0, Math.round(ms || 0));
+    var s = Math.floor(ms / 1000);
+    var m = Math.floor(s / 60);
+    var h = Math.floor(m / 60);
+    s = s % 60; m = m % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    return m + ':' + String(s).padStart(2,'0');
+  }
+  function refreshSessionHint() {
+    var row = document.getElementById('sessionHintRow');
+    var dd = document.getElementById('sessionHint');
+    if (!row || !dd) return;
+    var ms = 0;
+    try {
+      var raw = localStorage.getItem('ibm.tools.session');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && parsed.elapsedMs > 0) ms = parsed.elapsedMs;
+      }
+      if (!ms && window.IBMTools) {
+        var shared = IBMTools.loadShared() || {};
+        if (shared.lastSessionMs > 0) ms = shared.lastSessionMs;
+      }
+    } catch (e) {}
+    if (ms > 0) {
+      row.hidden = false;
+      dd.textContent = formatSessionMs(ms);
+    } else {
+      row.hidden = true;
+      dd.textContent = '—';
+    }
+  }
+
   if (window.IBMTools) IBMTools.mountSuiteNav('wordcount');
+  refreshSessionHint();
   try { text.value = localStorage.getItem(TEXT_KEY) || ''; } catch (e) {}
   import('./lib/count.mjs').then(function (WC) {
     window.__WC = WC;
@@ -6444,8 +6574,14 @@
   text.addEventListener('select', render);
   text.addEventListener('keyup', render);
   text.addEventListener('mouseup', render);
+  var selectionSettle = null;
   document.addEventListener('selectionchange', function () {
-    if (document.activeElement === text) render();
+    if (document.activeElement !== text) return;
+    if (selectionSettle) clearTimeout(selectionSettle);
+    selectionSettle = setTimeout(function () {
+      selectionSettle = null;
+      render();
+    }, 60);
   });
 
   clearBtn.addEventListener('click', requestClear);

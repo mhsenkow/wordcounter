@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="hourly">
 <header class="masthead">
@@ -42,27 +44,52 @@
     </fieldset>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('hourly');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'hourly',
-    about: "Hourly ↔ day rate ↔ project total. Day columns fill with worked hours.",
-    hasViz: true
+    about: "Hourly ↔ day rate ↔ project total. Calendar strip: weeks as rows, days as hour ladders.",
+    hasViz: true,
+    extra: {"defaults":{"grain":"days","showRate":"tint"},"fieldsHtml":"<fieldset><legend>grain</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"calendar grain\"><label><input type=\"radio\" name=\"grain\" value=\"days\"><span>days</span></label><label><input type=\"radio\" name=\"grain\" value=\"weeks\"><span>weeks</span></label></div></fieldset><fieldset><legend>rate</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"rate tint\"><label><input type=\"radio\" name=\"showRate\" value=\"off\"><span>off</span></label><label><input type=\"radio\" name=\"showRate\" value=\"tint\"><span>tint</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('hourly');
+  function S(){ return (toolUI && toolUI.settings) || {}; }
   function money(n){ return IBMNumberTool.formatMoney(n); }
-  function paint(days, hpd){
-    var d = Math.max(0, Math.min(18, Math.round(days)));
+  function paint(days, hpd, rate){
+    var grain = S().grain || 'days';
+    var showRate = S().showRate || 'tint';
+    var d = Math.max(0, Math.min(28, Math.round(days)));
     var slots = Math.max(1, Math.min(12, Math.round(hpd) || 1));
     var worked = Math.max(0, Math.min(slots, Math.round(hpd)));
-    var html = '<div class="day-cols">';
-    for (var i = 0; i < d; i++) {
-      html += '<div class="day" data-scrub="days">';
-      for (var s = 0; s < slots; s++) html += '<i class="' + (s < worked ? 'on' : '') + '"></i>';
+    var tint = showRate === 'tint' ? Math.max(8, Math.min(72, rate / 4)) : 0;
+    var html = '<div class="cal-strip" data-grain="' + grain + '" style="--rate-tint:' + tint + '%">';
+    if (grain === 'weeks') {
+      var weeks = Math.max(1, Math.ceil(d / 7));
+      for (var w = 0; w < weeks; w++) {
+        html += '<div class="cal-week">';
+        for (var day = 0; day < 7; day++) {
+          var idx = w * 7 + day;
+          if (idx >= d) { html += '<div class="day is-empty"></div>'; continue; }
+          html += '<div class="day" data-scrub="days">';
+          for (var s = 0; s < slots; s++) html += '<i class="' + (s < worked ? 'on' : '') + '"></i>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+    } else {
+      html += '<div class="day-cols">';
+      for (var i = 0; i < d; i++) {
+        html += '<div class="day" data-scrub="days">';
+        for (var s2 = 0; s2 < slots; s2++) html += '<i class="' + (s2 < worked ? 'on' : '') + '"></i>';
+        html += '</div>';
+      }
       html += '</div>';
     }
     html += '</div>';
@@ -79,8 +106,9 @@
     document.getElementById('out').textContent = money(total);
     document.getElementById('sub').textContent =
       'day rate ' + money(dayRate) + (hours ? ' · ' + hours + 'h' : '');
-    paint(days, hpd);
+    paint(days, hpd, rate);
   }
+  window.__ibmToolRender = render;
   ['rate','hpd','days'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

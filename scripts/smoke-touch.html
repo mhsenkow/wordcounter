@@ -8,7 +8,8 @@
   const tools = [
     'bill', 'hourly', 'fuel', 'unit', 'dose', 'bitrate', 'scalemap',
     'ratio', 'typescale', 'odds', 'combo', 'sample',
-    'budget', 'exposure', 'deal', 'streak'
+    'budget', 'exposure', 'deal', 'streak',
+    'tax', 'pace', 'contrast', 'bayes'
   ];
   const results = [];
 
@@ -153,11 +154,52 @@
             row.notes.push('ratio stage missing');
           }
         }
+
+        /* Per-tool settings extras + scrub targets */
+        const settingsBtn = doc.getElementById('settingsToggle');
+        if (settingsBtn) {
+          settingsBtn.click();
+          const sheet = doc.getElementById('settings');
+          const extras = sheet ? sheet.querySelectorAll('.fields fieldset .seg input[type="radio"]') : [];
+          const lookNames = new Set(['theme', 'ui', 'font', 'faces', 'showViz']);
+          const extraRadios = Array.from(extras).filter((el) => !lookNames.has(el.name));
+          if (extraRadios.length < 2) {
+            row.ok = false;
+            row.notes.push('extra settings radios ' + extraRadios.length);
+          } else {
+            const name = extraRadios.find((el) => !el.checked) || extraRadios[1];
+            const beforeKind = stageEl && stageEl.innerHTML.slice(0, 80);
+            name.checked = true;
+            name.dispatchEvent(new win.Event('change', { bubbles: true }));
+            const afterKind = stageEl && stageEl.innerHTML.slice(0, 80);
+            if (stageEl && beforeKind === afterKind && path !== 'ratio') {
+              /* some settings only restyle; still require a settings key persisted */
+              try {
+                const raw = win.localStorage.getItem('ibm.tool.' + path + '.settings');
+                if (!raw || !raw.includes(name.name)) {
+                  row.ok = false;
+                  row.notes.push('extra setting not persisted');
+                }
+              } catch (e) {
+                row.notes.push('localStorage');
+              }
+            }
+          }
+          /* close settings */
+          doc.body.classList.remove('settings-open');
+          if (sheet) sheet.setAttribute('hidden', '');
+        }
+
+        const scrub = doc.querySelectorAll('#toolStage [data-scrub], .ratio-stage');
+        if (path !== 'ratio' && scrub.length < 1) {
+          row.ok = false;
+          row.notes.push('no data-scrub on stage');
+        }
       }
 
       const css = doc.querySelector('link[href*="number-tool.css"]');
-      if (css && !/v=24/.test(css.getAttribute('href') || '')) {
-        row.notes.push('css cache not v24');
+      if (css && !/v=34/.test(css.getAttribute('href') || '')) {
+        row.notes.push('css cache not v32');
       }
     } catch (err) {
       row.ok = false;

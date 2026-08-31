@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>pace — ibm.io</title>
+<meta name="description" content="distance · eta">
+<link rel="canonical" href="https://ibm.io/pace/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+</head>
+<body class="tool-app" data-tool="pace">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>pace</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0:00</div>
+    <p class="face-sub" id="sub">eta</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>route</legend>
+      <label class="row"><span class="key">distance</span><span class="value"><input id="distance" type="number" inputmode="decimal" min="0" step="0.1" value="5" data-primary data-axis="y" data-axis-x="pace" data-step-fast="1" data-gesture="1" aria-label="distance"></span></label>
+      <label class="row"><span class="key">pace</span><span class="value"><input id="pace" type="number" inputmode="decimal" min="0" step="0.1" value="9.5" aria-label="pace minutes per unit"><span class="unit">min/u</span></span></label>
+      <label class="row"><span class="key">hours</span><span class="value"><input id="hours" type="number" inputmode="decimal" min="0" step="0.05" value="0.8" aria-label="finish hours"></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="pace presets">
+      <button type="button" class="preset" data-pace="8" data-dist="5">5k easy</button>
+      <button type="button" class="preset" data-pace="9.5" data-dist="6.2">10k</button>
+      <button type="button" class="preset" data-pace="10" data-dist="13.1">half</button>
+      <button type="button" class="preset" data-pace="11" data-dist="26.2">full</button>
+    </div>
+  </div>
+</main>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('pace');
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'pace',
+    about: "Distance × pace → ETA (or solve for pace). Route ticks teach distance; tick spacing teaches pace; finish mark is the ETA.",
+    hasViz: true,
+    extra: {"defaults":{"mode":"eta"},"fieldsHtml":"<fieldset><legend>solve</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"solve for\"><label><input type=\"radio\" name=\"mode\" value=\"eta\"><span>eta</span></label><label><input type=\"radio\" name=\"mode\" value=\"pace\"><span>pace</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
+  });
+
+  var stage = IBMNumberTool.ensureStage('pace');
+  function fmtHours(h){
+    var total = Math.round(Math.max(0, h) * 60);
+    var hh = Math.floor(total / 60);
+    var mm = total % 60;
+    if (hh <= 0) return mm + ' min';
+    return hh + ':' + String(mm).padStart(2,'0');
+  }
+  function mode(){
+    var s = toolUI && toolUI.settings;
+    return (s && s.mode === 'pace') ? 'pace' : 'eta';
+  }
+  function paint(d, pace, etaH, needed, solvingPace){
+    if (!stage) return;
+    var ticks = Math.max(2, Math.min(24, Math.round(d) || 2));
+    var gap = Math.max(4, Math.min(48, pace * 2.2));
+    var finish = solvingPace
+      ? Math.max(8, Math.min(100, (needed > 0 && pace > 0 ? (pace / needed) : 1) * 100))
+      : 100;
+    var fill = solvingPace ? Math.min(100, finish) : Math.min(100, (etaH > 0 ? 100 : 0));
+    /* In eta mode fill spans full route; density of ticks = distance, spacing CSS = pace */
+    var tickHtml = '';
+    for (var i = 0; i <= ticks; i++) {
+      tickHtml += '<i style="left:' + ((i / ticks) * 100).toFixed(2) + '%"></i>';
+    }
+    stage.innerHTML =
+      '<div class="pace-route' + (solvingPace ? ' is-solve-pace' : '') + '">' +
+        '<div class="pace-track" data-scrub="distance" style="--gap:' + gap + 'px">' +
+          '<div class="pace-fill" style="width:' + fill + '%"></div>' +
+          '<div class="pace-ticks">' + tickHtml + '</div>' +
+          '<b class="pace-finish" data-scrub="hours" style="left:' + finish + '%"></b>' +
+        '</div>' +
+        '<div class="pace-marks"><span data-scrub="distance">start</span><span data-scrub="pace">' +
+          (Math.round(pace * 10) / 10) + ' min/u</span><span data-scrub="hours">finish</span></div>' +
+      '</div>';
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var d = Math.max(0, parseFloat(document.getElementById('distance').value) || 0);
+    var pace = Math.max(0, parseFloat(document.getElementById('pace').value) || 0);
+    var hours = Math.max(0, parseFloat(document.getElementById('hours').value) || 0);
+    if (mode() === 'pace') {
+      var needed = d > 0 ? (hours * 60) / d : 0;
+      document.getElementById('out').textContent = (Math.round(needed * 10) / 10) + '';
+      document.getElementById('sub').textContent = 'min/unit for ' + fmtHours(hours) + ' finish';
+      paint(d, pace, hours, needed, true);
+    } else {
+      var eta = (d * pace) / 60;
+      document.getElementById('out').textContent = fmtHours(eta);
+      document.getElementById('sub').textContent = d + ' u · ' + pace + ' min/u';
+      paint(d, pace, eta, pace, false);
+    }
+  }
+  window.__ibmToolRender = render;
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('pace').value = btn.getAttribute('data-pace');
+    document.getElementById('distance').value = btn.getAttribute('data-dist');
+    render();
+  });
+  ['distance','pace','hours'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

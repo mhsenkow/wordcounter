@@ -4,7 +4,7 @@ Static single-file apps. No build, no package manager, no framework.
 
 ## Tools suite
 
-Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. Theme/chrome/font sync via `localStorage` key `ibm.tools.shared` (`lib/suite.js`).
+Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. Theme/chrome/font sync via `localStorage` key `ibm.tools.shared` (`lib/suite.js`). Quiet map at [`tools/`](tools/) (`/tools/`).
 
 | Group | Tool | Path | URL | Status |
 |---|---|---|---|---|
@@ -14,18 +14,22 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | money | **hourly** | `hourly/` | `/hourly/` | live |
 | money | **budget** | `budget/` | `/budget/` | live |
 | money | **fuel** | `fuel/` | `/fuel/` | live |
+| money | **tax** | `tax/` | `/tax/` | live |
 | convert | **unit** | `unit/` | `/unit/` | live |
 | convert | **dose** | `dose/` | `/dose/` | live |
 | convert | **bandwidth** | `bitrate/` | `/bitrate/` | live · labeled bandwidth |
 | convert | **scale** | `scalemap/` | `/scalemap/` | live · labeled scale |
+| convert | **pace** | `pace/` | `/pace/` | live |
 | form | **ratio** | `ratio/` | `/ratio/` | live |
 | form | **type** | `typescale/` | `/typescale/` | live · labeled type |
 | form | **exposure** | `exposure/` | `/exposure/` | live |
+| form | **contrast** | `contrast/` | `/contrast/` | live |
 | chance | **odds** | `odds/` | `/odds/` | live |
 | chance | **combo** | `combo/` | `/combo/` | live |
 | chance | **deal** | `deal/` | `/deal/` | live |
 | chance | **sample** | `sample/` | `/sample/` | live |
 | chance | **streak** | `streak/` | `/streak/` | live |
+| chance | **bayes** | `bayes/` | `/bayes/` | live |
 
 ## Deploy sync
 
@@ -45,35 +49,43 @@ scripts/sync-deploy.sh --all
 
 `PORTFOLIO_PUBLIC` overrides the default `/Users/powerox/portfolio/portfolio/public`.
 
-Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers.
+Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/suite.js` and `timecount/lib/suite.js` identical. Number tools load `lib/number-tool.css` + `lib/number-tool.js` for the same theme / chrome / digits / faces settings (synced via `ibm.tools.shared`) plus optional viz layers. Shared formulas for MCP/tests live in `lib/calc/index.mjs`.
 
 ### Gesture vocabulary (number tools)
 
 | Surface | Vertical | Horizontal | Notes |
 |---|---|---|---|
 | Face / chart | `data-primary` | `data-axis-x` | Pinch → `data-pinch` or primary |
-| Chart `[data-scrub]` | that input | same | Mapped viz cell (e.g. envelope) |
+| Chart `[data-scrub]` | that input | same | Mapped viz cell; tab/focus + arrows nudge; `pointer-events` |
 | Value row | that row’s input | same field | Tap (no drag) focuses to type |
 | Stack | scroll if mid-list | — | Wheel defers while scrollable |
 | Ratio stage | own drag | own drag | Skips shared scrub |
 | Steppers | ± hold | — | Independent of scrub |
+| Words primary | — | cycle metric | Touch swipe + wheel/drag on hero (never the draft) |
+| Time dial / chart | nudge limit | coarse 5m | Accel wheel, arrows/`[` `]`, soft presets while running |
 
 Attrs on inputs: `data-primary`, `data-axis-x`, `data-pinch`, `data-step-fast`.
+Number tools: haptic `vibrate(8)` on each stepped change; blur clamps min/max (soft red flash); percent fields default 0–100 when unit is `%`.
+
+Desk apps: words primary swipe cycles metrics; time dial scrub nudges limit. Number tools also support **copy** / **link** under the face (clipboard result + URL field hydrate) and print styles.
 
 ### Persistence
 
 | Key | Scope | Fields |
 |---|---|---|
-| `ibm.tools.shared` | suite-wide | `theme`, `ui`, `font`, `faces`, `recent` |
-| `ibm.tool.<id>.settings` | one number tool | look + `showViz` |
+| `ibm.tools.shared` | suite-wide | `theme`, `ui`, `font`, `faces`, `recent`, optional `lastSessionMs` |
+| `ibm.tools.session` | time → words hint | `elapsedMs`, `label`, `updatedAt` |
+| `ibm.tool.<id>.settings` | one number tool | look + `showViz` + extras |
+| `ibm.tool.<id>.values` | one number tool | last field/select values (URL params win on share links) |
 | `wordcounter.settings` / `wordcounter.text` | words | desk-local |
 | timecount local keys | time | desk-local |
 
 ### Product boundaries
 
 - In-page tools stay local / offline-first. No accounts, export suites, or AI inside the static pages.
-- MCP connector is a separate Worker (`mcp/`) for agents that want counts via API — linked from words settings, not embedded in the instrument UI.
-- Suite identity stays quiet: no marketing landing; the tools grid is the map.
+- MCP connector is a separate Worker (`mcp/`) for agents — words counts plus suite calcs (`tax_tip`, `pace_eta`, `contrast_ratio`, `combinations`, `bayes_update`, `parse_duration`).
+- Suite identity stays quiet: `/tools/` is a map, not a marketing landing; the tools grid is the map.
+- PWA: `manifest.webmanifest` + `sw.js` cache static shell assets only.
 
 Look settings prefer `ibm.tools.shared` on load so theme/chrome stay aligned across tools.
 
@@ -86,7 +98,7 @@ Look settings prefer `ibm.tools.shared` on load so theme/chrome stay aligned acr
 
 **DNS stays on Cloudflare** (`dimitris.ns.cloudflare.com`, `tessa.ns.cloudflare.com`). Do **not** point nameservers back at GreenGeeks.
 
-Public URLs: `https://ibm.io/wordcount/`, `https://ibm.io/timecount/` (and `www` variants).
+Public URLs: `https://ibm.io/wordcount/`, `https://ibm.io/timecount/`, `https://ibm.io/tools/` (and `www` variants).
 
 Some local machines still resolve apex `ibm.io` to the GreenGeeks IP (stale cache). That is why the GG copy must stay current — not only the Worker.
 
@@ -99,17 +111,13 @@ Some local machines still resolve apex `ibm.io` to the GreenGeeks IP (stale cach
    - Via cPanel File Manager or FTP/SFTP to `chi202.greengeeks.net`, user `mhsenkow` (password from panel — never commit it).
 3. **Cloudflare** — mirror into the portfolio app and deploy:
    ```bash
-   # words + time + suite + number tools → portfolio/public/
-   cp index.html /path/to/portfolio/portfolio/public/wordcount/index.html
-   # …also sync timecount/, lib/, bill/, unit/, etc.
-   cd /path/to/portfolio/portfolio
-   npm run deploy   # opennextjs-cloudflare build + deploy
+   scripts/sync-deploy.sh --cf
    ```
-   Wrangler account used previously: Cloudflare account owning Worker `portfolio` (custom domains `ibm.io`, `www.ibm.io`).
 4. **Verify**:
    ```bash
    curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://www.ibm.io/wordcount/
    curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://www.ibm.io/bill/
+   curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" https://www.ibm.io/tools/
    curl -sS -o /dev/null -w "%{http_code} %{size_download}\n" -H "Host: ibm.io" http://184.154.70.198/bill/
    ```
 

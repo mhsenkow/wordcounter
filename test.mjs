@@ -18,6 +18,14 @@ import {
   buildFullCounterUrl,
   parseCounterHandoff
 } from './lib/count.mjs';
+import { parseDuration, formatClock } from './lib/time.mjs';
+import {
+  taxTip,
+  paceEta,
+  contrastRatio,
+  combinations,
+  bayesUpdate
+} from './lib/calc/index.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -220,6 +228,57 @@ test('local stacks still resolve roles', () => {
 test('index.html still single-file (no bundler markers)', () => {
   assert.doesNotMatch(html, /webpack|vite|parcel/i);
   assert.ok(html.length > 20000);
+});
+
+test('calc tax tip on pre-tax', () => {
+  const r = taxTip({ subtotal: 100, taxPct: 10, tipPct: 20, tipOn: 'pre' });
+  assert.equal(r.taxAmount, 10);
+  assert.equal(r.tipAmount, 20);
+  assert.equal(r.grand, 130);
+});
+
+test('calc tax tip on total', () => {
+  const r = taxTip({ subtotal: 100, taxPct: 10, tipPct: 20, tipOn: 'total' });
+  assert.equal(r.taxAmount, 10);
+  assert.equal(r.tipAmount, 22);
+  assert.equal(r.grand, 132);
+});
+
+test('calc pace eta', () => {
+  const r = paceEta({ distance: 10, paceMinPerUnit: 6, hours: 0, mode: 'eta' });
+  assert.equal(r.etaHours, 1);
+});
+
+test('calc contrast black on white', () => {
+  const r = contrastRatio('#000000', '#ffffff');
+  assert.ok(r.ratio >= 20);
+  assert.equal(r.aaa, true);
+});
+
+test('calc combinations', () => {
+  assert.equal(combinations(5, 2), 10);
+  assert.equal(combinations(10, 0), 1);
+});
+
+test('calc bayes update', () => {
+  const r = bayesUpdate({ prior: 0.1, hit: 0.9, miss: 0.2 });
+  assert.ok(r.posterior > r.prior);
+  assert.ok(r.posterior < 1);
+});
+
+test('parse duration helpers', () => {
+  assert.equal(parseDuration('25m'), 25 * 60000);
+  assert.equal(formatClock(65000), '1:05');
+});
+
+test('suite has new instruments', () => {
+  const suite = fs.readFileSync(path.join(__dirname, 'lib/suite.js'), 'utf8');
+  for (const id of ['tax', 'pace', 'contrast', 'bayes']) {
+    assert.match(suite, new RegExp("id: '" + id + "'"));
+    assert.ok(fs.existsSync(path.join(__dirname, id, 'index.html')));
+  }
+  assert.ok(fs.existsSync(path.join(__dirname, 'tools/index.html')));
+  assert.ok(fs.existsSync(path.join(__dirname, 'manifest.webmanifest')));
 });
 
 if (failed) {

@@ -12,8 +12,16 @@ Remote MCP (Model Context Protocol) server for [ibm.io/wordcount](https://ibm.io
 | `open_word_counter` | Blank or pre-filled editor widget with optional word goal |
 | `open_full_counter` | Deep link to full offline editor (optional draft + target in URL) |
 | `compare_text` | Before/after delta for two text versions |
+| `parse_duration` | Parse `25m` / `5:00` → ms + clock |
+| `tax_tip` | Subtotal → tax + tip (pre-tax or on total) |
+| `pace_eta` | Distance × pace → ETA (or solve for pace) |
+| `contrast_ratio` | FG/BG hex → WCAG contrast + AA/AAA |
+| `combinations` | Ways to pick k of n (order ignored) |
+| `bayes_update` | Belief before × evidence → belief after |
 
-Text is processed in memory for the request only — nothing is stored.
+Text and numbers are processed in memory for the request only — nothing is stored.
+
+Suite map: [ibm.io/tools](https://ibm.io/tools/). Calc sources: [`../lib/calc/index.mjs`](../lib/calc/index.mjs), [`../lib/count.mjs`](../lib/count.mjs), [`../lib/time.mjs`](../lib/time.mjs).
 
 ## Develop
 

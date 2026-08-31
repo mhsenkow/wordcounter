@@ -8,6 +8,15 @@ import {
   formatSummary,
   buildFullCounterUrl
 } from '../../lib/count.mjs';
+import { parseDuration, formatClock } from '../../lib/time.mjs';
+import {
+  taxTip,
+  paceEta,
+  contrastRatio,
+  combinations,
+  bayesUpdate,
+  formatDurationHours
+} from '../../lib/calc/index.mjs';
 // @ts-expect-error wrangler Text module rule
 import widgetShell from './widget-shell.html';
 // @ts-expect-error wrangler Text module rule (.css must be .txt — esbuild treats .css as a module object)
@@ -151,7 +160,7 @@ function limitSummaryLine(check: ReturnType<typeof limitCheck>) {
 function createServer() {
   const server = new McpServer({
     name: 'ibm.io-wordcount',
-    version: '1.1.0'
+    version: '1.2.0'
   });
 
   server.registerResource(
@@ -322,6 +331,159 @@ function createServer() {
     }
   );
 
+  server.registerTool(
+    'parse_duration',
+    {
+      title: 'Parse duration',
+      description:
+        'Parse a duration string like 5:00, 1:05:30, 25m, or 90 into milliseconds and a clock string. Use for time math and limits.',
+      inputSchema: {
+        input: z.string().describe('Duration text (e.g. 25m, 5:00, 1:30:00)')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ input }) => {
+      const ms = parseDuration(input);
+      const clock = formatClock(ms);
+      return {
+        content: [{ type: 'text', text: `${input.trim()} → ${clock} (${ms} ms)` }],
+        structuredContent: { input, ms, clock }
+      };
+    }
+  );
+
+  server.registerTool(
+    'tax_tip',
+    {
+      title: 'Tax and tip',
+      description:
+        'Compute tax and tip from a subtotal. Tip can apply to pre-tax subtotal or to the tax-inclusive total.',
+      inputSchema: {
+        subtotal: z.number().nonnegative(),
+        taxPct: z.number().nonnegative().default(0),
+        tipPct: z.number().nonnegative().default(20),
+        tipOn: z.enum(['pre', 'total']).default('pre')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ subtotal, taxPct, tipPct, tipOn }) => {
+      const result = taxTip({ subtotal, taxPct, tipPct, tipOn });
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `Grand $${result.grand.toFixed(2)} (tax $${result.taxAmount.toFixed(2)}, tip $${result.tipAmount.toFixed(2)} on ${tipOn === 'total' ? 'total' : 'pre-tax'})`
+          }
+        ],
+        structuredContent: result
+      };
+    }
+  );
+
+  server.registerTool(
+    'pace_eta',
+    {
+      title: 'Pace / ETA',
+      description:
+        'Distance × pace (min per unit) → ETA hours, or solve for required pace given a finish time in hours.',
+      inputSchema: {
+        distance: z.number().nonnegative(),
+        paceMinPerUnit: z.number().nonnegative().default(0),
+        hours: z.number().nonnegative().default(0),
+        mode: z.enum(['eta', 'pace']).default('eta')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ distance, paceMinPerUnit, hours, mode }) => {
+      const result = paceEta({ distance, paceMinPerUnit, hours, mode });
+      const text =
+        mode === 'pace'
+          ? `Need ${result.paceMinPerUnit.toFixed(2)} min/unit for ${formatDurationHours(result.etaHours)}`
+          : `ETA ${formatDurationHours(result.etaHours)} at ${result.paceMinPerUnit} min/unit`;
+      return { content: [{ type: 'text', text }], structuredContent: result };
+    }
+  );
+
+  server.registerTool(
+    'contrast_ratio',
+    {
+      title: 'Contrast ratio',
+      description: 'WCAG contrast ratio for foreground/background hex colors, with AA/AAA flags.',
+      inputSchema: {
+        fg: z.string().describe('Foreground hex (#rgb or #rrggbb)'),
+        bg: z.string().describe('Background hex (#rgb or #rrggbb)')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ fg, bg }) => {
+      const result = contrastRatio(fg, bg);
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `${result.ratio.toFixed(2)}:1 · AA ${result.aa ? 'pass' : 'fail'} · AAA ${result.aaa ? 'pass' : 'fail'}`
+          }
+        ],
+        structuredContent: result
+      };
+    }
+  );
+
+  server.registerTool(
+    'combinations',
+    {
+      title: 'Combinations',
+      description:
+        'How many ways to pick k items from n when order does not matter (n choose k). Use for poker hands, lottery tickets, teams, and similar.',
+      inputSchema: {
+        n: z.number().int().nonnegative().describe('Total items to choose from'),
+        k: z.number().int().nonnegative().describe('How many to pick')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ n, k }) => {
+      const value = combinations(n, k);
+      return {
+        content: [{ type: 'text', text: `C(${n}, ${k}) = ${value}` }],
+        structuredContent: { n, k, value }
+      };
+    }
+  );
+
+  server.registerTool(
+    'bayes_update',
+    {
+      title: 'Bayes update',
+      description:
+        'Update a belief when evidence arrives. prior = belief before (0–1), hit = chance of seeing this evidence if the claim is true, miss = chance if false. Returns the belief after.',
+      inputSchema: {
+        prior: z.number().min(0).max(1).describe('Belief before evidence, 0–1'),
+        hit: z.number().min(0).max(1).describe('P(evidence | claim true), 0–1'),
+        miss: z.number().min(0).max(1).describe('P(evidence | claim false), 0–1')
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
+    },
+    async ({ prior, hit, miss }) => {
+      const result = bayesUpdate({ prior, hit, miss });
+      return {
+        content: [
+          {
+            type: 'text',
+            text:
+              `Posterior ${(result.posterior * 100).toFixed(1)}% (from ${(result.prior * 100).toFixed(1)}%, LR ${
+                Number.isFinite(result.likelihoodRatio)
+                  ? result.likelihoodRatio.toFixed(2)
+                  : '∞'
+              })`
+          }
+        ],
+        structuredContent: result
+      };
+    }
+  );
+
   return server;
 }
 
@@ -393,7 +555,7 @@ export default {
       return new Response(
         JSON.stringify({
           name: 'ibm.io Word Counter MCP',
-          version: '1.1.0',
+          version: '1.2.0',
           mcp: `${url.origin}/mcp`,
           demo: `${url.origin}/demo`,
           demoChat: `${url.origin}/demo/chat`,
@@ -401,7 +563,18 @@ export default {
           privacy: `${url.origin}/privacy`,
           terms: `${url.origin}/terms`,
           site: FULL_COUNTER_URL,
-          tools: ['count_text', 'open_word_counter', 'open_full_counter', 'compare_text']
+          tools: [
+            'count_text',
+            'open_word_counter',
+            'open_full_counter',
+            'compare_text',
+            'parse_duration',
+            'tax_tip',
+            'pace_eta',
+            'contrast_ratio',
+            'combinations',
+            'bayes_update'
+          ]
         }),
         {
           headers: {

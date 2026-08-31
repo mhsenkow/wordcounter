@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto" data-show-viz="true">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>bayes — ibm.io</title>
+<meta name="description" content="update belief">
+<link rel="canonical" href="https://ibm.io/bayes/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+</head>
+<body class="tool-app" data-tool="bayes">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>bayes</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<main>
+
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0%</div>
+    <p class="face-sub" id="sub">after evidence</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>belief</legend>
+      <label class="row"><span class="key">before</span><span class="value"><input id="prior" type="number" inputmode="decimal" min="0" max="100" step="1" value="10" data-primary data-axis="y" data-axis-x="hit" data-step-fast="5" data-gesture="1" aria-label="belief before evidence"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">if true</span><span class="value"><input id="hit" type="number" inputmode="decimal" min="0" max="100" step="1" value="90" aria-label="chance of evidence if claim is true"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">if false</span><span class="value"><input id="miss" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" aria-label="chance of evidence if claim is false"><span class="unit">%</span></span></label>
+    </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="bayes presets">
+      <button type="button" class="preset" data-prior="10" data-hit="90" data-miss="20">screening</button>
+      <button type="button" class="preset" data-prior="50" data-hit="80" data-miss="20">even start</button>
+      <button type="button" class="preset" data-prior="1" data-hit="99" data-miss="5">rare event</button>
+      <button type="button" class="preset" data-prior="80" data-hit="70" data-miss="40">already likely</button>
+    </div>
+    <p class="note">when if-true is much higher than if-false, belief rises</p>
+  </div>
+</main>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('bayes');
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'bayes',
+    about: "Start with how likely something seems. New evidence that shows up more often when the claim is true than when it is false pulls that belief up (or down).",
+    hasViz: true,
+    extra: {"defaults":{"view":"bars"},"fieldsHtml":"<fieldset><legend>view</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"stage view\"><label><input type=\"radio\" name=\"view\" value=\"bars\"><span>bars</span></label><label><input type=\"radio\" name=\"view\" value=\"odds\"><span>odds</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
+  });
+
+  var stage = IBMNumberTool.ensureStage('bayes');
+  function view(){
+    var s = toolUI && toolUI.settings;
+    return (s && s.view === 'odds') ? 'odds' : 'bars';
+  }
+  function paint(prior, posterior, hit, miss){
+    if (!stage) return;
+    var p0 = Math.round(prior * 1000) / 10;
+    var p1 = Math.round(posterior * 1000) / 10;
+    var lr = miss > 0 ? hit / miss : Infinity;
+    var lrLabel = Number.isFinite(lr) ? (Math.round(lr * 100) / 100) : '∞';
+    var arrow = Math.max(8, Math.min(92, Math.abs(p1 - p0)));
+    if (view() === 'odds') {
+      var o0 = prior >= 1 ? '∞' : (Math.round((prior / Math.max(1e-9, 1 - prior)) * 100) / 100);
+      var o1 = posterior >= 1 ? '∞' : (Math.round((posterior / Math.max(1e-9, 1 - posterior)) * 100) / 100);
+      stage.innerHTML =
+        '<div class="bayes-odds">' +
+          '<div data-scrub="prior"><span>before</span><b>' + o0 + '</b></div>' +
+          '<div class="bayes-lr" data-scrub="hit"><span>× evidence</span><b>' + lrLabel + '</b></div>' +
+          '<div data-scrub="miss"><span>after</span><b>' + o1 + '</b></div>' +
+        '</div>';
+    } else {
+      stage.innerHTML =
+        '<div class="bayes-bars">' +
+          '<div class="bayes-row" data-scrub="prior"><span>before</span><div class="bayes-track"><i style="width:' + p0 + '%"></i></div><b>' + p0 + '%</b></div>' +
+          '<div class="bayes-evidence">' +
+            '<button type="button" class="bayes-tick is-hit" data-scrub="hit" style="--h:' + (hit * 100) + '%"><span>if true</span></button>' +
+            '<div class="bayes-arrow" style="--w:' + arrow + '%" aria-hidden="true"><i></i><span>×' + lrLabel + '</span></div>' +
+            '<button type="button" class="bayes-tick is-miss" data-scrub="miss" style="--h:' + (miss * 100) + '%"><span>if false</span></button>' +
+          '</div>' +
+          '<div class="bayes-row is-post"><span>after</span><div class="bayes-track"><i style="width:' + p1 + '%"></i></div><b>' + p1 + '%</b></div>' +
+        '</div>';
+    }
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function render(){
+    var prior = Math.min(100, Math.max(0, parseFloat(document.getElementById('prior').value) || 0)) / 100;
+    var hit = Math.min(100, Math.max(0, parseFloat(document.getElementById('hit').value) || 0)) / 100;
+    var miss = Math.min(100, Math.max(0, parseFloat(document.getElementById('miss').value) || 0)) / 100;
+    var num = hit * prior;
+    var den = num + miss * (1 - prior);
+    var posterior = den > 0 ? num / den : 0;
+    document.getElementById('out').textContent = (Math.round(posterior * 1000) / 10) + '%';
+    document.getElementById('sub').textContent =
+      'was ' + (Math.round(prior * 1000) / 10) + '% · evidence ×' + (miss > 0 ? (Math.round((hit / miss) * 100) / 100) : '∞');
+    paint(prior, posterior, hit, miss);
+  }
+  window.__ibmToolRender = render;
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('prior').value = btn.getAttribute('data-prior');
+    document.getElementById('hit').value = btn.getAttribute('data-hit');
+    document.getElementById('miss').value = btn.getAttribute('data-miss');
+    render();
+  });
+  ['prior','hit','miss'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+  });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="typescale">
 <header class="masthead">
@@ -53,18 +55,29 @@
     <ul class="list" id="list"></ul>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('typescale');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'typescale',
-    about: "Base size × ratio → modular steps. Large Aa samples fill the stage.",
-    hasViz: true
+    about: "Base size × ratio → modular steps. Vertical scale ladder with live specimens.",
+    hasViz: true,
+    extra: {"defaults":{"specimen":"Aa","ladder":"5"},"fieldsHtml":"<fieldset><legend>specimen</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"specimen text\"><label><input type=\"radio\" name=\"specimen\" value=\"Aa\"><span>Aa</span></label><label><input type=\"radio\" name=\"specimen\" value=\"word\"><span>word</span></label><label><input type=\"radio\" name=\"specimen\" value=\"glyphs\"><span>glyphs</span></label></div></fieldset><fieldset><legend>ladder</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"ladder steps\"><label><input type=\"radio\" name=\"ladder\" value=\"5\"><span>5</span></label><label><input type=\"radio\" name=\"ladder\" value=\"all\"><span>all</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('typescale');
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function specimenText(){
+    var sp = S().specimen || 'Aa';
+    if (sp === 'word') return 'word';
+    if (sp === 'glyphs') return 'Hg';
+    return 'Aa';
+  }
   function render(){
     var base = Math.max(1, parseFloat(document.getElementById('base').value) || 16);
     var ratio = parseFloat(document.getElementById('ratio').value) || 1.25;
@@ -72,26 +85,31 @@
     document.getElementById('out').textContent = String(Math.round(base));
     document.getElementById('sub').textContent = 'base · ×' + ratio;
     var html = '';
-    var field = '';
     var stageSteps = [];
     for (var i = -2; i < steps - 2; i++) {
       var px = base * Math.pow(ratio, i);
       var rem = px / base;
-      html += '<li><span style="font-size:' + Math.min(40, px) + 'px">Aa ' + (i >= 0 ? '+' : '') + i + '</span><span>' + px.toFixed(1) + 'px · ' + rem.toFixed(3) + 'rem</span></li>';
-      stageSteps.push(px);
+      html += '<li><span style="font-size:' + Math.min(40, px) + 'px">' + specimenText() + ' ' + (i >= 0 ? '+' : '') + i + '</span><span>' + px.toFixed(1) + 'px · ' + rem.toFixed(3) + 'rem</span></li>';
+      stageSteps.push({ px: px, i: i });
     }
-    /* Stage shows up to 5 large samples; list keeps full precision */
-    var pick = stageSteps.length <= 5 ? stageSteps : stageSteps.filter(function(_, idx){
-      return idx === 0 || idx === stageSteps.length - 1 || idx % Math.ceil(stageSteps.length / 4) === 0;
-    }).slice(0, 5);
-    pick.forEach(function(px){
-      var show = Math.min(110, Math.max(28, px * 2.1));
-      field += '<span style="font-size:' + show + 'px">Aa</span>';
+    var ladder = S().ladder || '5';
+    var pick = stageSteps;
+    if (ladder === '5' && stageSteps.length > 5) {
+      pick = stageSteps.filter(function(_, idx){
+        return idx === 0 || idx === stageSteps.length - 1 || idx % Math.ceil(stageSteps.length / 4) === 0;
+      }).slice(0, 5);
+    }
+    var field = '<div class="type-ladder" data-scrub="base">';
+    pick.forEach(function(step){
+      var show = Math.min(72, Math.max(14, step.px));
+      field += '<div class="rung"><i></i><span style="font-size:' + show + 'px">' + specimenText() + '</span><em>' + step.px.toFixed(0) + '</em></div>';
     });
+    field += '</div>';
     document.getElementById('list').innerHTML = html;
-    stage.innerHTML = '<div class="type-field">' + field + '</div>';
+    stage.innerHTML = field;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
+  window.__ibmToolRender = render;
   ['base','ratio','steps'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);

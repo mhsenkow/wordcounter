@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="fuel">
 <header class="masthead">
@@ -42,26 +44,33 @@
     </fieldset>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('fuel');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'fuel',
-    about: "Miles ÷ mpg × price. Bead tape = gallons along the trip.",
-    hasViz: true
+    about: "Miles ÷ mpg × price. Tank fill = gallons; route ticks = miles with cost at the nose.",
+    hasViz: true,
+    extra: {"defaults":{"focus":"tank"},"fieldsHtml":"<fieldset><legend>focus</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"stage focus\"><label><input type=\"radio\" name=\"focus\" value=\"tank\"><span>tank</span></label><label><input type=\"radio\" name=\"focus\" value=\"route\"><span>route</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('fuel');
-  function paint(gal, miles){
-    var raw = Math.max(0, gal);
-    var maxBeads = 48;
-    var scale = raw > maxBeads ? raw / maxBeads : 1;
-    var beads = Math.max(0, Math.min(maxBeads, Math.round(raw / scale)));
-    var html = '<div class="trip-tape">';
-    for (var i = 0; i < beads; i++) html += '<i class="on"></i>';
-    html += '<span class="cap">' + miles.toFixed(0) + ' mi</span></div>';
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function paint(gal, miles, cost){
+    var focus = S().focus || 'tank';
+    var fill = Math.max(4, Math.min(96, Math.min(1, gal / 20) * 100));
+    var ticks = Math.max(4, Math.min(24, Math.round(miles / 20) || 4));
+    var html = '<div class="tank-route" data-focus="' + focus + '">';
+    html += '<div class="fuel-tank" data-scrub="mpg" style="--fill:' + fill.toFixed(1) + '%"><i></i><em>' + gal.toFixed(1) + ' gal</em></div>';
+    html += '<div class="fuel-route" data-scrub="miles"><div class="route-line">';
+    for (var i = 0; i < ticks; i++) html += '<i></i>';
+    html += '</div><span class="route-nose" data-scrub="price">' + IBMNumberTool.formatMoney(cost, { forceCents: true }) + '</span>';
+    html += '<span class="route-cap">' + miles.toFixed(0) + ' mi</span></div></div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
@@ -75,8 +84,9 @@
     document.getElementById('out').textContent = IBMNumberTool.formatMoney(cost, { forceCents: true });
     document.getElementById('sub').textContent =
       gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · ' + IBMNumberTool.formatMoney(price / mpg, { forceCents: true }) + '/mi';
-    paint(gal, miles);
+    paint(gal, miles, cost);
   }
+  window.__ibmToolRender = render;
   ['miles','mpg','price'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-ui="braun" data-font="mono" data-faces="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
+<title>tools — ibm.io</title>
+<meta name="description" content="Quiet map of the ibm.io instrument suite.">
+<link rel="canonical" href="https://ibm.io/tools/">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="stylesheet" href="../lib/number-tool.css?v=33">
+<style>
+  body.tools-map {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    font: 400 14px/1.45 var(--ui, Helvetica, Arial, sans-serif);
+    color: var(--ink, #111);
+    background: var(--bg, #f2f2f0);
+  }
+  body.tools-map h1 {
+    margin: 0 0 6px;
+    font: 500 1.6rem/1.2 var(--ui);
+    letter-spacing: .02em;
+  }
+  body.tools-map .lede {
+    margin: 0 0 28px;
+    color: var(--mute, #757575);
+    font-size: 13px;
+  }
+  body.tools-map .map-group { margin: 0 0 22px; }
+  body.tools-map .map-label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--mute);
+    opacity: .75;
+    margin: 0 0 8px;
+  }
+  body.tools-map .map-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  body.tools-map .map-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 72px;
+    padding: 12px 12px 10px;
+    text-decoration: none;
+    color: var(--mute);
+    border: 1px solid var(--hair, #e4e4e0);
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--face, #fafaf8) 92%, transparent);
+  }
+  body.tools-map .map-tile:hover,
+  body.tools-map .map-tile:focus-visible {
+    color: var(--ink);
+    outline: 1px solid var(--accent, #c45c26);
+    outline-offset: -1px;
+  }
+  body.tools-map .map-tile svg { width: 16px; height: 16px; }
+  body.tools-map .map-tile-label {
+    font-size: 13px;
+    letter-spacing: .04em;
+    text-transform: lowercase;
+  }
+  body.tools-map .map-tile-blurb {
+    font-size: 11px;
+    opacity: .75;
+  }
+</style>
+</head>
+<body class="tool-app tools-map" data-tool="tools">
+<header class="masthead">
+  <div class="masthead-start">
+    <h1>tools</h1>
+  </div>
+  <div class="actions">
+    <button id="themeBtn" class="icon-btn" type="button" aria-label="theme">
+      <span class="theme-orb" aria-hidden="true"></span>
+    </button>
+    <button id="settingsToggle" type="button" aria-expanded="false" aria-controls="settings">settings</button>
+  </div>
+</header>
+<p class="lede">Local instruments. No accounts. Open one and work.</p>
+<main id="map"></main>
+<script src="../lib/suite.js?v=35"></script>
+<script src="../lib/number-tool.js?v=33"></script>
+<script>
+(function () {
+  if (window.IBMTools) IBMTools.mountSuiteNav('tools');
+  window.IBMNumberTool && IBMNumberTool.mountSettings({
+    id: 'tools',
+    about: 'Quiet map of the ibm.io instrument suite. Look settings sync across tools.',
+    hasViz: false
+  });
+  var root = document.getElementById('map');
+  if (!root || !window.IBMTools) return;
+  IBMTools.GROUPS.forEach(function (group) {
+    var tools = IBMTools.TOOLS.filter(function (t) { return t.group === group.id && t.status === 'live'; });
+    if (!tools.length) return;
+    var section = document.createElement('section');
+    section.className = 'map-group';
+    section.setAttribute('aria-label', group.label);
+    var label = document.createElement('span');
+    label.className = 'map-label';
+    label.textContent = group.label;
+    section.appendChild(label);
+    var grid = document.createElement('ul');
+    grid.className = 'map-grid';
+    tools.forEach(function (tool) {
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.className = 'map-tile';
+      a.href = IBMTools.toolHref(tool);
+      a.innerHTML =
+        '<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.25">' +
+        tool.icon + '</svg>' +
+        '<span class="map-tile-label">' + tool.label + '</span>' +
+        '<span class="map-tile-blurb">' + tool.blurb + '</span>';
+      li.appendChild(a);
+      grid.appendChild(li);
+    });
+    section.appendChild(grid);
+    root.appendChild(section);
+  });
+})();
+</script>
+</body>
+</html>

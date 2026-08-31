@@ -13,7 +13,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=31">
+<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
 <body class="tool-app" data-tool="dose">
 <header class="masthead">
@@ -36,31 +38,50 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>mix</legend>
-      <label class="row"><span class="key">target</span><span class="value"><input id="want" type="number" inputmode="decimal" min="0" step="0.1" value="2" data-primary data-axis="y" data-axis-x="vol" data-pinch="have" data-step-fast="1" data-gesture="1" aria-label="target percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">target</span><span class="value"><input id="want" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="2" data-primary data-axis="y" data-axis-x="vol" data-pinch="have" data-step-fast="1" data-gesture="1" aria-label="target percent"><span class="unit">%</span></span></label>
       <label class="row"><span class="key">stock</span><span class="value"><input id="have" type="number" inputmode="decimal" min="0.01" step="0.1" value="10" data-step-fast="1" aria-label="stock percent"><span class="unit">%</span></span></label>
       <label class="row"><span class="key">batch</span><span class="value"><input id="vol" type="number" inputmode="decimal" min="0" step="1" value="1000" data-step-fast="100" aria-label="batch volume"><span class="unit">vol</span></span></label>
     </fieldset>
   </div>
 </main>
-<script src="../lib/suite.js?v=31"></script>
-<script src="../lib/number-tool.js?v=31"></script>
+<script src="../lib/suite.js?v=36"></script>
+<script src="../lib/number-tool.js?v=36"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('dose');
-  window.IBMNumberTool && IBMNumberTool.mountSettings({
+  var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'dose',
-    about: "Kitchen / garden dilutions only. Background split = concentrate vs diluent.",
-    hasViz: true
+    about: "Kitchen / garden dilutions only. Split panes or a diminishing drop trail.",
+    hasViz: true,
+    extra: {"defaults":{"view":"split"},"fieldsHtml":"<fieldset><legend>view</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"dose view\"><label><input type=\"radio\" name=\"view\" value=\"split\"><span>split</span></label><label><input type=\"radio\" name=\"view\" value=\"drops\"><span>drops</span></label></div></fieldset>"},
+    onApply: function () {
+      if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
+    }
   });
 
   var stage = IBMNumberTool.ensureStage('dose');
-  function paint(conc, water){
-    stage.innerHTML = '<div class="field-split"><div class="conc"></div><div class="dil"></div></div>';
-    var split = stage.querySelector('.field-split');
-    IBMNumberTool.setVars(split, {
-      '--a': String(conc || 0.0001),
-      '--b': String(water || 0.0001)
-    });
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function paint(conc, water, ratio){
+    var view = S().view || 'split';
+    if (view === 'drops') {
+      var html = '<div class="dose-drops">';
+      var n = 6;
+      for (var i = 0; i < n; i++) {
+        var scale = Math.max(0.18, Math.pow(1 / Math.max(ratio, 1.05), i));
+        html += '<i data-scrub="vol" style="--s:' + scale.toFixed(3) + '"></i>';
+      }
+      html += '</div>';
+      stage.innerHTML = html;
+    } else {
+      stage.innerHTML =
+        '<div class="field-split">' +
+        '<div class="conc" data-scrub="want"></div><div class="dil" data-scrub="have"></div></div>';
+      var split = stage.querySelector('.field-split');
+      IBMNumberTool.setVars(split, {
+        '--a': String(conc || 0.0001),
+        '--b': String(water || 0.0001)
+      });
+    }
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
@@ -69,11 +90,13 @@
     var vol = Math.max(0, parseFloat(document.getElementById('vol').value) || 0);
     var conc = vol * (want / have);
     var water = Math.max(0, vol - conc);
+    var ratio = have / Math.max(want, 0.0001);
     document.getElementById('out').textContent = conc.toFixed(1);
     document.getElementById('sub').textContent =
       'concentrate · add ' + water.toFixed(1) + ' diluent (same units)';
-    paint(conc, water);
+    paint(conc, water, ratio);
   }
+  window.__ibmToolRender = render;
   ['want','have','vol'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();
