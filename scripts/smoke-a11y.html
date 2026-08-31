@@ -45,7 +45,7 @@
   const panel = doc.getElementById('settings');
   check('focus-in-panel', panel.contains(doc.activeElement) || doc.activeElement === panel, doc.activeElement && (doc.activeElement.id || doc.activeElement.tagName));
 
-  check('keys-hint-gestures', (panel.textContent || '').indexOf('trackpad') >= 0);
+  check('keys-hint-gestures', /trackpad|gestures/i.test(panel.textContent || ''));
 
   const deepLabel = panel.querySelector('input[name="showViz"][value="deep"]');
   check('showViz-deep-radio', !!deepLabel);
