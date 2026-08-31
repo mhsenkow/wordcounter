@@ -513,6 +513,14 @@
     touch-action: none;
     cursor: ns-resize;
   }
+  .dial.is-scrubbable::after {
+    content: "";
+    position: absolute;
+    inset: -14px;
+    border-radius: 50%;
+    z-index: 0;
+    pointer-events: none;
+  }
   .dial .label-input,
   .dial .controls {
     touch-action: manipulation;
@@ -625,6 +633,11 @@
   main[data-state="running"] .face-time { color: var(--ink); }
   main[data-state="done"] .face-time { color: var(--done); }
   main[data-mode="limit"] .face-time { letter-spacing: -.02em; }
+  .face-time.is-cycling {
+    transition: transform .16s ease, opacity .16s ease;
+    transform: translateX(2px);
+    opacity: .88;
+  }
 
   .face-sub {
     font-size: 12px; letter-spacing: .01em; color: var(--mute);
@@ -761,6 +774,56 @@
     padding: 14px 16px; max-width: 88%;
   }
   .dial-core[data-figure="slab"] .face-time { font-weight: 400; letter-spacing: -.03em; }
+
+  .coach-mark {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 4;
+    width: max-content;
+    max-width: min(18rem, 88vw);
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.45;
+    letter-spacing: .02em;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--bg) 92%, var(--accent));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 10%, transparent);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 6px);
+    transition: opacity .35s ease, transform .35s ease;
+  }
+  .coach-mark.is-on {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  .scrub-bubble {
+    position: fixed;
+    z-index: 120;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -100%);
+    padding: 5px 10px;
+    font-family: var(--ui);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .01em;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--bg) 94%, var(--accent));
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--hair));
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 12%, transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .scrub-bubble.is-on {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 6px));
+  }
 
   /* layout — instrument posture */
   main[data-layout="compact"] .dial { width: min(100%, 260px); }
@@ -1011,6 +1074,122 @@
     }
     body.timecount-app {
       padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+  }
+
+  /* —— Landscape: dial | record split —— */
+  @media (orientation: landscape) and (max-height: 820px) {
+    body.timecount-app {
+      overflow: hidden;
+      height: 100dvh;
+      padding-bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--dock-h) + var(--rail-h));
+    }
+    main {
+      max-width: min(960px, 100%);
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .clock-stage {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(168px, 42%) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      align-items: center;
+      justify-items: stretch;
+      gap: 0 14px;
+      padding: 4px 0 6px;
+    }
+    .dial-wrap {
+      grid-column: 1;
+      grid-row: 1;
+      width: 100%;
+      justify-self: center;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .dial {
+      width: min(100%, min(46vh, 300px));
+      margin: 0 auto;
+    }
+    #progress {
+      margin-top: 4px;
+      max-width: 100%;
+    }
+    .controls {
+      grid-column: 1;
+      grid-row: 2;
+      padding: 2px 0 0;
+      justify-content: center;
+    }
+    .record:not([hidden]) {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: stretch;
+      display: flex !important;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      border-left: 1px solid var(--hair);
+      padding-left: 12px;
+      margin-top: 0;
+    }
+    main[data-density="calm"] .clock-stage,
+    main[data-layout="focus"] .clock-stage {
+      grid-template-columns: 1fr;
+    }
+    main[data-density="calm"] .dial-wrap,
+    main[data-layout="focus"] .dial-wrap {
+      grid-column: 1;
+    }
+    main[data-density="calm"] .dial,
+    main[data-layout="focus"] .dial {
+      width: min(100%, min(52vh, 340px));
+    }
+    .face-time {
+      font-size: clamp(2rem, 10vh, 3.5rem);
+    }
+    .action-rail {
+      bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--dock-h) + var(--rail-h));
+    }
+    header.masthead {
+      max-width: min(55vw, 360px);
+    }
+    #settings.open .fields {
+      max-height: min(78dvh, calc(100dvh - var(--mast-h) - 48px));
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 20px;
+    }
+    #settings .settings-group {
+      grid-column: 1 / -1;
+    }
+    #settings .settings-head {
+      grid-column: 1 / -1;
+    }
+    .stage-ghost[data-ghost-place="se"]::before {
+      bottom: calc(var(--dock-h) + var(--rail-h) + 4vh);
+    }
+    .stage-ghost[data-ghost-place="sw"]::before {
+      bottom: calc(var(--dock-h) + var(--rail-h) + 4vh);
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 480px) {
+    .dial {
+      width: min(100%, min(40vh, 240px)) !important;
+    }
+    .face-time {
+      font-size: clamp(1.75rem, 9vh, 2.75rem);
+    }
+    .clock-stage {
+      gap: 0 10px;
     }
   }
 
@@ -1648,7 +1827,8 @@
             <kbd>space</kbd> run · <kbd>l</kbd> split · <kbd>r</kbd> reset ·
             <kbd>esc</kbd> close · <kbd>⌘/ctrl</kbd>+<kbd>,</kbd> settings ·
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>t</kbd> theme
-            <br>drag or scroll dial / chart to nudge the limit · shift or sideways = 5m · ↑↓ / [ ] keys
+            <br>swipe the clock face left/right to change the primary readout
+            <br>drag or scroll dial / chart to nudge the limit · shift or sideways = 5m · ↑↓ / [ ] keys · value bubble while dragging
             <br>double-tap dial to split · presets soft-set while running · tap name to label
           </p>
         </fieldset>
@@ -1669,7 +1849,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=43"></script>
+<script src="lib/suite.js?v=44"></script>
 <script>
 (function () {
   'use strict';
@@ -1730,6 +1910,7 @@
   var FACES = { auto: true, web: true, local: true };
   var LAYOUTS = { hero: true, compact: true, focus: true };
   var PRIMARY = { elapsed: true, remaining: true, splits: true, segments: true, average: true };
+  var PRIMARY_ORDER = ['elapsed', 'remaining', 'splits', 'segments', 'average'];
   var FIGURES = { pair: true, stack: true, spine: true, caption: true, ticket: true, slab: true };
   var REACH = { none: true, tint: true, wash: true, dot: true, alarm: true, tag: true };
   var CHARTS = { dots: true, squares: true, ticks: true, bar: true, ring: true };
@@ -1862,6 +2043,43 @@
 
   function haptic(pattern) {
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+  }
+
+  function cyclePrimary(dir) {
+    dir = dir === -1 ? -1 : 1;
+    var i = PRIMARY_ORDER.indexOf(settings.primary);
+    if (i < 0) i = 0;
+    settings.primary = PRIMARY_ORDER[(i + dir + PRIMARY_ORDER.length) % PRIMARY_ORDER.length];
+    applySettingsControls();
+    saveState();
+    render();
+    haptic(8);
+  }
+
+  function dismissDialCoach(mark) {
+    if (!mark) return;
+    mark.classList.remove('is-on');
+    window.setTimeout(function () {
+      if (mark.parentNode) mark.parentNode.removeChild(mark);
+    }, 360);
+    if (window.IBMTools && IBMTools.markHintSeen) IBMTools.markHintSeen('timeHeroSwipe');
+  }
+
+  function mountDialCoachMark() {
+    if (!dialCore) return;
+    if (window.IBMTools && IBMTools.hintSeen && IBMTools.hintSeen('timeHeroSwipe')) return;
+    var mark = document.createElement('p');
+    mark.className = 'coach-mark';
+    mark.textContent = 'Swipe the clock face left or right to change the primary readout.';
+    dialCore.appendChild(mark);
+    window.requestAnimationFrame(function () { mark.classList.add('is-on'); });
+    var dismissTimer = window.setTimeout(function () { dismissDialCoach(mark); }, 7000);
+    function earlyDismiss() {
+      window.clearTimeout(dismissTimer);
+      dismissDialCoach(mark);
+      dialCore.removeEventListener('pointerdown', earlyDismiss);
+    }
+    dialCore.addEventListener('pointerdown', earlyDismiss, { once: true });
   }
 
   function formatClock(ms) {
@@ -2932,6 +3150,32 @@
     var drag = null;
     var progressEl = document.getElementById('progress');
     var lastTap = 0;
+    var scrubBubble = null;
+
+    function ensureScrubBubble() {
+      if (scrubBubble) return scrubBubble;
+      scrubBubble = document.createElement('div');
+      scrubBubble.className = 'scrub-bubble';
+      scrubBubble.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(scrubBubble);
+      return scrubBubble;
+    }
+
+    function updateScrubBubble(x, y) {
+      var bubble = ensureScrubBubble();
+      var ms = settings.target > 0 ? settings.target : 25 * 60000;
+      bubble.textContent = formatLimit(ms);
+      bubble.classList.add('is-on');
+      document.body.classList.add('has-scrub-bubble');
+      bubble.style.left = Math.round(x || window.innerWidth / 2) + 'px';
+      bubble.style.top = Math.round((y || window.innerHeight / 2) - 10) + 'px';
+    }
+
+    function hideScrubBubble() {
+      if (!scrubBubble) return;
+      scrubBubble.classList.remove('is-on');
+      document.body.classList.remove('has-scrub-bubble');
+    }
 
     function scrubEnabled() {
       if (document.body.classList.contains('settings-open')) return false;
@@ -2971,6 +3215,7 @@
       setTarget(next, { resetTimer: false });
       haptic(8);
       syncScrubCursor();
+      updateScrubBubble(drag ? drag.lastX : null, drag ? drag.lastY : null);
     }
 
     function onWheel(e) {
@@ -2982,6 +3227,7 @@
       if (Math.abs(dy) < 1 && Math.abs(dx) < 1) return;
       e.preventDefault();
       document.body.classList.add('is-scrubbing');
+      updateScrubBubble(e.clientX, e.clientY);
       if (e.shiftKey || Math.abs(dx) > Math.abs(dy)) {
         accumX += e.shiftKey && Math.abs(dy) >= Math.abs(dx) ? dy : dx;
         while (Math.abs(accumX) >= THRESH) {
@@ -3000,7 +3246,10 @@
         accumX = 0;
       }
       clearTimeout(onWheel._t);
-      onWheel._t = setTimeout(function () { document.body.classList.remove('is-scrubbing'); }, 280);
+      onWheel._t = setTimeout(function () {
+        document.body.classList.remove('is-scrubbing');
+        hideScrubBubble();
+      }, 280);
     }
 
     function bindSurface(el) {
@@ -3010,6 +3259,7 @@
         if (document.body.classList.contains('settings-open')) return;
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (e.target && e.target.closest && e.target.closest('input, button, a')) return;
+        if (e.target && e.target.closest && e.target.closest('.face-stack, .face-time')) return;
         /* Double-tap dial face → split in splits mode */
         if (el === dialEl && settings.mode === 'splits') {
           var now = Date.now();
@@ -3043,6 +3293,7 @@
         drag.moved = true;
         e.preventDefault();
         document.body.classList.add('is-scrubbing');
+        updateScrubBubble(e.clientX, e.clientY);
         var thresh = e.pointerType === 'touch' || e.pointerType === 'pen' ? TOUCH_THRESH : THRESH;
         if (Math.abs(drag.accumY) >= Math.abs(drag.accumX)) {
           while (Math.abs(drag.accumY) >= thresh) {
@@ -3066,6 +3317,7 @@
         var pid = drag.id;
         drag = null;
         document.body.classList.remove('is-scrubbing');
+        hideScrubBubble();
         try {
           if (el.hasPointerCapture && el.hasPointerCapture(pid)) el.releasePointerCapture(pid);
         } catch (err) {}
@@ -3094,6 +3346,84 @@
     var _render = render;
     window.__ibmSyncTimeScrub = syncScrubCursor;
   })();
+
+  /* Horizontal swipe on clock face → cycle primary readout */
+  (function mountPrimarySwipe() {
+    if (!dialCore) return;
+    var THRESH = 52;
+    var drag = null;
+    var accum = 0;
+    var lastStep = 0;
+
+    function gated() {
+      if (document.body.classList.contains('settings-open')) return true;
+      return false;
+    }
+
+    function step(dir) {
+      var now = Date.now();
+      if (now - lastStep < 90) return;
+      lastStep = now;
+      cyclePrimary(dir);
+      if (faceTime) {
+        faceTime.classList.add('is-cycling');
+        window.setTimeout(function () { faceTime.classList.remove('is-cycling'); }, 180);
+      }
+    }
+
+    dialCore.addEventListener('pointerdown', function (e) {
+      if (gated()) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!e.target.closest || !e.target.closest('.face-stack, .face-time')) return;
+      if (e.target.closest('input, button, a')) return;
+      drag = { id: e.pointerId, x: e.clientX, accum: 0, moved: false };
+      accum = 0;
+      e.stopPropagation();
+      try { dialCore.setPointerCapture(e.pointerId); } catch (err) {}
+    }, true);
+
+    dialCore.addEventListener('pointermove', function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var dx = e.clientX - drag.x;
+      drag.x = e.clientX;
+      drag.accum += dx;
+      if (!drag.moved && Math.abs(drag.accum) < 10) return;
+      drag.moved = true;
+      e.preventDefault();
+      e.stopPropagation();
+      while (Math.abs(drag.accum) >= THRESH) {
+        var dir = drag.accum > 0 ? -1 : 1;
+        drag.accum -= (drag.accum > 0 ? 1 : -1) * THRESH;
+        step(dir);
+      }
+    }, true);
+
+    function endSwipe(e) {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      drag = null;
+      accum = 0;
+    }
+    dialCore.addEventListener('pointerup', endSwipe, true);
+    dialCore.addEventListener('pointercancel', endSwipe, true);
+
+    dialCore.addEventListener('wheel', function (e) {
+      if (gated()) return;
+      if (!e.target.closest || !e.target.closest('.face-stack, .face-time')) return;
+      var dx = e.deltaX;
+      var dy = e.deltaY;
+      if (Math.abs(dx) < Math.abs(dy) && !e.shiftKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      accum += e.shiftKey && Math.abs(dy) > Math.abs(dx) ? dy : dx;
+      while (Math.abs(accum) >= THRESH) {
+        var dir = accum > 0 ? -1 : 1;
+        accum -= (accum > 0 ? 1 : -1) * THRESH;
+        step(dir);
+      }
+    }, { passive: false, capture: true });
+  })();
+
+  mountDialCoachMark();
 
   document.addEventListener('visibilitychange', function () {
     if (state.running) startTick();

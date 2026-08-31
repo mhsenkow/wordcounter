@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
@@ -1919,6 +1919,123 @@
     transform: translateX(2px);
     opacity: .88;
   }
+
+  /* one-time coach mark — swipe hero to change metric */
+  .coach-mark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 6;
+    margin: 0 auto;
+    width: max-content;
+    max-width: min(18rem, 92vw);
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.45;
+    letter-spacing: .02em;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--bg) 92%, var(--accent));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 10%, transparent);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .35s ease, transform .35s ease;
+  }
+  .coach-mark.is-on {
+    opacity: 1;
+    transform: none;
+  }
+  .coach-mark::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -5px;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    background: inherit;
+    border-right: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--hair));
+    transform: rotate(45deg);
+  }
+
+  /* pull-to-clear on draft */
+  .pull-clear {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 0;
+    padding: 0 12px 6px;
+    font-size: 11px;
+    letter-spacing: .03em;
+    color: var(--mute);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity .18s ease, transform .18s ease, color .18s ease;
+  }
+  .editor-surface.is-pulling .pull-clear,
+  .editor-surface.is-pull-armed .pull-clear {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .editor-surface.is-pull-armed .pull-clear { color: var(--accent); }
+  .editor-surface.is-pull-confirm .pull-clear { color: var(--mark); }
+
+  /* long-press metric chip menu */
+  .metric-menu {
+    position: fixed;
+    z-index: 140;
+    min-width: 9.5rem;
+    padding: 4px 0;
+    background: var(--bg);
+    border: 1px solid var(--hair);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+    opacity: 0;
+    transform: translateY(4px) scale(.98);
+    transition: opacity .14s ease, transform .14s ease;
+    pointer-events: none;
+  }
+  .metric-menu.is-open {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .metric-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: 13px;
+    letter-spacing: .01em;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    padding: 9px 14px;
+    min-height: 40px;
+    cursor: pointer;
+  }
+  .metric-menu button:hover,
+  .metric-menu button:focus-visible {
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    outline: none;
+  }
+  .metric-menu button:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .metric-menu button[aria-disabled="true"] {
+    opacity: .45;
+    pointer-events: none;
+  }
+
   .primary .select-hint {
     font-size: 10px;
     letter-spacing: 0.06em;
@@ -3948,15 +4065,282 @@
     }
   }
 
-  @media (max-height: 500px) and (orientation: landscape) {
-    .hero { padding: 10px 0; }
-    .primary b { font-size: clamp(2rem, 10vw, 3rem); }
-    .editor, .editor-surface, textarea { min-height: min(28vh, 10rem); }
-    body.settings-open .dock { max-height: min(88dvh, 100%); }
-    #settings.open .fields {
-      max-height: min(70dvh, calc(88dvh - var(--dock-bar, 3.5rem) - 2rem));
+  /* —— Landscape: hero/metrics | draft split —— */
+  @media (orientation: landscape) and (max-height: 820px) {
+    body {
+      overflow: hidden;
+      height: 100dvh;
+      padding-top: max(10px, env(safe-area-inset-top));
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
-    main { min-height: 0; }
+    body:has(main[data-goal="true"]) {
+      padding-left: max(calc(var(--pad) + var(--rail)), env(safe-area-inset-left));
+    }
+    main {
+      display: grid;
+      grid-template-columns: clamp(148px, 34vw, 280px) minmax(0, 1fr);
+      grid-template-rows: 1fr;
+      gap: 0 12px;
+      max-width: 100%;
+      height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom)));
+      min-height: 0;
+      padding-bottom: 0;
+    }
+    .hero {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: start;
+      flex-direction: column;
+      gap: 10px;
+      padding: 8px 12px 8px 0;
+      border-bottom: 0;
+      border-right: 1px solid var(--hair);
+    }
+    .primary b {
+      font-size: clamp(1.75rem, 8vh, 2.75rem);
+    }
+    .progress {
+      max-width: 100%;
+      margin-left: 0;
+      flex: none;
+    }
+    dl {
+      grid-column: 1;
+      grid-row: 1;
+      align-self: end;
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      overflow-x: hidden;
+      overflow-y: auto;
+      max-height: 58%;
+      padding: 8px 12px 8px 0;
+      border-bottom: 0;
+      border-right: 1px solid var(--hair);
+      touch-action: pan-y;
+      scroll-snap-type: none;
+    }
+    dl > div {
+      flex-direction: row;
+      justify-content: space-between;
+      width: 100%;
+    }
+    dl > div + div {
+      border-left: 0;
+      margin-left: 0;
+      padding-left: 0;
+      border-top: 1px solid var(--hair);
+      margin-top: 6px;
+      padding-top: 6px;
+    }
+    .editor {
+      grid-column: 2;
+      grid-row: 1;
+      min-height: 0;
+    }
+    .editor,
+    .editor-surface,
+    textarea {
+      min-height: 0;
+    }
+    main[data-layout="focus"] dl { display: none; }
+    main[data-layout="compact"] .hero { display: none; }
+    main[data-layout="compact"] dl {
+      align-self: stretch;
+      max-height: none;
+    }
+    .scale-rail {
+      top: max(10px, env(safe-area-inset-top));
+      bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    body.settings-open .dock { max-height: min(92dvh, 100%); }
+    #settings.open .fields {
+      max-height: min(78dvh, calc(92dvh - var(--dock-bar, 3.5rem) - 1.5rem));
+    }
+  }
+
+  /* Desktop landscape: masthead spans top, then split */
+  @media (orientation: landscape) and (max-height: 820px) and (min-width: 561px) {
+    main {
+      grid-template-rows: auto 1fr;
+    }
+    .dock > header {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 12px;
+    }
+    #settings {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .hero {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    dl {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .editor {
+      grid-column: 2;
+      grid-row: 2;
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 820px) and (max-width: 560px) {
+    :root { --dock-bar: 3rem; }
+    main {
+      height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom)) - var(--dock-bar) - env(safe-area-inset-bottom, 0px));
+      padding-bottom: 0;
+    }
+    body.is-typing.is-kb-open main {
+      height: calc(var(--vv-h, 100dvh) - var(--vv-offset, 0px) - var(--dock-bar) - env(safe-area-inset-bottom, 0px));
+      max-height: calc(var(--vv-h, 100dvh) - var(--vv-offset, 0px) - var(--dock-bar) - env(safe-area-inset-bottom, 0px));
+    }
+    body.is-typing dl {
+      display: none;
+    }
+    .scale-rail {
+      bottom: calc(var(--dock-bar) + env(safe-area-inset-bottom, 0px) + 8px);
+    }
+    #settings.open .fields {
+      column-count: 2;
+      column-gap: 20px;
+    }
+    #settings .fields > fieldset {
+      break-inside: avoid;
+    }
+  }
+
+  @media (orientation: landscape) and (max-height: 480px) {
+    .hero { padding: 6px 10px 6px 0; }
+    .primary b { font-size: clamp(1.5rem, 7vh, 2.25rem); }
+    dl { max-height: 52%; }
+  }
+
+  /* —— Collapsible chrome while typing (mobile keyboard) —— */
+  .hero,
+  .primary,
+  .primary b,
+  dl,
+  .editor,
+  .editor-surface {
+    transition:
+      padding 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      gap 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      min-height 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      font-size 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (pointer: coarse), (max-width: 720px) {
+    body.is-typing.is-kb-open {
+      overflow: hidden;
+      position: fixed;
+      left: 0;
+      right: 0;
+      width: 100%;
+      top: var(--vv-offset, 0px);
+      height: var(--vv-h, 100dvh);
+      min-height: 0;
+    }
+    body.is-typing.is-kb-open main {
+      height: calc(var(--vv-h, 100dvh) - var(--vv-offset, 0px));
+      min-height: 0;
+      max-height: calc(var(--vv-h, 100dvh) - var(--vv-offset, 0px));
+      overflow: hidden;
+    }
+    body.is-typing.is-kb-open .scale-rail {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+  /* Phones: shrink chrome as soon as a field is focused (keyboard animates in) */
+  @media (max-width: 560px) {
+    body.is-typing .hero {
+      flex: 0 0 auto;
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      gap: 8px 12px;
+      padding: 6px 0 4px;
+    }
+    body.is-typing .hero .progress {
+      display: none !important;
+    }
+    body.is-typing .primary {
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      min-height: 0;
+      gap: 6px 8px;
+    }
+    body.is-typing .primary[data-figure="stack"] {
+      flex-direction: row;
+      align-items: baseline;
+    }
+    body.is-typing .primary b {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    body.is-typing .primary span,
+    body.is-typing .primary .goal-hint,
+    body.is-typing .select-hint {
+      font-size: 10px;
+    }
+    body.is-typing .primary .select-hint,
+    body.is-typing .primary-notes {
+      display: none;
+    }
+    body.is-typing dl {
+      display: none;
+    }
+    body.is-typing .editor {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    body.is-typing .editor-surface,
+    body.is-typing textarea {
+      min-height: 0 !important;
+      height: 100%;
+    }
+  }
+  /* Tablets / coarse: collapse only once keyboard is actually open */
+  @media (min-width: 561px) and (max-width: 720px), (min-width: 561px) and (pointer: coarse) {
+    body.is-typing.is-kb-open .hero {
+      flex: 0 0 auto;
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      gap: 8px 12px;
+      padding: 6px 0 4px;
+    }
+    body.is-typing.is-kb-open .hero .progress {
+      display: none !important;
+    }
+    body.is-typing.is-kb-open .primary {
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      min-height: 0;
+      gap: 6px 8px;
+    }
+    body.is-typing.is-kb-open .primary b {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+    body.is-typing.is-kb-open dl {
+      display: none;
+    }
+    body.is-typing.is-kb-open .editor {
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    body.is-typing.is-kb-open .editor-surface,
+    body.is-typing.is-kb-open textarea {
+      min-height: 0 !important;
+      height: 100%;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -4278,7 +4662,7 @@
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>t</kbd> theme ·
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>m</kbd> voice ·
             <kbd>⌘/ctrl</kbd>+<kbd>⇧</kbd>+<kbd>⌫</kbd> clear
-            <span class="keys-swipe"> · swipe footer for settings · swipe theme · swipe count · pull settings shut · two-finger tap copies</span>
+            <span class="keys-swipe"> · swipe hero to change metric · long-press a chip for actions · pull draft down to clear · swipe footer for settings · swipe theme · two-finger tap copies</span>
             <br>tools grid (top right) jumps the suite · look settings sync with time and number tools
           </p>
         </fieldset>
@@ -4338,7 +4722,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=43"></script>
+<script src="lib/suite.js?v=44"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
@@ -5000,6 +5384,262 @@
     applySettingsControls();
     saveSettings();
     render();
+  }
+
+  function setPrimaryMetric(key) {
+    if (!METRICS[key]) return;
+    if (!document.querySelector('input[name="primary"][value="' + key + '"]')) return;
+    settings.primary = key;
+    applySettingsControls();
+    saveSettings();
+    render();
+    haptic(8);
+  }
+
+  function copyMetricCount(key) {
+    var m = METRICS[key];
+    if (!m) return Promise.resolve(false);
+    var c = count(text.value);
+    var val = m.format(c);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(val).then(function () {
+        haptic(10);
+        return true;
+      }).catch(function () { return false; });
+    }
+    return Promise.resolve(false);
+  }
+
+  function dismissCoachMark(mark) {
+    if (!mark) return;
+    mark.classList.remove('is-on');
+    window.setTimeout(function () {
+      if (mark.parentNode) mark.parentNode.removeChild(mark);
+    }, 360);
+    if (window.IBMTools && IBMTools.markHintSeen) IBMTools.markHintSeen('heroSwipe');
+  }
+
+  function mountHeroCoachMark() {
+    if (!primaryBlock) return;
+    if (window.IBMTools && IBMTools.hintSeen && IBMTools.hintSeen('heroSwipe')) return;
+    var mark = document.createElement('p');
+    mark.className = 'coach-mark';
+    mark.textContent = 'Swipe the count left or right to change the primary metric.';
+    primaryBlock.appendChild(mark);
+    window.requestAnimationFrame(function () {
+      mark.classList.add('is-on');
+    });
+    var dismissTimer = window.setTimeout(function () { dismissCoachMark(mark); }, 7000);
+    function earlyDismiss() {
+      window.clearTimeout(dismissTimer);
+      dismissCoachMark(mark);
+      primaryBlock.removeEventListener('pointerdown', earlyDismiss);
+      primaryBlock.removeEventListener('touchstart', earlyDismiss);
+    }
+    primaryBlock.addEventListener('pointerdown', earlyDismiss, { once: true });
+    primaryBlock.addEventListener('touchstart', earlyDismiss, { once: true, passive: true });
+  }
+
+  function mountPullClear() {
+    var surface = editor && editor.querySelector('.editor-surface');
+    if (!surface || !text) return;
+    var hint = document.createElement('div');
+    hint.className = 'pull-clear';
+    hint.setAttribute('aria-hidden', 'true');
+    hint.textContent = 'pull to clear';
+    surface.insertBefore(hint, surface.firstChild);
+
+    var pull = null;
+    var ARM = 56;
+    var CONFIRM = 104;
+    var MAX = 132;
+
+    function resetPull() {
+      pull = null;
+      surface.classList.remove('is-pulling', 'is-pull-armed', 'is-pull-confirm');
+      surface.style.transform = '';
+      hint.textContent = 'pull to clear';
+    }
+
+    function atTop() {
+      return text.scrollTop <= 1;
+    }
+
+    surface.addEventListener('pointerdown', function (e) {
+      if (document.body.classList.contains('settings-open')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!atTop() || !text.value) return;
+      if (e.target && e.target.closest && e.target.closest('#voiceDock, .voice-stop')) return;
+      pull = {
+        id: e.pointerId,
+        y0: e.clientY,
+        dy: 0,
+        armed: clearArmed
+      };
+      try { surface.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    surface.addEventListener('pointermove', function (e) {
+      if (!pull || e.pointerId !== pull.id) return;
+      var dy = Math.max(0, e.clientY - pull.y0);
+      if (dy < 8 && !surface.classList.contains('is-pulling')) return;
+      pull.dy = dy;
+      e.preventDefault();
+      surface.classList.add('is-pulling');
+      var shift = Math.min(dy * 0.35, MAX * 0.35);
+      surface.style.transform = 'translateY(' + shift.toFixed(1) + 'px)';
+      if (dy >= CONFIRM) {
+        surface.classList.add('is-pull-confirm');
+        surface.classList.remove('is-pull-armed');
+        hint.textContent = 'release to clear';
+      } else if (dy >= ARM) {
+        surface.classList.add('is-pull-armed');
+        surface.classList.remove('is-pull-confirm');
+        hint.textContent = pull.armed || clearArmed ? 'release to confirm' : 'keep pulling…';
+      } else {
+        surface.classList.remove('is-pull-armed', 'is-pull-confirm');
+        hint.textContent = 'pull to clear';
+      }
+    });
+
+    function endPull(e) {
+      if (!pull || (e && e.pointerId !== pull.id)) return;
+      var dy = pull.dy;
+      var pid = pull.id;
+      pull = null;
+      try {
+        if (surface.hasPointerCapture && surface.hasPointerCapture(pid)) {
+          surface.releasePointerCapture(pid);
+        }
+      } catch (err2) {}
+      if (dy >= CONFIRM) requestClear();
+      resetPull();
+    }
+
+    surface.addEventListener('pointerup', endPull);
+    surface.addEventListener('pointercancel', endPull);
+  }
+
+  function setupMetricMenus() {
+    var menu = document.createElement('div');
+    menu.className = 'metric-menu';
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    document.body.appendChild(menu);
+
+    var openRow = null;
+    var longTimer = null;
+    var longRow = null;
+    var suppressClick = false;
+
+    function closeMenu() {
+      menu.classList.remove('is-open');
+      menu.hidden = true;
+      openRow = null;
+      menu.innerHTML = '';
+    }
+
+    function placeMenu(x, y) {
+      menu.hidden = false;
+      menu.style.left = '0';
+      menu.style.top = '0';
+      var rect = menu.getBoundingClientRect();
+      var left = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+      var top = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+      window.requestAnimationFrame(function () { menu.classList.add('is-open'); });
+    }
+
+    function openMetricMenu(row, x, y) {
+      if (!row) return;
+      var key = row.getAttribute('data-metric');
+      if (!key || !METRICS[key]) return;
+      closeMenu();
+      openRow = row;
+      suppressClick = true;
+      window.setTimeout(function () { suppressClick = false; }, 400);
+      haptic(12);
+
+      function addItem(label, fn, disabled) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('role', 'menuitem');
+        btn.textContent = label;
+        if (disabled) btn.setAttribute('aria-disabled', 'true');
+        btn.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (disabled) return;
+          closeMenu();
+          fn();
+        });
+        menu.appendChild(btn);
+      }
+
+      var canPrimary = !!document.querySelector('input[name="primary"][value="' + key + '"]');
+      var isPrimary = settings.primary === key;
+      addItem('set as primary', function () { setPrimaryMetric(key); }, !canPrimary || isPrimary);
+      if (row.hasAttribute('data-annotate') && ANNOTATABLE[key]) {
+        addItem('annotate', function () { setAnnotate(key); });
+      }
+      addItem('copy count', function () { copyMetricCount(key); });
+
+      placeMenu(x, y);
+    }
+
+    function clearLong() {
+      if (longTimer) {
+        window.clearTimeout(longTimer);
+        longTimer = null;
+      }
+      longRow = null;
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('#metrics [data-metric]'), function (row) {
+      var pressX = 0;
+      var pressY = 0;
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        clearLong();
+        longRow = row;
+        pressX = e.clientX;
+        pressY = e.clientY;
+        longTimer = window.setTimeout(function () {
+          openMetricMenu(row, pressX, pressY);
+          longTimer = null;
+        }, 480);
+      });
+      row.addEventListener('pointermove', function (e) {
+        if (!longTimer || longRow !== row) return;
+        if (Math.abs(e.clientX - pressX) > 12 || Math.abs(e.clientY - pressY) > 12) clearLong();
+      });
+      row.addEventListener('pointerup', clearLong);
+      row.addEventListener('pointercancel', clearLong);
+      row.addEventListener('pointerleave', clearLong);
+      row.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        openMetricMenu(row, e.clientX, e.clientY);
+      });
+      row.addEventListener('click', function (e) {
+        if (suppressClick) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, true);
+    });
+
+    document.addEventListener('pointerdown', function (e) {
+      if (!menu.classList.contains('is-open')) return;
+      if (e.target.closest && e.target.closest('.metric-menu')) return;
+      closeMenu();
+    }, true);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && menu.classList.contains('is-open')) {
+        e.preventDefault();
+        closeMenu();
+      }
+    });
   }
 
   function bindSwipe(el, opts) {
@@ -6613,6 +7253,9 @@
   }).catch(function () {});
   setupVoice();
   setupGestures();
+  mountHeroCoachMark();
+  mountPullClear();
+  setupMetricMenus();
 
   text.addEventListener('input', function () {
     if (undoArmed) exitUndo();
@@ -6899,6 +7542,64 @@
   });
 
   document.addEventListener('keydown', onKeydown);
+
+  /* Collapsible chrome while typing — pin to visual viewport when keyboard opens */
+  function syncTypingChrome() {
+    var ae = document.activeElement;
+    var typing = ae && ae.matches && ae.matches(
+      'textarea, select, input:not([type="radio"]):not([type="checkbox"]):not([type="button"]):not([type="submit"])'
+    );
+    document.body.classList.toggle('is-typing', !!typing);
+  }
+
+  function syncViewportChrome() {
+    var vv = window.visualViewport;
+    var vh = vv ? vv.height : window.innerHeight;
+    var offset = vv ? vv.offsetTop : 0;
+    var open = vv ? (window.innerHeight - vv.height) > 80 : false;
+    document.documentElement.style.setProperty('--vv-h', Math.round(vh) + 'px');
+    document.documentElement.style.setProperty('--vv-offset', Math.round(offset) + 'px');
+    document.body.classList.toggle('is-kb-open', open);
+  }
+
+  function onViewportChrome() {
+    syncViewportChrome();
+    if (document.body.classList.contains('is-kb-open')) {
+      var active = document.activeElement;
+      if (active && active.matches && active.matches('textarea, input, select')) {
+        requestAnimationFrame(function () {
+          try {
+            active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+          } catch (err) {}
+        });
+      }
+    }
+  }
+
+  window.addEventListener('resize', onViewportChrome);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportChrome);
+    window.visualViewport.addEventListener('scroll', onViewportChrome);
+  }
+  document.addEventListener('focusin', function (e) {
+    if (!e.target || !e.target.matches) return;
+    if (!e.target.matches('textarea, select, input')) return;
+    syncTypingChrome();
+    setTimeout(function () {
+      onViewportChrome();
+      try {
+        e.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      } catch (err) {}
+    }, 50);
+    setTimeout(onViewportChrome, 320);
+  });
+  document.addEventListener('focusout', function () {
+    setTimeout(function () {
+      syncTypingChrome();
+      onViewportChrome();
+    }, 120);
+  });
+  syncViewportChrome();
 
   applyScaleRail();
   render();

@@ -796,6 +796,45 @@ html[data-gestures="1"] .tool-stage [data-scrub]:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
   outline-offset: 3px;
 }
+/* Larger invisible hit targets on mapped chart cells */
+html[data-gestures="1"] .tool-stage [data-scrub] {
+  position: relative;
+}
+html[data-gestures="1"] .tool-stage [data-scrub]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(44px, calc(100% + 24px));
+  height: max(44px, calc(100% + 24px));
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+/* Floating value while scrubbing */
+.scrub-bubble {
+  position: fixed;
+  z-index: 120;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -100%);
+  padding: 5px 10px;
+  font-family: var(--ui);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .01em;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 94%, var(--accent));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--hair));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 12%, transparent);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease, transform .12s ease;
+}
+.scrub-bubble.is-on {
+  opacity: 1;
+  transform: translate(-50%, calc(-100% - 6px));
+}
 html[data-gestures="1"] main {
   pointer-events: none;
 }
@@ -899,6 +938,10 @@ html[data-show-viz="deep"] body[data-tool="ratio"] .tool-stage .deep-canvas {
 }
 html[data-show-viz="deep"] body[data-tool="ratio"] #toolStage {
   z-index: 1;
+}
+html[data-show-viz="deep"] body[data-tool="combo"] .tool-stage .deep-canvas {
+  top: calc(var(--mast-h) + 4px);
+  bottom: calc(var(--instrument-h, 180px) + 4px);
 }
 
 @media (max-width: 600px) {
@@ -1833,14 +1876,84 @@ body.is-soon .soon-badge { align-self: center; }
   html[data-gestures="1"] label.row:focus-within .value {
     cursor: text;
   }
-  body.is-kb-open main .stack {
-    max-height: min(38dvh, 320px);
+  /* Keyboard open: collapse hero, give fields the room */
+  body.tool-app.is-typing.is-kb-open {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+    top: var(--vv-offset, 0px);
+    height: var(--vv-h, 100dvh);
+    max-height: var(--vv-h, 100dvh);
+    overflow: hidden;
   }
-  body.is-kb-open .tool-stage {
-    opacity: .35;
+  @media (max-width: 560px) {
+    body.is-typing .face {
+      flex-direction: row;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      padding: 4px 10px 6px;
+    }
+    body.is-typing .face-value {
+      font-size: clamp(1.2rem, 5vw, 1.65rem);
+      line-height: 1;
+    }
+    body.is-typing .face-sub {
+      display: none;
+    }
+    body.is-typing .tool-stage {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      max-height: 0;
+      overflow: hidden;
+    }
+    body.is-typing main .stack {
+      max-height: none;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+  }
+  body.is-typing.is-kb-open .face {
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 4px 10px 6px;
+  }
+  body.is-typing.is-kb-open .face-value {
+    font-size: clamp(1.2rem, 5vw, 1.65rem);
+    line-height: 1;
+  }
+  body.is-typing.is-kb-open .face-sub {
+    display: none;
+  }
+  body.is-typing.is-kb-open .tool-stage {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    max-height: 0;
+    overflow: hidden;
+  }
+  body.is-typing.is-kb-open main .stack {
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
   }
   body.is-kb-open .face {
     padding-bottom: 4px;
+  }
+  .face,
+  .face-value,
+  .tool-stage,
+  main .stack {
+    transition:
+      padding var(--dur-fast) var(--ease-out),
+      gap var(--dur-fast) var(--ease-out),
+      font-size var(--dur-fast) var(--ease-out),
+      opacity var(--dur) var(--ease-out),
+      max-height var(--dur) var(--ease-out);
   }
   body.tool-app {
     padding-bottom: max(16px, env(safe-area-inset-bottom));
@@ -1862,29 +1975,119 @@ body.is-soon .soon-badge { align-self: center; }
   }
 }
 
-/* Short / landscape phones — keep instrument usable one-handed */
-@media (pointer: coarse) and (orientation: landscape), (max-height: 480px) {
-  .face {
-    padding: 4px 8px 6px;
+/* —— Landscape: face | stack side-by-side; stage well above —— */
+@media (orientation: landscape) and (max-height: 820px) {
+  body.tool-app {
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+  main {
+    display: grid;
+    grid-template-columns: clamp(128px, 30vw, 240px) minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    align-items: end;
+    align-content: end;
+    gap: 0 10px;
+    max-width: 100%;
+    width: 100%;
+  }
+  main .face {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    margin: 0;
+    padding: 6px 10px 8px 0;
     gap: 4px;
+    border-right: 1px solid color-mix(in srgb, var(--hair) 80%, transparent);
   }
-  .face-value {
-    font-size: clamp(1.7rem, 9vh, 2.6rem);
+  main .face-value {
+    font-size: clamp(1.65rem, 8vh, 2.5rem);
   }
-  .face-sub {
+  main .face-sub {
     font-size: 11px;
     min-height: 0;
   }
   main .stack {
-    max-height: min(56dvh, 340px);
-    padding: 8px 10px 10px;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    max-height: min(calc(100dvh - var(--mast-h) - 16px), 100%);
+    margin: 0;
+    padding: 8px 0 8px 10px;
     gap: 10px;
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  body.is-typing.is-kb-open main .stack {
+    max-height: min(calc(var(--vv-h, 100dvh) - var(--mast-h) - 16px), 100%);
+    flex: 1 1 auto;
+    min-height: 0;
   }
   label.row {
     min-height: 44px;
   }
   .tool-stage {
     --pad-t: calc(var(--mast-h) + 8px);
+  }
+  #settings {
+    max-width: min(720px, calc(100vw - 24px));
+  }
+  #settings > .inner {
+    max-height: min(88dvh, calc(100dvh - 24px));
+  }
+  #settings .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 22px;
+  }
+  #settings .fields > fieldset,
+  #settings .fields > .about-copy,
+  #settings .fields > .keys-hint {
+    grid-column: 1 / -1;
+  }
+  #settings .fields > fieldset.about-info {
+    grid-column: 1 / -1;
+  }
+
+  /* Ratio — drag plane left, readout + fields right */
+  body[data-tool="ratio"] main {
+    grid-template-columns: minmax(0, 1fr) clamp(128px, 30vw, 220px);
+    align-items: stretch;
+  }
+  body[data-tool="ratio"] .ratio-stage {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: calc(clamp(128px, 30vw, 220px) + max(56px, env(safe-area-inset-right)) + 12px);
+    top: calc(max(8px, env(safe-area-inset-top)) + var(--mast-h));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    height: auto;
+    max-height: none;
+    transform: none;
+  }
+  body[data-tool="ratio"] .face,
+  body[data-tool="ratio"] .stack {
+    grid-column: 2;
+  }
+  body[data-tool="ratio"] .face {
+    align-self: end;
+    border-right: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--hair) 80%, transparent);
+  }
+  body[data-tool="ratio"] .stack {
+    align-self: end;
+    padding-top: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 480px) {
+  main .face-value {
+    font-size: clamp(1.45rem, 7vh, 2rem);
+  }
+  main .stack {
+    padding: 6px 0 6px 8px;
+    gap: 8px;
   }
 }
 

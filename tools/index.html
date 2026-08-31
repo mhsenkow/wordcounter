@@ -77,6 +77,34 @@
     font-size: 11px;
     opacity: .75;
   }
+  @media (orientation: landscape) and (max-height: 820px) {
+    body.tools-map {
+      max-width: min(960px, 100%);
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      overflow-y: auto;
+      height: 100dvh;
+      box-sizing: border-box;
+    }
+    body.tools-map h1 {
+      font-size: 1.35rem;
+      margin-bottom: 4px;
+    }
+    body.tools-map .lede {
+      margin-bottom: 16px;
+    }
+    body.tools-map .map-grid {
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 6px;
+    }
+    body.tools-map .map-tile {
+      min-height: 64px;
+      padding: 10px 10px 8px;
+    }
+    body.tools-map .map-group {
+      margin-bottom: 14px;
+    }
+  }
 </style>
 </head>
 <body class="tool-app tools-map" data-tool="tools">
@@ -93,7 +121,7 @@
 </header>
 <p class="lede">Local instruments. No accounts. Open one and work.</p>
 <main id="map"></main>
-<script src="../lib/suite.js?v=35"></script>
+<script src="../lib/suite.js?v=44"></script>
 <script src="../lib/number-tool.js?v=33"></script>
 <script>
 (function () {

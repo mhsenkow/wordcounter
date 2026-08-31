@@ -89,7 +89,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz, extr
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="${FONTS}"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=43">
+<link rel="stylesheet" href="../lib/number-tool.css?v=44">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -113,8 +113,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=43"></script>
-<script src="../lib/number-tool.js?v=43"></script>
+<script src="../lib/suite.js?v=44"></script>
+<script src="../lib/number-tool.js?v=44"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');

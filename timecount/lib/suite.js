@@ -927,6 +927,21 @@
     saveShared(partial);
   }
 
+  function loadHints() {
+    var shared = loadShared();
+    return shared && shared.hints ? shared.hints : {};
+  }
+
+  function hintSeen(key) {
+    return !!loadHints()[key];
+  }
+
+  function markHintSeen(key) {
+    var hints = loadHints();
+    hints[key] = Date.now();
+    saveShared({ hints: hints });
+  }
+
   global.IBMTools = {
     SHARED_KEY: SHARED_KEY,
     THEMES: THEMES,
@@ -948,6 +963,8 @@
     saveShared: saveShared,
     mergeSharedInto: mergeSharedInto,
     pushSharedFrom: pushSharedFrom,
+    hintSeen: hintSeen,
+    markHintSeen: markHintSeen,
     registerShellWorker: registerShellWorker
   };
 })(typeof window !== 'undefined' ? window : globalThis);

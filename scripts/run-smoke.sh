@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PORT="${SMOKE_PORT:-8777}"
 BASE="http://127.0.0.1:${PORT}"
-CACHE_V=43
+CACHE_V=44
 
 echo "== unit tests =="
 node test.mjs
