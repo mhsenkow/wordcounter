@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -38,13 +38,21 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>transfer</legend>
-      <label class="row"><span class="key">size</span><span class="value"><input id="size" type="number" inputmode="decimal" min="0" step="10" value="1500" data-primary data-axis="y" data-axis-x="speed" data-step-fast="100" data-gesture="1" aria-label="file size"><span class="unit">MB</span></span></label>
-      <label class="row"><span class="key">speed</span><span class="value"><input id="speed" type="number" inputmode="decimal" min="0.01" step="1" value="100" data-step-fast="10" aria-label="bandwidth"><span class="unit">Mbps</span></span></label>
+      <label class="row"><span class="key">size</span><span class="value"><input id="size" type="number" inputmode="decimal" min="0" step="10" value="1500" data-primary data-axis="y" data-axis-x="speed" data-step-fast="100" data-gesture="1" aria-label="file size"></span></label>
+      <label class="row"><span class="key">unit</span><span class="value"><select id="sizeUnit" aria-label="size unit"><option value="MB" selected>MB</option><option value="GB">GB</option></select></span></label>
+      <label class="row"><span class="key">speed</span><span class="value"><input id="speed" type="number" inputmode="decimal" min="0.01" step="1" value="100" data-step-fast="10" aria-label="bandwidth"></span></label>
+      <label class="row"><span class="key">link</span><span class="value"><select id="speedUnit" aria-label="speed unit"><option value="Mbps" selected>Mbps</option><option value="Gbps">Gbps</option></select></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="transfer presets" data-cols="4">
+      <button type="button" class="preset" data-size="25" data-speed="25" data-sizeUnit="MB" data-speedUnit="Mbps" aria-pressed="false">photo<span class="preset-meta">25 MB</span></button>
+      <button type="button" class="preset" data-size="100" data-speed="50" data-sizeUnit="MB" data-speedUnit="Mbps" aria-pressed="false">album<span class="preset-meta">100 MB</span></button>
+      <button type="button" class="preset" data-size="1500" data-speed="100" data-sizeUnit="MB" data-speedUnit="Mbps" aria-pressed="true">movie<span class="preset-meta">1.5 GB</span></button>
+      <button type="button" class="preset" data-size="10" data-speed="200" data-sizeUnit="GB" data-speedUnit="Mbps" aria-pressed="false">4K<span class="preset-meta">10 GB</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('bitrate');
@@ -99,15 +107,25 @@
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
-    var mb = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
-    var mbps = Math.max(0.01, parseFloat(document.getElementById('speed').value) || 0.01);
+    var size = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
+    var sizeUnit = document.getElementById('sizeUnit').value || 'MB';
+    var speed = Math.max(0.01, parseFloat(document.getElementById('speed').value) || 0.01);
+    var speedUnit = document.getElementById('speedUnit').value || 'Mbps';
+    var mb = sizeUnit === 'GB' ? size * 1024 : size;
+    var mbps = speedUnit === 'Gbps' ? speed * 1000 : speed;
     var sec = (mb * 8) / mbps;
     document.getElementById('out').textContent = fmt(sec);
-    document.getElementById('sub').textContent = mb + ' MB @ ' + mbps + ' Mbps';
-    paint(mb, sec);
+    document.getElementById('sub').textContent = size + ' ' + sizeUnit + ' @ ' + speed + ' ' + speedUnit;
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('bitrate', stage, { size: mb, speed: mbps });
+    else if (mode !== 'plain') paint(mb, sec);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  ['size','speed'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  ['size','speed','sizeUnit','speedUnit'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
   render();
 })();
 </script>

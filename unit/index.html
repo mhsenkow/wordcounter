@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -71,11 +71,17 @@
         </select>
       </span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="kitchen presets" data-cols="4">
+      <button type="button" class="preset" data-amount="1" data-from="cup" data-to="g" data-density="0.53" aria-pressed="true">flour<span class="preset-meta">1 cup→g</span></button>
+      <button type="button" class="preset" data-amount="1" data-from="cup" data-to="g" data-density="0.85" aria-pressed="false">sugar<span class="preset-meta">1 cup→g</span></button>
+      <button type="button" class="preset" data-amount="1" data-from="tbsp" data-to="g" data-density="0.91" aria-pressed="false">butter<span class="preset-meta">1 tbsp→g</span></button>
+      <button type="button" class="preset" data-amount="8" data-from="oz" data-to="cup" data-density="1" aria-pressed="false">water<span class="preset-meta">8 oz→cup</span></button>
+    </div>
     <ul class="list" id="hist"></ul>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('unit');
@@ -157,9 +163,13 @@
     var pretty = out >= 100 ? out.toFixed(0) : out >= 10 ? out.toFixed(1) : out.toFixed(2);
     document.getElementById('out').textContent = pretty;
     document.getElementById('sub').textContent = amount + ' ' + from + ' → ' + pretty + ' ' + to;
-    paint(amount, out);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('unit', stage, { amount: amount, density: density, fromIsVol: isVol(from), toIsMass: isMass(to) });
+    else if (mode !== 'plain') paint(amount, out);
+    else stage.innerHTML = '';
     if (commit) commitHist(amount + ' ' + from + ' → ' + pretty + ' ' + to);
     else renderHist();
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = function(){ render(false); };
   ['amount','from','to','density'].forEach(function(id){
@@ -170,6 +180,12 @@
     if (e.key === 'Enter') render(true);
   });
   document.getElementById('amount').addEventListener('blur', function(){ render(true); });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["amount","from","to","density"],
+    map: null,
+    after: function () { render(false); }
+  });
   render(false);
 })();
 </script>

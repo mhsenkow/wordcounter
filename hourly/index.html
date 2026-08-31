@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -42,10 +42,16 @@
       <label class="row"><span class="key">hours / day</span><span class="value"><input id="hpd" type="number" inputmode="decimal" min="0" step="0.5" value="6" aria-label="hours per day"></span></label>
       <label class="row"><span class="key">days</span><span class="value"><input id="days" type="number" inputmode="decimal" min="0" step="0.5" value="10" data-primary data-axis="y" data-axis-x="hpd" data-pinch="rate" data-step-fast="5" data-gesture="1" aria-label="days"></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="project presets" data-cols="4">
+      <button type="button" class="preset" data-rate="125" data-hpd="8" data-days="1" aria-pressed="false">day<span class="preset-meta">8h</span></button>
+      <button type="button" class="preset" data-rate="125" data-hpd="6" data-days="5" aria-pressed="false">week<span class="preset-meta">30h</span></button>
+      <button type="button" class="preset" data-rate="150" data-hpd="6" data-days="10" aria-pressed="true">sprint<span class="preset-meta">60h</span></button>
+      <button type="button" class="preset" data-rate="100" data-hpd="4" data-days="20" aria-pressed="false">month<span class="preset-meta">80h</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('hourly');
@@ -106,10 +112,20 @@
     document.getElementById('out').textContent = money(total);
     document.getElementById('sub').textContent =
       'day rate ' + money(dayRate) + (hours ? ' · ' + hours + 'h' : '');
-    paint(days, hpd, rate);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('hourly', stage, { rate: rate, days: days, hpd: hpd });
+    else if (mode !== 'plain') paint(days, hpd, rate);
+    else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
   ['rate','hpd','days'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["rate","hpd","days"],
+    map: null,
+    after: function () { render(); }
+  });
   render();
 })();
 </script>

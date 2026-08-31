@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -38,9 +38,9 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>triangle</legend>
-      <label class="row"><span class="key">ISO</span><span class="value"><input id="iso" type="number" inputmode="numeric" min="25" step="25" value="100" data-step-fast="100" aria-label="ISO"></span></label>
-      <label class="row"><span class="key">ƒ</span><span class="value"><input id="fnum" type="number" inputmode="decimal" min="0.5" step="0.1" value="8" data-primary data-axis="y" data-axis-x="shut" data-pinch="iso" data-step-fast="1" data-gesture="1" aria-label="aperture"></span></label>
-      <label class="row"><span class="key">shutter</span><span class="value"><input id="shut" type="number" inputmode="numeric" min="1" step="1" value="125" data-step-fast="25" aria-label="shutter denominator"><span class="unit">1/n</span></span></label>
+      <label class="row"><span class="key">ISO</span><span class="value"><select id="iso" aria-label="ISO"><option value="50">50</option><option value="100" selected>100</option><option value="200">200</option><option value="400">400</option><option value="800">800</option><option value="1600">1600</option><option value="3200">3200</option><option value="6400">6400</option></select></span></label>
+      <label class="row"><span class="key">ƒ</span><span class="value"><select id="fnum" aria-label="aperture" data-primary data-axis="y" data-axis-x="shut" data-pinch="iso" data-gesture="1"><option value="1.4">ƒ/1.4</option><option value="2">ƒ/2</option><option value="2.8">ƒ/2.8</option><option value="4">ƒ/4</option><option value="5.6">ƒ/5.6</option><option value="8" selected>ƒ/8</option><option value="11">ƒ/11</option><option value="16">ƒ/16</option><option value="22">ƒ/22</option></select></span></label>
+      <label class="row"><span class="key">shutter</span><span class="value"><select id="shut" aria-label="shutter speed"><option value="1000">1/1000</option><option value="500">1/500</option><option value="250">1/250</option><option value="125" selected>1/125</option><option value="60">1/60</option><option value="30">1/30</option><option value="15">1/15</option><option value="8">1/8</option><option value="4">1/4</option><option value="2">1/2</option><option value="1">1″</option></select></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="sunny 16 presets">
       <button type="button" class="preset" data-iso="100" data-f="16" data-shut="125">sunny</button>
@@ -50,8 +50,8 @@
     </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('exposure');
@@ -86,6 +86,14 @@
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
+  function setSelect(id, value){
+    var el = document.getElementById(id);
+    if (!el) return;
+    var v = String(value);
+    for (var i = 0; i < el.options.length; i++) {
+      if (el.options[i].value === v) { el.selectedIndex = i; return; }
+    }
+  }
   function render(){
     var iso = Math.max(25, parseFloat(document.getElementById('iso').value) || 100);
     var f = Math.max(0.5, parseFloat(document.getElementById('fnum').value) || 1);
@@ -104,7 +112,10 @@
           ? ' · sunny 16'
           : ' · ' + (sunnyDelta > 0 ? '+' : '') + (Math.round(sunnyDelta * 10) / 10) + ' from sunny 16');
     }
-    paint(ev, iso, f, shutN);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('exposure', stage, { iso: iso, fnum: f, shutN: shutN, ev: ev });
+    else if (mode !== 'plain') paint(ev, iso, f, shutN);
+    else stage.innerHTML = '';
     document.querySelectorAll('#presets .preset').forEach(function(btn){
       var match =
         Number(btn.getAttribute('data-iso')) === iso &&
@@ -117,13 +128,14 @@
   document.getElementById('presets').addEventListener('click', function(e){
     var btn = e.target.closest('.preset');
     if (!btn) return;
-    document.getElementById('iso').value = btn.getAttribute('data-iso');
-    document.getElementById('fnum').value = btn.getAttribute('data-f');
-    document.getElementById('shut').value = btn.getAttribute('data-shut');
+    setSelect('iso', btn.getAttribute('data-iso'));
+    setSelect('fnum', btn.getAttribute('data-f'));
+    setSelect('shut', btn.getAttribute('data-shut'));
     render();
   });
   ['iso','fnum','shut'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();
 })();

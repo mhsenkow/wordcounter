@@ -1,10 +1,15 @@
 /* Offline shell for static suite assets only — no user content on the server. */
-const CACHE = 'ibm-tools-shell-v1';
+const CACHE = 'ibm-tools-shell-v2';
 const PRECACHE = [
   '/tools/',
   '/lib/suite.js',
   '/lib/number-tool.js',
   '/lib/number-tool.css',
+  '/lib/deep-viz.js',
+  '/lib/vega.min.js',
+  '/lib/vega-lite.min.js',
+  '/lib/vega-embed.min.js',
+  '/lib/regl.min.js',
   '/manifest.webmanifest'
 ];
 

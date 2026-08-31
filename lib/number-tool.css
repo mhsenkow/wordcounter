@@ -537,59 +537,96 @@ label.row .unit {
   text-transform: lowercase;
 }
 
-/* Preset rail — Braun calculator keys, not chips */
+/* Preset grid — square calculator keys */
 .presets,
 .seg.presets {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
 }
+
+.presets[data-cols="2"],
+.presets.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.presets[data-cols="3"],
+.presets.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.presets[data-cols="5"],
+.presets.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
 button.preset,
 .presets .linkish,
 .seg.presets .linkish {
   font: inherit;
   font-family: var(--digits);
-  font-size: 13px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   letter-spacing: .02em;
+  line-height: 1.15;
   color: var(--mute);
-  background: none;
+  background: color-mix(in srgb, var(--face) 92%, var(--ink) 8%);
   border: 0;
   border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
   margin: 0;
-  padding: 10px 14px;
-  min-height: 44px;
+  padding: 8px 6px;
+  min-height: 52px;
+  aspect-ratio: 1 / 1;
   cursor: pointer;
   text-align: center;
-  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
   touch-action: manipulation;
-  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
-button.preset:last-child,
-.presets .linkish:last-child,
-.seg.presets .linkish:last-child { border-right: 0; }
+button.preset .preset-meta,
+.presets .linkish .preset-meta {
+  font-size: 9px;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+  color: color-mix(in srgb, var(--mute) 80%, transparent);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 button.preset:hover,
 .presets .linkish:hover,
-.seg.presets .linkish:hover { color: var(--ink); }
+.seg.presets .linkish:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--face) 80%, var(--ink) 20%);
+}
 
 button.preset:focus-visible,
 .presets .linkish:focus-visible,
 .seg.presets .linkish:focus-visible {
   outline: none;
   color: var(--ink);
-  box-shadow: inset 0 -1px 0 var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  z-index: 1;
 }
 
 button.preset[aria-pressed="true"],
 .presets .linkish.is-set,
 .seg.presets .linkish.is-set {
   color: var(--ink);
-  box-shadow: inset 0 -1px 0 var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--face));
+  box-shadow: inset 0 0 0 1px var(--accent);
+  z-index: 1;
+}
+
+button.preset[aria-pressed="true"] .preset-meta,
+.presets .linkish.is-set .preset-meta {
+  color: color-mix(in srgb, var(--ink) 55%, var(--mute));
 }
 
 .seg {
@@ -640,6 +677,26 @@ button.preset[aria-pressed="true"],
 [data-theme="brutal"] .presets .linkish {
   border-color: #000;
   border-width: 2px;
+}
+[data-theme="brutal"] button.preset[aria-pressed="true"],
+[data-theme="brutal"] .presets .linkish.is-set {
+  background: #ff0;
+  color: #000;
+  box-shadow: none;
+}
+[data-theme="contrast"] button.preset[aria-pressed="true"] {
+  background: #ff0;
+  color: #000;
+}
+[data-theme="nes"] .presets { border-radius: 0; }
+@media (max-width: 380px) {
+  .presets[data-cols="5"],
+  .presets.cols-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  button.preset,
+  .presets .linkish {
+    min-height: 48px;
+    font-size: 11px;
+  }
 }
 
 .note {
@@ -732,7 +789,79 @@ html[data-gestures="1"] main .soon-badge,
 html[data-gestures="1"] main .note {
   pointer-events: auto;
 }
-html[data-show-viz="false"] .tool-stage { display: none !important; }
+html[data-show-viz="false"] .tool-stage,
+html[data-show-viz="plain"] .tool-stage,
+html[data-show-viz="off"] .tool-stage { display: none !important; }
+
+.tool-stage .deep-chart,
+.tool-stage .deep-canvas {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+}
+.tool-stage .deep-chart {
+  overflow: hidden;
+}
+.tool-stage .deep-chart .vega-embed,
+.tool-stage .deep-chart .vega-embed details {
+  width: 100% !important;
+  height: 100% !important;
+}
+.tool-stage .deep-chart canvas,
+.tool-stage .deep-chart svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+.tool-stage .deep-chart .vega-embed summary,
+.tool-stage .deep-chart .vega-embed .vega-actions {
+  display: none !important;
+}
+.tool-stage .deep-canvas {
+  width: auto;
+  height: auto;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+.tool-stage .deep-scrub {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  pointer-events: auto;
+  z-index: 2;
+  background: transparent;
+}
+.tool-stage[data-deep="webgl"] .deep-scrub {
+  /* let canvas own orbit; scrub only on edges via transparent overlay opacity */
+  pointer-events: none;
+}
+.tool-stage .deep-fallback {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  display: grid;
+  place-items: center;
+  color: var(--mute);
+  font: 500 12px/1.3 var(--ui);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+}
+
+@media (max-width: 600px) {
+  .tool-stage .deep-chart,
+  .tool-stage .deep-canvas,
+  .tool-stage .deep-scrub {
+    --deep-pad-r: 12px;
+  }
+}
+
+@media print {
+  .tool-stage .deep-chart,
+  .tool-stage .deep-canvas {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 220px;
+  }
+}
 
 header.masthead,
 main,
@@ -1718,7 +1847,10 @@ body.is-soon .soon-badge { align-self: center; }
 
 /* Inline strip viz optional — hide when stage present for same tool */
 body[data-tool] main > .viz:not(.ratio-inline) { display: none; }
-html[data-show-viz="false"] body[data-tool="ratio"] .ratio-stage { display: none !important; }
+html[data-show-viz="false"] body[data-tool="ratio"] .ratio-stage,
+html[data-show-viz="plain"] body[data-tool="ratio"] .ratio-stage,
+html[data-show-viz="off"] body[data-tool="ratio"] .ratio-stage { display: none !important; }
+html[data-show-viz="deep"] body[data-tool="ratio"] .ratio-stage { display: none !important; }
 .viz-bar {
   position: relative; height: 8px; width: 100%;
   background: var(--hair); border: 1px solid var(--rule); overflow: hidden;

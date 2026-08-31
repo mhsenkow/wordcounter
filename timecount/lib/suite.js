@@ -87,8 +87,8 @@
         lead: 'Split a check with tip baked in.',
         body: 'Enter the receipt total, tip percent, and party size. The face shows what each person owes. The stage draws a receipt well — tip as a ribbon, people as columns.',
         use: [
+          'Enter the total and party size; pick a tip from the list.',
           'Scrub tip on the face or chart; drag sideways to change people.',
-          'Preset chips snap 15 / 18 / 20 / 25%.',
           'Settings can show tip as share of the grand total or as dollars.'
         ]
       }
@@ -132,8 +132,7 @@
         lead: 'Stack sales tax and tip on a subtotal.',
         body: 'Start from the pre-tax amount, add tax, then tip. Tip can sit on the pre-tax figure or on the taxed total — a common restaurant vs receipt ambiguity. The stage is a stacked receipt you can scrub band by band.',
         use: [
-          'Enter subtotal, tax %, and tip %.',
-          'Settings choose whether tip applies pre-tax or post-tax.',
+          'Enter subtotal and tax %; pick tip and whether it applies pre-tax or after tax.',
           'Scrub each receipt band on the stage.'
         ]
       }
@@ -179,7 +178,7 @@
         lead: 'Turn a map legend into real-world distance.',
         body: 'Read the printed scale (e.g. 1:24,000 or a bar), measure a length on the map, and get ground distance. Distance rings and a true scale bar keep the ratio visible.',
         use: [
-          'Set the map scale and the measured length on paper.',
+          'Set the map scale, pick miles or km, and measure a length on paper.',
           'The face shows real distance; scrub to explore nearby lengths.'
         ]
       }
@@ -190,7 +189,7 @@
         lead: 'Distance × pace → finish time (or solve for pace).',
         body: 'For runs, rides, and hikes: enter distance and pace to get ETA, or lock a finish and back into pace. Route ticks teach distance; tick spacing teaches pace; the finish mark is the ETA.',
         use: [
-          'Fill distance and pace (or ETA) and read the solved field.',
+          'Pick solve mode (finish time or needed pace), then fill the other fields.',
           'Scrub the route stage — spacing tightens as pace quickens.'
         ]
       }
@@ -234,78 +233,78 @@
       id: 'contrast', label: 'contrast', blurb: 'fg · bg · wcag', group: 'form', paths: ['contrast'], icon: I.contrast, status: 'live',
       help: {
         lead: 'Check text contrast against WCAG bands.',
-        body: 'Pick foreground and background hex colors. The face is the contrast ratio; pass/fail bands for AA / AAA (normal and large text) update with it. The swatch teaches luminance; specimen size follows settings.',
+        body: 'Pick foreground and background hex colors. The face is the contrast ratio; pass/fail bands for AA / AAA update with it. Choose normal or large text for the WCAG rules that apply.',
         use: [
           'Enter or scrub fg / bg hex values.',
-          'Read the ratio and which WCAG rungs clear.',
-          'Adjust text size in settings to match large-text rules.'
+          'Pick text size (normal / large) for the right WCAG rungs.',
+          'Read the ratio and which bands clear.'
         ]
       }
     },
     {
-      id: 'odds', label: 'odds', blurb: 'chance · payoff', group: 'chance', paths: ['odds'], icon: I.odds, status: 'live',
+      id: 'odds', label: 'odds', blurb: 'avg · bet', group: 'chance', paths: ['odds'], icon: I.odds, status: 'live',
       help: {
-        lead: 'What a simple bet pays on average.',
-        body: 'Win chance × win amount, plus lose chance × lose amount. Positive means the bet pays you over many repeats; the seesaw tips with that average.',
+        lead: 'Average dollars each time you take a bet.',
+        body: 'Not a bookmaker’s odds line — the long-run average: win % of the win $, plus lose % of the lose $ (usually a negative stake). Above zero means the bet pays you over many plays.',
         use: [
           'Enter win chance, dollars if you win, and dollars if you lose.',
-          'Scrub chance on the face; watch the seesaw tip.'
+          'Try a preset, then scrub chance and watch the seesaw tip.'
         ]
       }
     },
     {
-      id: 'combo', label: 'combo', blurb: 'pick k of n', group: 'chance', paths: ['combo'], icon: I.combo, status: 'live',
+      id: 'combo', label: 'combo', blurb: 'ways to pick', group: 'chance', paths: ['combo'], icon: I.combo, status: 'live',
       help: {
-        lead: 'How many ways to pick without caring about order.',
-        body: 'From a pile of n items, how many distinct groups of size k exist? Poker hands, lottery tickets, teams — order does not matter. The stage lights k of n seats so the count is visible.',
+        lead: 'How many distinct groups can you draw from a pile?',
+        body: 'Order does not matter — a poker hand is the same cards whether you were dealt them left-to-right or not. The stage lights the picks so the count is visible.',
         use: [
-          'Set from (total) and pick (chosen).',
-          'Scrub either value; the lit seats track what you pick.'
+          'Set from (pile size) and pick (how many).',
+          'Try poker / lotto / team presets; scrub to explore.'
         ]
       }
     },
     {
-      id: 'deal', label: 'deal', blurb: 'deck left', group: 'chance', paths: ['deal'], icon: I.deal, status: 'live',
+      id: 'deal', label: 'deal', blurb: 'next card', group: 'chance', paths: ['deal'], icon: I.deal, status: 'live',
       help: {
-        lead: 'Chance the next card is one you want.',
-        body: 'As the deck shrinks, count how many cards remain and how many of those are still favorable. The shoe and lit grid make that ratio tangible.',
+        lead: 'Chance the next card is one you still want.',
+        body: 'As the deck shrinks, count cards left and how many of those are still wanted. Lit cards on the grid are the ones you care about.',
         use: [
-          'Set cards left and how many of them you still want.',
-          'Scrub the shoe or grid; the next-card chance updates.'
+          'Set left and want (wanted cards still in the deck).',
+          'Presets snap common cases: aces, a suit, tens+, a short shoe.'
         ]
       }
     },
     {
-      id: 'sample', label: 'sample', blurb: 'poll · margin', group: 'chance', paths: ['sample'], icon: I.sample, status: 'live',
+      id: 'sample', label: 'sample', blurb: 'poll · ±', group: 'chance', paths: ['sample'], icon: I.sample, status: 'live',
       help: {
-        lead: 'How wide a poll result tends to swing.',
-        body: 'Given sample size and an estimated share, ballpark the margin of error. Bigger samples tighten the band. Rough rule of thumb — not a full survey design.',
+        lead: 'How far might a poll miss the real share?',
+        body: 'Enter how many people you asked and the yes %. The face is a ballpark ± margin. More people tighten it. Rule of thumb — not a full survey design.',
         use: [
-          'Enter sample size and estimated share; set confidence in settings.',
+          'Enter sample size and estimated share; pick confidence on the page.',
           'Read ± margin on the face; scrub size to watch the band tighten.'
         ]
       }
     },
     {
-      id: 'streak', label: 'streak', blurb: 'next flip', group: 'chance', paths: ['streak'], icon: I.streak, status: 'live',
+      id: 'streak', label: 'streak', blurb: 'still the same', group: 'chance', paths: ['streak'], icon: I.streak, status: 'live',
       help: {
-        lead: 'A streak does not make the next flip "due."',
-        body: 'Independent coin flips: past heads do not raise the chance of tails. The face shows the next toss is still the same chance — even though a long run was unlikely.',
+        lead: 'A streak does not make the next flip “due.”',
+        body: 'Independent flips: past heads do not raise the chance of tails. The face stays on the next flip’s chance — unchanged — while the caption shows how rare that run was.',
         use: [
-          'Set the coin\'s chance and a run length.',
-          'Read "next still…" under the face; the dual track sketches the fallacy vs the truth.'
+          'Set heads % and how many you’ve seen in a row.',
+          'Read “next flip still…” under the face.'
         ]
       }
     },
     {
-      id: 'bayes', label: 'bayes', blurb: 'update belief', group: 'chance', paths: ['bayes'], icon: I.bayes, status: 'live',
+      id: 'bayes', label: 'bayes', blurb: 'before → after', group: 'chance', paths: ['bayes'], icon: I.bayes, status: 'live',
       help: {
-        lead: 'Update a belief when new evidence arrives.',
-        body: 'Start with how likely something seems (before). Then say how often that evidence shows up if the claim is true vs false. The face is your belief after seeing it.',
+        lead: 'How much should this evidence change your mind?',
+        body: 'Before = how likely the claim seemed. When true / when false = how often you’d see this evidence in each world. The face is your belief after seeing it.',
         use: [
-          'Enter before %, if true %, and if false %.',
-          'Read the updated % on the face; scrub to feel how sensitive it is.',
-          'Handy for tests, filters, and "how much should this change my mind?"'
+          'Enter before %, when true %, and when false %.',
+          'Try lab test or rare disease; scrub to feel sensitivity.',
+          'Handy for tests, filters, and “should this update me?”'
         ]
       }
     }

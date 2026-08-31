@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -38,6 +38,7 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>route</legend>
+      <label class="row"><span class="key">solve</span><span class="value"><select id="mode" aria-label="solve for"><option value="eta" selected>finish time</option><option value="pace">needed pace</option></select></span></label>
       <label class="row"><span class="key">distance</span><span class="value"><input id="distance" type="number" inputmode="decimal" min="0" step="0.1" value="5" data-primary data-axis="y" data-axis-x="pace" data-step-fast="1" data-gesture="1" aria-label="distance"></span></label>
       <label class="row"><span class="key">pace</span><span class="value"><input id="pace" type="number" inputmode="decimal" min="0" step="0.1" value="9.5" aria-label="pace minutes per unit"><span class="unit">min/u</span></span></label>
       <label class="row"><span class="key">hours</span><span class="value"><input id="hours" type="number" inputmode="decimal" min="0" step="0.05" value="0.8" aria-label="finish hours"></span></label>
@@ -50,8 +51,8 @@
     </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('pace');
@@ -59,7 +60,7 @@
     id: 'pace',
     about: "Distance × pace → ETA (or solve for pace). Route ticks teach distance; tick spacing teaches pace; finish mark is the ETA.",
     hasViz: true,
-    extra: {"defaults":{"mode":"eta"},"fieldsHtml":"<fieldset><legend>solve</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"solve for\"><label><input type=\"radio\" name=\"mode\" value=\"eta\"><span>eta</span></label><label><input type=\"radio\" name=\"mode\" value=\"pace\"><span>pace</span></label></div></fieldset>"},
+    extra: null,
     onApply: function () {
       if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
     }
@@ -74,8 +75,8 @@
     return hh + ':' + String(mm).padStart(2,'0');
   }
   function mode(){
-    var s = toolUI && toolUI.settings;
-    return (s && s.mode === 'pace') ? 'pace' : 'eta';
+    var el = document.getElementById('mode');
+    return (el && el.value === 'pace') ? 'pace' : 'eta';
   }
   function paint(d, pace, etaH, needed, solvingPace){
     if (!stage) return;
@@ -106,16 +107,21 @@
     var d = Math.max(0, parseFloat(document.getElementById('distance').value) || 0);
     var pace = Math.max(0, parseFloat(document.getElementById('pace').value) || 0);
     var hours = Math.max(0, parseFloat(document.getElementById('hours').value) || 0);
+    var modeV = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
     if (mode() === 'pace') {
       var needed = d > 0 ? (hours * 60) / d : 0;
       document.getElementById('out').textContent = (Math.round(needed * 10) / 10) + '';
       document.getElementById('sub').textContent = 'min/unit for ' + fmtHours(hours) + ' finish';
-      paint(d, pace, hours, needed, true);
+      if (modeV === 'deep') IBMNumberTool.paintDeep('pace', stage, { distance: d, pace: pace, etaH: hours });
+      else if (modeV !== 'plain') paint(d, pace, hours, needed, true);
+      else stage.innerHTML = '';
     } else {
       var eta = (d * pace) / 60;
       document.getElementById('out').textContent = fmtHours(eta);
       document.getElementById('sub').textContent = d + ' u · ' + pace + ' min/u';
-      paint(d, pace, eta, pace, false);
+      if (modeV === 'deep') IBMNumberTool.paintDeep('pace', stage, { distance: d, pace: pace, etaH: eta });
+      else if (modeV !== 'plain') paint(d, pace, eta, pace, false);
+      else stage.innerHTML = '';
     }
   }
   window.__ibmToolRender = render;
@@ -126,8 +132,9 @@
     document.getElementById('distance').value = btn.getAttribute('data-dist');
     render();
   });
-  ['distance','pace','hours'].forEach(function(id){
+  ['distance','pace','hours','mode'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();
 })();

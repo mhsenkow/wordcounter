@@ -7,13 +7,13 @@
 <meta name="theme-color" content="#f2f2f0" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#161616" media="(prefers-color-scheme: dark)">
 <title>combo — ibm.io</title>
-<meta name="description" content="pick k of n">
+<meta name="description" content="ways to pick">
 <link rel="canonical" href="https://ibm.io/combo/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -33,25 +33,31 @@
 
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
-    <p class="face-sub" id="sub">ways to pick</p>
+    <p class="face-sub" id="sub">distinct groups</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
-      <legend>choose</legend>
-      <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items"></span></label>
+      <legend>pile</legend>
+      <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items in the pile"></span></label>
       <label class="row"><span class="key">pick</span><span class="value"><input id="k" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="how many to pick"></span></label>
     </fieldset>
-    <p class="note">order does not matter</p>
+    <div class="presets" id="presets" role="group" aria-label="combo presets">
+      <button type="button" class="preset" data-n="52" data-k="5">poker</button>
+      <button type="button" class="preset" data-n="49" data-k="6">lotto</button>
+      <button type="button" class="preset" data-n="10" data-k="3">team</button>
+      <button type="button" class="preset" data-n="20" data-k="2">pair</button>
+    </div>
+    <p class="note">same cards in a different order still count as one</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('combo');
   var toolUI = window.IBMNumberTool && IBMNumberTool.mountSettings({
     id: 'combo',
-    about: "How many ways to pick k items from n when order does not matter — a poker hand, a lottery ticket, a team.",
+    about: "How many distinct groups can you draw from a pile when order does not matter — a 5-card hand, a lottery ticket, a team of three.",
     hasViz: true,
     extra: {"defaults":{"shape":"ring"},"fieldsHtml":"<fieldset><legend>shape</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"combo shape\"><label><input type=\"radio\" name=\"shape\" value=\"ring\"><span>ring</span></label><label><input type=\"radio\" name=\"shape\" value=\"grid\"><span>grid</span></label></div></fieldset>"},
     onApply: function () {
@@ -100,10 +106,21 @@
     var k = Math.max(0, parseInt(document.getElementById('k').value, 10) || 0);
     var ways = choose(n, k);
     document.getElementById('out').textContent = IBMNumberTool.formatCount(ways);
-    document.getElementById('sub').textContent = 'pick ' + k + ' of ' + n;
-    paint(n, k);
+    document.getElementById('sub').textContent =
+      k > n ? 'cannot pick ' + k + ' from ' + n : 'ways to pick ' + k + ' from ' + n;
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('combo', stage, { n: n, k: k, count: ways });
+    else if (mode !== 'plain') paint(n, k);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('n').value = btn.getAttribute('data-n');
+    document.getElementById('k').value = btn.getAttribute('data-k');
+    render();
+  });
   ['n','k'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();
 })();

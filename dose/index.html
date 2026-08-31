@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -42,10 +42,16 @@
       <label class="row"><span class="key">stock</span><span class="value"><input id="have" type="number" inputmode="decimal" min="0.01" step="0.1" value="10" data-step-fast="1" aria-label="stock percent"><span class="unit">%</span></span></label>
       <label class="row"><span class="key">batch</span><span class="value"><input id="vol" type="number" inputmode="decimal" min="0" step="1" value="1000" data-step-fast="100" aria-label="batch volume"><span class="unit">vol</span></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="mix presets" data-cols="4">
+      <button type="button" class="preset" data-want="2" data-have="10" data-vol="1000" aria-pressed="true">garden<span class="preset-meta">2% of 10%</span></button>
+      <button type="button" class="preset" data-want="0.1" data-have="5" data-vol="500" aria-pressed="false">bleach<span class="preset-meta">spray</span></button>
+      <button type="button" class="preset" data-want="1" data-have="100" data-vol="1000" aria-pressed="false">feed<span class="preset-meta">1:100</span></button>
+      <button type="button" class="preset" data-want="5" data-have="30" data-vol="500" aria-pressed="false">clean<span class="preset-meta">vinegar</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('dose');
@@ -94,10 +100,20 @@
     document.getElementById('out').textContent = conc.toFixed(1);
     document.getElementById('sub').textContent =
       'concentrate · add ' + water.toFixed(1) + ' diluent (same units)';
-    paint(conc, water, ratio);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('dose', stage, { want: want, have: have, vol: vol });
+    else if (mode !== 'plain') paint(conc, water, ratio);
+    else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
   ['want','have','vol'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["want","have","vol"],
+    map: null,
+    after: function () { render(); }
+  });
   render();
 })();
 </script>

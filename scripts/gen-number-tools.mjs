@@ -21,8 +21,54 @@ function segField(legend, name, aria, opts) {
   );
 }
 
+/** Row with a <select> of discrete choices. opts: [[value, label], ...] */
+function selectRow(key, id, aria, opts, attrs) {
+  attrs = attrs || '';
+  return (
+    '<label class="row"><span class="key">' + key + '</span><span class="value">' +
+    '<select id="' + id + '" aria-label="' + aria + '"' + (attrs ? ' ' + attrs : '') + '>' +
+    opts.map(([v, l, sel]) => '<option value="' + v + '"' + (sel ? ' selected' : '') + '>' + l + '</option>').join('') +
+    '</select></span></label>'
+  );
+}
+
 function makeExtra(defaults, ...fields) {
   return { defaults, fieldsHtml: fields.join('') };
+}
+
+/** Square preset grid markup. buttons: [{ label, pressed?, meta?, ...dataAttrs }] */
+function presetsMarkup(aria, buttons, cols) {
+  const n = cols || (buttons.length === 5 ? 5 : buttons.length === 3 ? 3 : 4);
+  const cells = buttons
+    .map((b) => {
+      const { label, pressed, meta, ...data } = b;
+      const attrs = Object.entries(data)
+        .map(([k, v]) => `data-${k}="${String(v).replace(/"/g, '&quot;')}"`)
+        .join(' ');
+      const ap = pressed ? 'true' : 'false';
+      const inner = meta
+        ? `${label}<span class="preset-meta">${meta}</span>`
+        : label;
+      return `      <button type="button" class="preset" ${attrs} aria-pressed="${ap}">${inner}</button>`;
+    })
+    .join('\n');
+  return `    <div class="presets" id="presets" role="group" aria-label="${aria}" data-cols="${n}">\n${cells}\n    </div>`;
+}
+
+/** Script snippet: bindPresets + sync hook name */
+function presetsBind(keys, map, afterExpr) {
+  const mapJson = map ? JSON.stringify(map) : 'null';
+  const after = afterExpr || 'render()';
+  return `
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ${JSON.stringify(keys)},
+    map: ${mapJson},
+    after: function () { ${after}; }
+  });`;
+}
+
+function presetsSyncLine() {
+  return `    if (presets) presets.sync();`;
 }
 
 function pageShell({ id, title, blurb, about, status, body, script, hasViz, extra }) {
@@ -43,7 +89,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz, extr
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="${FONTS}"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -67,8 +113,8 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('${id}');
@@ -112,25 +158,14 @@ const tools = {
     <fieldset class="panel">
       <legend>receipt</legend>
       <label class="row"><span class="key">total</span><span class="value"><input id="total" type="number" inputmode="decimal" min="0" step="0.01" value="86.40" aria-label="receipt total"></span></label>
-      <label class="row"><span class="key">tip</span><span class="value"><input id="tip" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" data-primary data-axis="y" data-axis-x="people" data-step-fast="5" data-gesture="1" aria-label="tip percent"><span class="unit">%</span></span></label>
+      ${selectRow('tip', 'tip', 'tip percent', [['15', '15%'], ['18', '18%'], ['20', '20%', true], ['22', '22%'], ['25', '25%']], 'data-primary data-axis="y" data-axis-x="people" data-gesture="1"')}
       <label class="row"><span class="key">people</span><span class="value"><input id="people" type="number" inputmode="numeric" min="1" step="1" value="2" aria-label="people"></span></label>
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="tip presets">
-      <button type="button" class="preset" data-tip="15" aria-pressed="false">15%</button>
-      <button type="button" class="preset" data-tip="18" aria-pressed="false">18%</button>
-      <button type="button" class="preset" data-tip="20" aria-pressed="true">20%</button>
-      <button type="button" class="preset" data-tip="25" aria-pressed="false">25%</button>
-    </div>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('bill');
   function S(){ return (toolUI && toolUI.settings) || {}; }
   function money(n){ return IBMNumberTool.formatMoney(n, { forceCents: true }); }
-  function syncTipPresets(tipPct){
-    document.querySelectorAll('#presets .preset').forEach(function(btn){
-      btn.setAttribute('aria-pressed', String(Number(btn.getAttribute('data-tip')) === tipPct));
-    });
-  }
   function paint(people, tipPct, tipAmt, grand){
     var n = Math.max(1, Math.min(12, people));
     var view = S().view || 'people';
@@ -159,16 +194,15 @@ const tools = {
     document.getElementById('out').textContent = money(each);
     document.getElementById('sub').textContent =
       (people === 1 ? 'you pay' : 'per person') + ' · tip ' + money(tip) + ' · total ' + money(grand);
-    paint(people, tipPct, tip, grand);
-    syncTipPresets(tipPct);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('bill', stage, { people: people, tipPct: tipPct, total: total });
+    else if (mode !== 'plain') paint(people, tipPct, tip, grand);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  ['total','tip','people'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('[data-tip]');
-    if (!btn) return;
-    document.getElementById('tip').value = btn.getAttribute('data-tip');
-    render();
+  ['total','tip','people'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();`
   },
@@ -196,6 +230,12 @@ const tools = {
       <label class="row"><span class="key">hours / day</span><span class="value"><input id="hpd" type="number" inputmode="decimal" min="0" step="0.5" value="6" aria-label="hours per day"></span></label>
       <label class="row"><span class="key">days</span><span class="value"><input id="days" type="number" inputmode="decimal" min="0" step="0.5" value="10" data-primary data-axis="y" data-axis-x="hpd" data-pinch="rate" data-step-fast="5" data-gesture="1" aria-label="days"></span></label>
     </fieldset>
+${presetsMarkup('project presets', [
+  { label: 'day', rate: '125', hpd: '8', days: '1', meta: '8h' },
+  { label: 'week', rate: '125', hpd: '6', days: '5', meta: '30h' },
+  { label: 'sprint', rate: '150', hpd: '6', days: '10', meta: '60h', pressed: true },
+  { label: 'month', rate: '100', hpd: '4', days: '20', meta: '80h' }
+])}
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('hourly');
@@ -245,10 +285,15 @@ const tools = {
     document.getElementById('out').textContent = money(total);
     document.getElementById('sub').textContent =
       'day rate ' + money(dayRate) + (hours ? ' · ' + hours + 'h' : '');
-    paint(days, hpd, rate);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('hourly', stage, { rate: rate, days: days, hpd: hpd });
+    else if (mode !== 'plain') paint(days, hpd, rate);
+    else stage.innerHTML = '';
+${presetsSyncLine()}
   }
   window.__ibmToolRender = render;
   ['rate','hpd','days'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+${presetsBind(['rate','hpd','days'])}
   render();`
   },
 
@@ -274,6 +319,12 @@ const tools = {
       <label class="row"><span class="key">mpg</span><span class="value"><input id="mpg" type="number" inputmode="decimal" min="0.1" step="0.1" value="28" aria-label="miles per gallon"></span></label>
       <label class="row"><span class="key">$ / gal</span><span class="value"><input id="price" type="number" inputmode="decimal" min="0" step="0.01" value="3.89" data-step-fast="0.1" aria-label="dollars per gallon"></span></label>
     </fieldset>
+${presetsMarkup('trip presets', [
+  { label: 'commute', miles: '30', mpg: '28', price: '3.89', meta: '30 mi' },
+  { label: 'road', miles: '320', mpg: '28', price: '3.89', meta: '320 mi', pressed: true },
+  { label: 'city', miles: '12', mpg: '22', price: '4.29', meta: 'thirsty' },
+  { label: 'hwy', miles: '450', mpg: '34', price: '3.69', meta: 'efficient' }
+])}
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('fuel');
@@ -301,10 +352,15 @@ const tools = {
     document.getElementById('out').textContent = IBMNumberTool.formatMoney(cost, { forceCents: true });
     document.getElementById('sub').textContent =
       gal.toFixed(1) + ' gal · ' + l100.toFixed(1) + ' L/100km · ' + IBMNumberTool.formatMoney(price / mpg, { forceCents: true }) + '/mi';
-    paint(gal, miles, cost);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('fuel', stage, { miles: miles, mpg: mpg, price: price });
+    else if (mode !== 'plain') paint(gal, miles, cost);
+    else stage.innerHTML = '';
+${presetsSyncLine()}
   }
   window.__ibmToolRender = render;
   ['miles','mpg','price'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+${presetsBind(['miles','mpg','price'])}
   render();`
   },
 
@@ -359,6 +415,12 @@ const tools = {
         </select>
       </span></label>
     </fieldset>
+${presetsMarkup('kitchen presets', [
+  { label: 'flour', amount: '1', from: 'cup', to: 'g', density: '0.53', meta: '1 cup→g', pressed: true },
+  { label: 'sugar', amount: '1', from: 'cup', to: 'g', density: '0.85', meta: '1 cup→g' },
+  { label: 'butter', amount: '1', from: 'tbsp', to: 'g', density: '0.91', meta: '1 tbsp→g' },
+  { label: 'water', amount: '8', from: 'oz', to: 'cup', density: '1', meta: '8 oz→cup' }
+])}
     <ul class="list" id="hist"></ul>
   </div>`,
     script: `
@@ -430,9 +492,13 @@ const tools = {
     var pretty = out >= 100 ? out.toFixed(0) : out >= 10 ? out.toFixed(1) : out.toFixed(2);
     document.getElementById('out').textContent = pretty;
     document.getElementById('sub').textContent = amount + ' ' + from + ' → ' + pretty + ' ' + to;
-    paint(amount, out);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('unit', stage, { amount: amount, density: density, fromIsVol: isVol(from), toIsMass: isMass(to) });
+    else if (mode !== 'plain') paint(amount, out);
+    else stage.innerHTML = '';
     if (commit) commitHist(amount + ' ' + from + ' → ' + pretty + ' ' + to);
     else renderHist();
+${presetsSyncLine()}
   }
   window.__ibmToolRender = function(){ render(false); };
   ['amount','from','to','density'].forEach(function(id){
@@ -443,6 +509,7 @@ const tools = {
     if (e.key === 'Enter') render(true);
   });
   document.getElementById('amount').addEventListener('blur', function(){ render(true); });
+${presetsBind(['amount','from','to','density'], null, 'render(false)')}
   render(false);`
   },
 
@@ -468,6 +535,12 @@ const tools = {
       <label class="row"><span class="key">stock</span><span class="value"><input id="have" type="number" inputmode="decimal" min="0.01" step="0.1" value="10" data-step-fast="1" aria-label="stock percent"><span class="unit">%</span></span></label>
       <label class="row"><span class="key">batch</span><span class="value"><input id="vol" type="number" inputmode="decimal" min="0" step="1" value="1000" data-step-fast="100" aria-label="batch volume"><span class="unit">vol</span></span></label>
     </fieldset>
+${presetsMarkup('mix presets', [
+  { label: 'garden', want: '2', have: '10', vol: '1000', meta: '2% of 10%', pressed: true },
+  { label: 'bleach', want: '0.1', have: '5', vol: '500', meta: 'spray' },
+  { label: 'feed', want: '1', have: '100', vol: '1000', meta: '1:100' },
+  { label: 'clean', want: '5', have: '30', vol: '500', meta: 'vinegar' }
+])}
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('dose');
@@ -505,10 +578,15 @@ const tools = {
     document.getElementById('out').textContent = conc.toFixed(1);
     document.getElementById('sub').textContent =
       'concentrate · add ' + water.toFixed(1) + ' diluent (same units)';
-    paint(conc, water, ratio);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('dose', stage, { want: want, have: have, vol: vol });
+    else if (mode !== 'plain') paint(conc, water, ratio);
+    else stage.innerHTML = '';
+${presetsSyncLine()}
   }
   window.__ibmToolRender = render;
   ['want','have','vol'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+${presetsBind(['want','have','vol'])}
   render();`
   },
 
@@ -531,9 +609,17 @@ const tools = {
   <div class="stack">
     <fieldset class="panel">
       <legend>transfer</legend>
-      <label class="row"><span class="key">size</span><span class="value"><input id="size" type="number" inputmode="decimal" min="0" step="10" value="1500" data-primary data-axis="y" data-axis-x="speed" data-step-fast="100" data-gesture="1" aria-label="file size"><span class="unit">MB</span></span></label>
-      <label class="row"><span class="key">speed</span><span class="value"><input id="speed" type="number" inputmode="decimal" min="0.01" step="1" value="100" data-step-fast="10" aria-label="bandwidth"><span class="unit">Mbps</span></span></label>
+      <label class="row"><span class="key">size</span><span class="value"><input id="size" type="number" inputmode="decimal" min="0" step="10" value="1500" data-primary data-axis="y" data-axis-x="speed" data-step-fast="100" data-gesture="1" aria-label="file size"></span></label>
+      ${selectRow('unit', 'sizeUnit', 'size unit', [['MB', 'MB', true], ['GB', 'GB']])}
+      <label class="row"><span class="key">speed</span><span class="value"><input id="speed" type="number" inputmode="decimal" min="0.01" step="1" value="100" data-step-fast="10" aria-label="bandwidth"></span></label>
+      ${selectRow('link', 'speedUnit', 'speed unit', [['Mbps', 'Mbps', true], ['Gbps', 'Gbps']])}
     </fieldset>
+${presetsMarkup('transfer presets', [
+  { label: 'photo', size: '25', speed: '25', sizeUnit: 'MB', speedUnit: 'Mbps', meta: '25 MB' },
+  { label: 'album', size: '100', speed: '50', sizeUnit: 'MB', speedUnit: 'Mbps', meta: '100 MB' },
+  { label: 'movie', size: '1500', speed: '100', sizeUnit: 'MB', speedUnit: 'Mbps', meta: '1.5 GB', pressed: true },
+  { label: '4K', size: '10', speed: '200', sizeUnit: 'GB', speedUnit: 'Mbps', meta: '10 GB' }
+])}
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('bitrate');
@@ -577,15 +663,25 @@ const tools = {
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
-    var mb = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
-    var mbps = Math.max(0.01, parseFloat(document.getElementById('speed').value) || 0.01);
+    var size = Math.max(0, parseFloat(document.getElementById('size').value) || 0);
+    var sizeUnit = document.getElementById('sizeUnit').value || 'MB';
+    var speed = Math.max(0.01, parseFloat(document.getElementById('speed').value) || 0.01);
+    var speedUnit = document.getElementById('speedUnit').value || 'Mbps';
+    var mb = sizeUnit === 'GB' ? size * 1024 : size;
+    var mbps = speedUnit === 'Gbps' ? speed * 1000 : speed;
     var sec = (mb * 8) / mbps;
     document.getElementById('out').textContent = fmt(sec);
-    document.getElementById('sub').textContent = mb + ' MB @ ' + mbps + ' Mbps';
-    paint(mb, sec);
+    document.getElementById('sub').textContent = size + ' ' + sizeUnit + ' @ ' + speed + ' ' + speedUnit;
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('bitrate', stage, { size: mb, speed: mbps });
+    else if (mode !== 'plain') paint(mb, sec);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  ['size','speed'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  ['size','speed','sizeUnit','speedUnit'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
   render();`
   },
 
@@ -596,8 +692,7 @@ const tools = {
     status: 'live',
     hasViz: true,
     extra: makeExtra(
-      { units: 'mi', rings: 'on' },
-      segField('units', 'units', 'distance units', [['mi', 'mi'], ['km', 'km']]),
+      { rings: 'on' },
       segField('rings', 'rings', 'distance rings', [['off', 'off'], ['on', 'on']])
     ),
     body: `
@@ -608,7 +703,8 @@ const tools = {
   <div class="stack">
     <fieldset class="panel">
       <legend>legend</legend>
-      <label class="row"><span class="key">1 inch =</span><span class="value"><input id="real" type="number" inputmode="decimal" min="0" step="0.1" value="1" aria-label="miles per inch"><span class="unit">mi</span></span></label>
+      <label class="row"><span class="key">1 inch =</span><span class="value"><input id="real" type="number" inputmode="decimal" min="0" step="0.1" value="1" aria-label="distance per inch"></span></label>
+      ${selectRow('units', 'units', 'distance units', [['mi', 'miles', true], ['km', 'km']])}
       <label class="row"><span class="key">measure</span><span class="value"><input id="measure" type="number" inputmode="decimal" min="0" step="0.1" value="2.4" data-primary data-axis="y" data-axis-x="real" data-step-fast="1" data-gesture="1" aria-label="inches on map"><span class="unit">in</span></span></label>
     </fieldset>
   </div>`,
@@ -634,7 +730,7 @@ const tools = {
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function render(){
-    var units = S().units || 'mi';
+    var units = document.getElementById('units').value || 'mi';
     var realIn = Math.max(0, parseFloat(document.getElementById('real').value) || 0);
     var measure = Math.max(0, parseFloat(document.getElementById('measure').value) || 0);
     var real = units === 'km' ? realIn * (1 / MI_PER_KM) : realIn;
@@ -650,10 +746,16 @@ const tools = {
     }
     document.getElementById('out').textContent = pretty;
     document.getElementById('sub').textContent = measure + ' in × ' + realIn + ' ' + units + '/in';
-    paint(measure, realIn, units, out);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('scalemap', stage, { measure: measure, real: realIn, units: units, dist: out });
+    else if (mode !== 'plain') paint(measure, realIn, units, out);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  ['real','measure'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
+  ['real','measure','units'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
   render();`
   },
 
@@ -735,6 +837,13 @@ const tools = {
     box.style.aspectRatio = w + ' / ' + h;
     syncPresets(r);
     syncGuides();
+    var toolStage = document.getElementById('toolStage');
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep' && toolStage) {
+      IBMNumberTool.paintDeep('ratio', toolStage, { width: w, height: h, ratio: r });
+    } else if (toolStage && mode === 'plain') {
+      toolStage.innerHTML = '';
+    }
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
   function setRatio(r){
@@ -855,7 +964,7 @@ const tools = {
           <option value="1.618">golden</option>
         </select>
       </span></label>
-      <label class="row"><span class="key">steps</span><span class="value"><input id="steps" type="number" inputmode="numeric" min="3" max="12" step="1" value="6" aria-label="steps"></span></label>
+      ${selectRow('steps', 'steps', 'number of steps', [['4', '4'], ['5', '5'], ['6', '6', true], ['7', '7'], ['8', '8'], ['10', '10'], ['12', '12']], 'data-gesture="1"')}
     </fieldset>
     <ul class="list" id="list"></ul>
   </div>`,
@@ -896,8 +1005,12 @@ const tools = {
     });
     field += '</div>';
     document.getElementById('list').innerHTML = html;
-    stage.innerHTML = field;
-    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('typescale', stage, { base: base, ratio: ratio, steps: steps });
+    else if (mode !== 'plain') {
+      stage.innerHTML = field;
+      IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+    } else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   ['base','ratio','steps'].forEach(function(id){
@@ -909,8 +1022,8 @@ const tools = {
 
   odds: {
     title: 'odds',
-    blurb: 'chance · payoff',
-    about: 'What a bet pays on average: win chance × win amount, plus lose chance × lose amount. The seesaw tips with that average.',
+    blurb: 'avg · bet',
+    about: 'Average dollars each time you take a bet — not a bookmaker’s odds line. Chance × win $ plus (100 − chance) × lose $ (lose is usually negative).',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
@@ -920,16 +1033,22 @@ const tools = {
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
-    <p class="face-sub" id="sub">average outcome</p>
+    <p class="face-sub" id="sub">avg $ per play</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
       <legend>bet</legend>
       <label class="row"><span class="key">chance</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="12" data-primary data-axis="y" data-axis-x="win" data-step-fast="1" data-gesture="1" aria-label="win chance percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">$ if win</span><span class="value"><input id="win" type="number" inputmode="decimal" step="1" value="100" data-step-fast="10" aria-label="dollars if win"></span></label>
-      <label class="row"><span class="key">$ if lose</span><span class="value"><input id="lose" type="number" inputmode="decimal" step="1" value="-20" aria-label="dollars if lose"></span></label>
+      <label class="row"><span class="key">win $</span><span class="value"><input id="win" type="number" inputmode="decimal" step="1" value="100" data-step-fast="10" aria-label="dollars if you win"></span></label>
+      <label class="row"><span class="key">lose $</span><span class="value"><input id="lose" type="number" inputmode="decimal" step="1" value="-20" aria-label="dollars if you lose"></span></label>
     </fieldset>
-    <p class="note">positive means the bet pays on average</p>
+    <div class="presets" id="presets" role="group" aria-label="bet presets">
+      <button type="button" class="preset" data-p="50" data-win="10" data-lose="-10">even</button>
+      <button type="button" class="preset" data-p="12" data-win="100" data-lose="-20">longshot</button>
+      <button type="button" class="preset" data-p="48.6" data-win="10" data-lose="-10">coin</button>
+      <button type="button" class="preset" data-p="25" data-win="30" data-lose="-10">3∶1</button>
+    </div>
+    <p class="note">above zero = pays you over many plays</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('odds');
@@ -962,25 +1081,40 @@ const tools = {
     }
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
+  function money(n, face){
+    var s = face ? Number(n).toFixed(2) : String(Math.round(n * 100) / 100);
+    return (Number(s) >= 0 ? '+' : '') + s;
+  }
   function render(){
     var p = Math.max(0, Math.min(100, parseFloat(document.getElementById('p').value) || 0)) / 100;
     var win = parseFloat(document.getElementById('win').value) || 0;
     var lose = parseFloat(document.getElementById('lose').value) || 0;
     var ev = p * win + (1 - p) * lose;
-    document.getElementById('out').textContent = (ev >= 0 ? '+' : '') + ev.toFixed(2);
+    document.getElementById('out').textContent = money(ev, true);
     document.getElementById('sub').textContent =
-      (p * 100).toFixed(1) + '% × ' + win + ' + ' + ((1 - p) * 100).toFixed(1) + '% × ' + lose;
-    paint(ev, p, win, lose);
+      (p * 100).toFixed(1) + '% of ' + money(win) + ' · ' + ((1 - p) * 100).toFixed(1) + '% of ' + money(lose);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('odds', stage, { p: p, win: win, lose: lose, ev: ev });
+    else if (mode !== 'plain') paint(ev, p, win, lose);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('p').value = btn.getAttribute('data-p');
+    document.getElementById('win').value = btn.getAttribute('data-win');
+    document.getElementById('lose').value = btn.getAttribute('data-lose');
+    render();
+  });
   ['p','win','lose'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();`
   },
 
   combo: {
     title: 'combo',
-    blurb: 'pick k of n',
-    about: 'How many ways to pick k items from n when order does not matter — a poker hand, a lottery ticket, a team.',
+    blurb: 'ways to pick',
+    about: 'How many distinct groups can you draw from a pile when order does not matter — a 5-card hand, a lottery ticket, a team of three.',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
@@ -990,15 +1124,21 @@ const tools = {
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0</div>
-    <p class="face-sub" id="sub">ways to pick</p>
+    <p class="face-sub" id="sub">distinct groups</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
-      <legend>choose</legend>
-      <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items"></span></label>
+      <legend>pile</legend>
+      <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items in the pile"></span></label>
       <label class="row"><span class="key">pick</span><span class="value"><input id="k" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="how many to pick"></span></label>
     </fieldset>
-    <p class="note">order does not matter</p>
+    <div class="presets" id="presets" role="group" aria-label="combo presets">
+      <button type="button" class="preset" data-n="52" data-k="5">poker</button>
+      <button type="button" class="preset" data-n="49" data-k="6">lotto</button>
+      <button type="button" class="preset" data-n="10" data-k="3">team</button>
+      <button type="button" class="preset" data-n="20" data-k="2">pair</button>
+    </div>
+    <p class="note">same cards in a different order still count as one</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('combo');
@@ -1042,23 +1182,33 @@ const tools = {
     var k = Math.max(0, parseInt(document.getElementById('k').value, 10) || 0);
     var ways = choose(n, k);
     document.getElementById('out').textContent = IBMNumberTool.formatCount(ways);
-    document.getElementById('sub').textContent = 'pick ' + k + ' of ' + n;
-    paint(n, k);
+    document.getElementById('sub').textContent =
+      k > n ? 'cannot pick ' + k + ' from ' + n : 'ways to pick ' + k + ' from ' + n;
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('combo', stage, { n: n, k: k, count: ways });
+    else if (mode !== 'plain') paint(n, k);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
+  document.getElementById('presets').addEventListener('click', function(e){
+    var btn = e.target.closest('.preset');
+    if (!btn) return;
+    document.getElementById('n').value = btn.getAttribute('data-n');
+    document.getElementById('k').value = btn.getAttribute('data-k');
+    render();
+  });
   ['n','k'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();`
   },
 
   sample: {
     title: 'sample',
-    blurb: 'poll · margin',
-    about: 'How wide a poll result tends to swing. Bigger sample → tighter band. Rough rule of thumb, not a full survey design.',
+    blurb: 'poll · ±',
+    about: 'Ballpark how far a poll might miss the real share. More people → tighter ±. Rule of thumb only — not a full survey design.',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
-      { z: '1.96', curve: 'bell' },
-      segField('z', 'z', 'confidence level', [['1.645', '90%'], ['1.96', '95%'], ['2.576', '99%']]),
+      { curve: 'bell' },
       segField('curve', 'curve', 'sample curve', [['bell', 'bell'], ['rail', 'rail']])
     ),
     body: `
@@ -1068,11 +1218,12 @@ const tools = {
   </div>
   <div class="stack">
     <fieldset class="panel">
-      <legend>survey</legend>
-      <label class="row"><span class="key">size</span><span class="value"><input id="n" type="number" inputmode="numeric" min="1" step="1" value="400" data-primary data-axis="y" data-axis-x="p" data-step-fast="50" data-gesture="1" aria-label="sample size"></span></label>
-      <label class="row"><span class="key">share</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" aria-label="estimated share percent"><span class="unit">%</span></span></label>
+      <legend>poll</legend>
+      <label class="row"><span class="key">people</span><span class="value"><input id="n" type="number" inputmode="numeric" min="1" step="1" value="400" data-primary data-axis="y" data-axis-x="p" data-step-fast="50" data-gesture="1" aria-label="number of people surveyed"></span></label>
+      <label class="row"><span class="key">yes</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" aria-label="percent who said yes"><span class="unit">%</span></span></label>
+      ${selectRow('confidence', 'z', 'confidence level', [['1.645', '90%'], ['1.96', '95%', true], ['2.576', '99%']])}
     </fieldset>
-    <p class="note">± around the share at the chosen confidence</p>
+    <p class="note">± around yes at the chosen confidence</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('sample');
@@ -1112,16 +1263,20 @@ const tools = {
   }
   function render(){
     var n = Math.max(1, parseInt(document.getElementById('n').value, 10) || 1);
-    var z = parseFloat(S().z) || 1.96;
+    var z = parseFloat(document.getElementById('z').value) || 1.96;
     var conf = ({ '1.645': '90%', '1.96': '95%', '2.576': '99%' })[String(z)] || '95%';
     var p = Math.max(0, Math.min(1, (parseFloat(document.getElementById('p').value) || 50) / 100));
     var moe = z * Math.sqrt(p * (1 - p) / n);
     document.getElementById('out').textContent = '±' + (moe * 100).toFixed(1) + '%';
-    document.getElementById('sub').textContent = n + ' people · ' + conf + ' confidence';
-    paint(p, moe);
+    document.getElementById('sub').textContent =
+      'yes ' + Math.round(p * 100) + '% of ' + n + ' · ' + conf + ' confidence';
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('sample', stage, { n: n, share: p, moe: moe, z: z });
+    else if (mode !== 'plain') paint(p, moe);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  ['n','p'].forEach(function(id){
+  ['n','p','z'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
@@ -1212,7 +1367,13 @@ const tools = {
       left < 0
         ? 'over by ' + money(Math.abs(left)) + ' · used ' + money(used)
         : money(used) + ' allocated · ' + (pot ? Math.round((used / pot) * 100) : 0) + '%';
-    paint(pot, parts, left);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') {
+      IBMNumberTool.paintDeep('budget', stage, {
+        pot: pot, live: parts[0].amt, food: parts[1].amt, move: parts[2].amt, fun: parts[3].amt
+      });
+    } else if (mode !== 'plain') paint(pot, parts, left);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   ['pot','live','food','move','fun'].forEach(function(id){
@@ -1240,9 +1401,9 @@ const tools = {
   <div class="stack">
     <fieldset class="panel">
       <legend>triangle</legend>
-      <label class="row"><span class="key">ISO</span><span class="value"><input id="iso" type="number" inputmode="numeric" min="25" step="25" value="100" data-step-fast="100" aria-label="ISO"></span></label>
-      <label class="row"><span class="key">ƒ</span><span class="value"><input id="fnum" type="number" inputmode="decimal" min="0.5" step="0.1" value="8" data-primary data-axis="y" data-axis-x="shut" data-pinch="iso" data-step-fast="1" data-gesture="1" aria-label="aperture"></span></label>
-      <label class="row"><span class="key">shutter</span><span class="value"><input id="shut" type="number" inputmode="numeric" min="1" step="1" value="125" data-step-fast="25" aria-label="shutter denominator"><span class="unit">1/n</span></span></label>
+      ${selectRow('ISO', 'iso', 'ISO', [['50', '50'], ['100', '100', true], ['200', '200'], ['400', '400'], ['800', '800'], ['1600', '1600'], ['3200', '3200'], ['6400', '6400']])}
+      ${selectRow('ƒ', 'fnum', 'aperture', [['1.4', 'ƒ/1.4'], ['2', 'ƒ/2'], ['2.8', 'ƒ/2.8'], ['4', 'ƒ/4'], ['5.6', 'ƒ/5.6'], ['8', 'ƒ/8', true], ['11', 'ƒ/11'], ['16', 'ƒ/16'], ['22', 'ƒ/22']], 'data-primary data-axis="y" data-axis-x="shut" data-pinch="iso" data-gesture="1"')}
+      ${selectRow('shutter', 'shut', 'shutter speed', [['1000', '1/1000'], ['500', '1/500'], ['250', '1/250'], ['125', '1/125', true], ['60', '1/60'], ['30', '1/30'], ['15', '1/15'], ['8', '1/8'], ['4', '1/4'], ['2', '1/2'], ['1', '1″']])}
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="sunny 16 presets">
       <button type="button" class="preset" data-iso="100" data-f="16" data-shut="125">sunny</button>
@@ -1273,6 +1434,14 @@ const tools = {
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
+  function setSelect(id, value){
+    var el = document.getElementById(id);
+    if (!el) return;
+    var v = String(value);
+    for (var i = 0; i < el.options.length; i++) {
+      if (el.options[i].value === v) { el.selectedIndex = i; return; }
+    }
+  }
   function render(){
     var iso = Math.max(25, parseFloat(document.getElementById('iso').value) || 100);
     var f = Math.max(0.5, parseFloat(document.getElementById('fnum').value) || 1);
@@ -1291,7 +1460,10 @@ const tools = {
           ? ' · sunny 16'
           : ' · ' + (sunnyDelta > 0 ? '+' : '') + (Math.round(sunnyDelta * 10) / 10) + ' from sunny 16');
     }
-    paint(ev, iso, f, shutN);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('exposure', stage, { iso: iso, fnum: f, shutN: shutN, ev: ev });
+    else if (mode !== 'plain') paint(ev, iso, f, shutN);
+    else stage.innerHTML = '';
     document.querySelectorAll('#presets .preset').forEach(function(btn){
       var match =
         Number(btn.getAttribute('data-iso')) === iso &&
@@ -1304,46 +1476,47 @@ const tools = {
   document.getElementById('presets').addEventListener('click', function(e){
     var btn = e.target.closest('.preset');
     if (!btn) return;
-    document.getElementById('iso').value = btn.getAttribute('data-iso');
-    document.getElementById('fnum').value = btn.getAttribute('data-f');
-    document.getElementById('shut').value = btn.getAttribute('data-shut');
+    setSelect('iso', btn.getAttribute('data-iso'));
+    setSelect('fnum', btn.getAttribute('data-f'));
+    setSelect('shut', btn.getAttribute('data-shut'));
     render();
   });
   ['iso','fnum','shut'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();`
   },
 
   deal: {
     title: 'deal',
-    blurb: 'deck left',
-    about: 'Chance the next card is one you want. Set how many cards remain and how many of those are still favorable.',
+    blurb: 'next card',
+    about: 'Chance the next card is one you still want. Set how many cards are left, and how many of those are the ones you care about.',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
       { style: 'poker', favor: 'tint' },
       segField('style', 'style', 'deck style', [['poker', 'poker'], ['shoe', 'shoe']]),
-      segField('favor', 'favor', 'favorable mark', [['tint', 'tint'], ['pip', 'pip']])
+      segField('mark', 'favor', 'wanted-card mark', [['tint', 'tint'], ['pip', 'pip']])
     ),
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0%</div>
-    <p class="face-sub" id="sub">next card</p>
+    <p class="face-sub" id="sub">next card is wanted</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
       <legend>deck</legend>
       <label class="row"><span class="key">left</span><span class="value"><input id="left" type="number" inputmode="numeric" min="1" max="52" step="1" value="40" data-primary data-axis="y" data-axis-x="want" data-step-fast="5" data-gesture="1" aria-label="cards left in deck"></span></label>
-      <label class="row"><span class="key">favor</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="favorable cards left"></span></label>
+      <label class="row"><span class="key">want</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="wanted cards still left"></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="deck presets">
-      <button type="button" class="preset" data-left="52" data-want="4">4 aces</button>
-      <button type="button" class="preset" data-left="52" data-want="13">1 suit</button>
-      <button type="button" class="preset" data-left="52" data-want="16">10+</button>
-      <button type="button" class="preset" data-left="20" data-want="3">late shoe</button>
+      <button type="button" class="preset" data-left="52" data-want="4">aces</button>
+      <button type="button" class="preset" data-left="52" data-want="13">hearts</button>
+      <button type="button" class="preset" data-left="52" data-want="16">tens+</button>
+      <button type="button" class="preset" data-left="20" data-want="3">short</button>
     </div>
-    <p class="note">lit cards are the ones you want</p>
+    <p class="note">lit cards = the ones you want</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('deal');
@@ -1373,10 +1546,14 @@ const tools = {
     }
     var pp = want / left;
     var pct = Math.round(pp * 1000) / 10;
+    var oneIn = want ? (Math.round((left / want) * 10) / 10) : '∞';
     document.getElementById('out').textContent = pct + '%';
     document.getElementById('sub').textContent =
-      want + ' of ' + left + ' left · about 1 in ' + (want ? (Math.round((left / want) * 10) / 10) : '∞');
-    paint(left, want);
+      want + ' wanted of ' + left + ' left · about 1 in ' + oneIn;
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('deal', stage, { left: left, want: want, p: pp });
+    else if (mode !== 'plain') paint(left, want);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){
@@ -1394,8 +1571,8 @@ const tools = {
 
   streak: {
     title: 'streak',
-    blurb: 'next flip',
-    about: 'Independent flips: a run of heads does not make tails "due." The next toss still has the same chance — the streak itself was just unlikely.',
+    blurb: 'still the same',
+    about: 'A run of heads does not make tails “due.” Each flip is independent: the next toss keeps the same chance. The long run was just unlikely.',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
@@ -1405,13 +1582,13 @@ const tools = {
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">50%</div>
-    <p class="face-sub" id="sub">next toss</p>
+    <p class="face-sub" id="sub">next flip</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
       <legend>coin</legend>
-      <label class="row"><span class="key">chance</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="chance of heads percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">run</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="streak length"></span></label>
+      <label class="row"><span class="key">heads</span><span class="value"><input id="p" type="number" inputmode="decimal" min="0" max="100" step="1" value="50" data-primary data-axis="y" data-axis-x="run" data-step-fast="5" data-gesture="1" aria-label="chance of heads percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">seen</span><span class="value"><input id="run" type="number" inputmode="numeric" min="0" max="40" step="1" value="5" data-step-fast="2" aria-label="heads in a row so far"></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="streak presets">
       <button type="button" class="preset" data-p="50" data-run="5">fair · 5</button>
@@ -1419,11 +1596,14 @@ const tools = {
       <button type="button" class="preset" data-p="60" data-run="5">60% · 5</button>
       <button type="button" class="preset" data-p="40" data-run="5">40% · 5</button>
     </div>
-    <p class="note">past flips do not change the next one</p>
+    <p class="note">the coin does not owe you the other side</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('streak');
   function S(){ return (toolUI && toolUI.settings) || {}; }
+  function runLabel(streakP, run){
+    return streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%';
+  }
   function paint(run, p01, streakP){
     var view = S().view || 'dual';
     var n = Math.max(0, Math.min(24, Math.round(run)));
@@ -1442,9 +1622,8 @@ const tools = {
     } else if (n < 24) {
       html += '<div class="streak-row"><i class="next" data-scrub="p" style="--p:' + Math.round(p01 * 100) + '%"></i></div>';
     }
-    html += '<div class="streak-cap">chance of this run ' +
-      (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
-      '</div></div>';
+    html += '<div class="streak-cap">that run was ' + runLabel(streakP, run) + ' · next still ' +
+      (Math.round(p01 * 1000) / 10) + '%</div></div>';
     stage.innerHTML = html;
     IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
   }
@@ -1455,10 +1634,11 @@ const tools = {
     var streakP = Math.pow(p01, run);
     document.getElementById('out').textContent = (Math.round(pct * 10) / 10) + '%';
     document.getElementById('sub').textContent =
-      'next still ' + pct + '% · this run was ' +
-      (streakP < 0.001 && run > 0 ? '<0.1%' : (Math.round(streakP * 1000) / 10) + '%') +
-      ' · not “due”';
-    paint(run, p01, streakP);
+      'next flip still ' + pct + '% · a run of ' + run + ' was ' + runLabel(streakP, run);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('streak', stage, { p: p01, run: run, streakP: streakP });
+    else if (mode !== 'plain') paint(run, p01, streakP);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){
@@ -1481,10 +1661,7 @@ const tools = {
     about: 'Subtotal → tax → tip. Tip can sit on pre-tax or on the taxed total. Stage is a stacked receipt; scrub each band.',
     status: 'live',
     hasViz: true,
-    extra: makeExtra(
-      { tipOn: 'pre' },
-      segField('tip on', 'tipOn', 'tip base', [['pre', 'pre-tax'], ['total', 'after tax']])
-    ),
+    extra: null,
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0.00</div>
@@ -1495,21 +1672,16 @@ const tools = {
       <legend>check</legend>
       <label class="row"><span class="key">subtotal</span><span class="value"><input id="subtotal" type="number" inputmode="decimal" min="0" step="0.01" value="72.00" data-primary data-axis="y" data-axis-x="tip" data-step-fast="5" data-gesture="1" aria-label="subtotal"></span></label>
       <label class="row"><span class="key">tax</span><span class="value"><input id="tax" type="number" inputmode="decimal" min="0" max="100" step="0.25" value="8.875" aria-label="tax percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">tip</span><span class="value"><input id="tip" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" aria-label="tip percent"><span class="unit">%</span></span></label>
+      ${selectRow('tip', 'tip', 'tip percent', [['15', '15%'], ['18', '18%'], ['20', '20%', true], ['22', '22%'], ['25', '25%']])}
+      ${selectRow('tip on', 'tipOn', 'tip base', [['pre', 'pre-tax', true], ['total', 'after tax']])}
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="tip presets">
-      <button type="button" class="preset" data-tip="15">15%</button>
-      <button type="button" class="preset" data-tip="18">18%</button>
-      <button type="button" class="preset" data-tip="20" aria-pressed="true">20%</button>
-      <button type="button" class="preset" data-tip="25">25%</button>
-    </div>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('tax');
   var money = function(n){ return IBMNumberTool.formatMoney(n); };
   function tipOn(){
-    var s = toolUI && toolUI.settings;
-    return (s && s.tipOn === 'total') ? 'total' : 'pre';
+    var el = document.getElementById('tipOn');
+    return (el && el.value === 'total') ? 'total' : 'pre';
   }
   function paint(sub, taxAmt, tipAmt, grand, tipBase){
     if (!stage) return;
@@ -1537,20 +1709,15 @@ const tools = {
     document.getElementById('out').textContent = money(grand);
     document.getElementById('sub').textContent =
       'tax ' + money(taxAmt) + ' · tip ' + money(tipAmt) + ' on ' + (tipOn() === 'total' ? 'total' : 'pre-tax');
-    paint(sub, taxAmt, tipAmt, grand, tipBase);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('tax', stage, { sub: sub, taxPct: taxPct, tipPct: tipPct, tipOn: tipOn() });
+    else if (mode !== 'plain') paint(sub, taxAmt, tipAmt, grand, tipBase);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('.preset');
-    if (!btn) return;
-    document.getElementById('tip').value = btn.getAttribute('data-tip');
-    document.querySelectorAll('#presets .preset').forEach(function(b){
-      b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-    });
-    render();
-  });
-  ['subtotal','tax','tip'].forEach(function(id){
+  ['subtotal','tax','tip','tipOn'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();`
   },
@@ -1561,10 +1728,7 @@ const tools = {
     about: 'Distance × pace → ETA (or solve for pace). Route ticks teach distance; tick spacing teaches pace; finish mark is the ETA.',
     status: 'live',
     hasViz: true,
-    extra: makeExtra(
-      { mode: 'eta' },
-      segField('solve', 'mode', 'solve for', [['eta', 'eta'], ['pace', 'pace']])
-    ),
+    extra: null,
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0:00</div>
@@ -1573,6 +1737,7 @@ const tools = {
   <div class="stack">
     <fieldset class="panel">
       <legend>route</legend>
+      ${selectRow('solve', 'mode', 'solve for', [['eta', 'finish time', true], ['pace', 'needed pace']])}
       <label class="row"><span class="key">distance</span><span class="value"><input id="distance" type="number" inputmode="decimal" min="0" step="0.1" value="5" data-primary data-axis="y" data-axis-x="pace" data-step-fast="1" data-gesture="1" aria-label="distance"></span></label>
       <label class="row"><span class="key">pace</span><span class="value"><input id="pace" type="number" inputmode="decimal" min="0" step="0.1" value="9.5" aria-label="pace minutes per unit"><span class="unit">min/u</span></span></label>
       <label class="row"><span class="key">hours</span><span class="value"><input id="hours" type="number" inputmode="decimal" min="0" step="0.05" value="0.8" aria-label="finish hours"></span></label>
@@ -1594,8 +1759,8 @@ const tools = {
     return hh + ':' + String(mm).padStart(2,'0');
   }
   function mode(){
-    var s = toolUI && toolUI.settings;
-    return (s && s.mode === 'pace') ? 'pace' : 'eta';
+    var el = document.getElementById('mode');
+    return (el && el.value === 'pace') ? 'pace' : 'eta';
   }
   function paint(d, pace, etaH, needed, solvingPace){
     if (!stage) return;
@@ -1626,16 +1791,21 @@ const tools = {
     var d = Math.max(0, parseFloat(document.getElementById('distance').value) || 0);
     var pace = Math.max(0, parseFloat(document.getElementById('pace').value) || 0);
     var hours = Math.max(0, parseFloat(document.getElementById('hours').value) || 0);
+    var modeV = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
     if (mode() === 'pace') {
       var needed = d > 0 ? (hours * 60) / d : 0;
       document.getElementById('out').textContent = (Math.round(needed * 10) / 10) + '';
       document.getElementById('sub').textContent = 'min/unit for ' + fmtHours(hours) + ' finish';
-      paint(d, pace, hours, needed, true);
+      if (modeV === 'deep') IBMNumberTool.paintDeep('pace', stage, { distance: d, pace: pace, etaH: hours });
+      else if (modeV !== 'plain') paint(d, pace, hours, needed, true);
+      else stage.innerHTML = '';
     } else {
       var eta = (d * pace) / 60;
       document.getElementById('out').textContent = fmtHours(eta);
       document.getElementById('sub').textContent = d + ' u · ' + pace + ' min/u';
-      paint(d, pace, eta, pace, false);
+      if (modeV === 'deep') IBMNumberTool.paintDeep('pace', stage, { distance: d, pace: pace, etaH: eta });
+      else if (modeV !== 'plain') paint(d, pace, eta, pace, false);
+      else stage.innerHTML = '';
     }
   }
   window.__ibmToolRender = render;
@@ -1646,8 +1816,9 @@ const tools = {
     document.getElementById('distance').value = btn.getAttribute('data-dist');
     render();
   });
-  ['distance','pace','hours'].forEach(function(id){
+  ['distance','pace','hours','mode'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();`
   },
@@ -1655,13 +1826,10 @@ const tools = {
   contrast: {
     title: 'contrast',
     blurb: 'fg · bg · wcag',
-    about: 'Foreground / background hex → contrast ratio and WCAG bands. Swatch teaches luminance; text size follows settings.',
+    about: 'Foreground / background hex → contrast ratio and WCAG bands. Swatch teaches luminance; text size follows the size control.',
     status: 'live',
     hasViz: true,
-    extra: makeExtra(
-      { size: 'normal' },
-      segField('text', 'size', 'text size', [['normal', 'normal'], ['large', 'large']])
-    ),
+    extra: null,
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0.00</div>
@@ -1673,6 +1841,7 @@ const tools = {
       <label class="row"><span class="key">fg</span><span class="value"><input id="fg" type="text" value="#111111" spellcheck="false" autocomplete="off" aria-label="foreground hex"></span></label>
       <label class="row"><span class="key">bg</span><span class="value"><input id="bg" type="text" value="#f2f2f0" spellcheck="false" autocomplete="off" aria-label="background hex"></span></label>
       <label class="row"><span class="key">lift</span><span class="value"><input id="lift" type="number" inputmode="numeric" min="-40" max="40" step="2" value="0" data-primary data-axis="y" data-axis-x="lift" data-step-fast="5" data-gesture="1" aria-label="brightness lift"><span class="unit">Δ</span></span></label>
+      ${selectRow('text', 'size', 'text size for WCAG', [['normal', 'normal', true], ['large', 'large']])}
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="contrast presets">
       <button type="button" class="preset" data-fg="#111111" data-bg="#ffffff">ink/white</button>
@@ -1702,8 +1871,8 @@ const tools = {
   function lin(c){ var x=c/255; return x<=0.04045 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4); }
   function lum(rgb){ return 0.2126*lin(rgb[0])+0.7152*lin(rgb[1])+0.0722*lin(rgb[2]); }
   function size(){
-    var s = toolUI && toolUI.settings;
-    return (s && s.size === 'large') ? 'large' : 'normal';
+    var el = document.getElementById('size');
+    return (el && el.value === 'large') ? 'large' : 'normal';
   }
   function paint(fg, bg, ratio, pass, L1, L2){
     if (!stage) return;
@@ -1759,7 +1928,10 @@ const tools = {
     document.getElementById('out').textContent = (Math.round(ratio * 100) / 100).toFixed(2);
     document.getElementById('sub').textContent =
       (pass.aaa ? 'AAA' : pass.aa ? 'AA' : 'fail') + ' · ' + size() + ' text';
-    paint(fgHex, bgHex, ratio, pass, L1, L2);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('contrast', stage, { L1: L1, L2: L2, ratio: ratio, size: size() });
+    else if (mode !== 'plain') paint(fgHex, bgHex, ratio, pass, L1, L2);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){
@@ -1772,7 +1944,7 @@ const tools = {
     document.getElementById('lift').value = 0;
     render();
   });
-  ['fg','bg','lift'].forEach(function(id){
+  ['fg','bg','lift','size'].forEach(function(id){
     document.getElementById(id).addEventListener('input', function(){
       if (id === 'fg' || id === 'bg') {
         var parsed = parseHex(document.getElementById(id).value);
@@ -1784,14 +1956,15 @@ const tools = {
       }
       render();
     });
+    document.getElementById(id).addEventListener('change', render);
   });
   render();`
   },
 
   bayes: {
     title: 'bayes',
-    blurb: 'update belief',
-    about: 'Start with how likely something seems. New evidence that shows up more often when the claim is true than when it is false pulls that belief up (or down).',
+    blurb: 'before → after',
+    about: 'How much should this evidence change your mind? Start with how likely the claim seemed. Then: how often would you see this evidence if the claim were true, vs if it were false?',
     status: 'live',
     hasViz: true,
     extra: makeExtra(
@@ -1801,22 +1974,22 @@ const tools = {
     body: `
   <div class="face">
     <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">0%</div>
-    <p class="face-sub" id="sub">after evidence</p>
+    <p class="face-sub" id="sub">belief after</p>
   </div>
   <div class="stack">
     <fieldset class="panel">
-      <legend>belief</legend>
-      <label class="row"><span class="key">before</span><span class="value"><input id="prior" type="number" inputmode="decimal" min="0" max="100" step="1" value="10" data-primary data-axis="y" data-axis-x="hit" data-step-fast="5" data-gesture="1" aria-label="belief before evidence"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">if true</span><span class="value"><input id="hit" type="number" inputmode="decimal" min="0" max="100" step="1" value="90" aria-label="chance of evidence if claim is true"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">if false</span><span class="value"><input id="miss" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" aria-label="chance of evidence if claim is false"><span class="unit">%</span></span></label>
+      <legend>claim</legend>
+      <label class="row"><span class="key">before</span><span class="value"><input id="prior" type="number" inputmode="decimal" min="0" max="100" step="1" value="10" data-primary data-axis="y" data-axis-x="hit" data-step-fast="5" data-gesture="1" aria-label="belief before evidence percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">when true</span><span class="value"><input id="hit" type="number" inputmode="decimal" min="0" max="100" step="1" value="90" aria-label="how often evidence appears when claim is true"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">when false</span><span class="value"><input id="miss" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" aria-label="how often evidence appears when claim is false"><span class="unit">%</span></span></label>
     </fieldset>
     <div class="presets" id="presets" role="group" aria-label="bayes presets">
-      <button type="button" class="preset" data-prior="10" data-hit="90" data-miss="20">screening</button>
+      <button type="button" class="preset" data-prior="10" data-hit="90" data-miss="20">lab test</button>
       <button type="button" class="preset" data-prior="50" data-hit="80" data-miss="20">even start</button>
-      <button type="button" class="preset" data-prior="1" data-hit="99" data-miss="5">rare event</button>
-      <button type="button" class="preset" data-prior="80" data-hit="70" data-miss="40">already likely</button>
+      <button type="button" class="preset" data-prior="1" data-hit="99" data-miss="5">rare disease</button>
+      <button type="button" class="preset" data-prior="80" data-hit="70" data-miss="40">already sure</button>
     </div>
-    <p class="note">when if-true is much higher than if-false, belief rises</p>
+    <p class="note">evidence common when true and rare when false raises belief</p>
   </div>`,
     script: `
   var stage = IBMNumberTool.ensureStage('bayes');
@@ -1836,18 +2009,18 @@ const tools = {
       var o1 = posterior >= 1 ? '∞' : (Math.round((posterior / Math.max(1e-9, 1 - posterior)) * 100) / 100);
       stage.innerHTML =
         '<div class="bayes-odds">' +
-          '<div data-scrub="prior"><span>before</span><b>' + o0 + '</b></div>' +
-          '<div class="bayes-lr" data-scrub="hit"><span>× evidence</span><b>' + lrLabel + '</b></div>' +
-          '<div data-scrub="miss"><span>after</span><b>' + o1 + '</b></div>' +
+          '<div data-scrub="prior"><span>before</span><b>' + o0 + '∶1</b></div>' +
+          '<div class="bayes-lr" data-scrub="hit"><span>× how often</span><b>' + lrLabel + '</b></div>' +
+          '<div data-scrub="miss"><span>after</span><b>' + o1 + '∶1</b></div>' +
         '</div>';
     } else {
       stage.innerHTML =
         '<div class="bayes-bars">' +
           '<div class="bayes-row" data-scrub="prior"><span>before</span><div class="bayes-track"><i style="width:' + p0 + '%"></i></div><b>' + p0 + '%</b></div>' +
           '<div class="bayes-evidence">' +
-            '<button type="button" class="bayes-tick is-hit" data-scrub="hit" style="--h:' + (hit * 100) + '%"><span>if true</span></button>' +
-            '<div class="bayes-arrow" style="--w:' + arrow + '%" aria-hidden="true"><i></i><span>×' + lrLabel + '</span></div>' +
-            '<button type="button" class="bayes-tick is-miss" data-scrub="miss" style="--h:' + (miss * 100) + '%"><span>if false</span></button>' +
+            '<button type="button" class="bayes-tick is-hit" data-scrub="hit" style="--h:' + (hit * 100) + '%"><span>true</span></button>' +
+            '<div class="bayes-arrow" style="--w:' + arrow + '%" aria-hidden="true"><i></i><span>' + lrLabel + '×</span></div>' +
+            '<button type="button" class="bayes-tick is-miss" data-scrub="miss" style="--h:' + (miss * 100) + '%"><span>false</span></button>' +
           '</div>' +
           '<div class="bayes-row is-post"><span>after</span><div class="bayes-track"><i style="width:' + p1 + '%"></i></div><b>' + p1 + '%</b></div>' +
         '</div>';
@@ -1861,10 +2034,20 @@ const tools = {
     var num = hit * prior;
     var den = num + miss * (1 - prior);
     var posterior = den > 0 ? num / den : 0;
-    document.getElementById('out').textContent = (Math.round(posterior * 1000) / 10) + '%';
+    var p0 = Math.round(prior * 1000) / 10;
+    var p1 = Math.round(posterior * 1000) / 10;
+    var lr = miss > 0 ? (Math.round((hit / miss) * 100) / 100) : '∞';
+    document.getElementById('out').textContent = p1 + '%';
     document.getElementById('sub').textContent =
-      'was ' + (Math.round(prior * 1000) / 10) + '% · evidence ×' + (miss > 0 ? (Math.round((hit / miss) * 100) / 100) : '∞');
-    paint(prior, posterior, hit, miss);
+      'was ' + p0 + '% · evidence ' + lr + '× as often when true';
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
+    if (mode === 'deep') {
+      IBMNumberTool.paintDeep('bayes', stage, {
+        prior: prior, hit: hit, miss: miss, posterior: posterior,
+        lr: miss > 0 ? hit / miss : 100
+      });
+    } else if (mode !== 'plain') paint(prior, posterior, hit, miss);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
   document.getElementById('presets').addEventListener('click', function(e){

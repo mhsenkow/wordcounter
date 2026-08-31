@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=36">
+<link rel="stylesheet" href="../lib/number-tool.css?v=39">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -40,18 +40,13 @@
       <legend>check</legend>
       <label class="row"><span class="key">subtotal</span><span class="value"><input id="subtotal" type="number" inputmode="decimal" min="0" step="0.01" value="72.00" data-primary data-axis="y" data-axis-x="tip" data-step-fast="5" data-gesture="1" aria-label="subtotal"></span></label>
       <label class="row"><span class="key">tax</span><span class="value"><input id="tax" type="number" inputmode="decimal" min="0" max="100" step="0.25" value="8.875" aria-label="tax percent"><span class="unit">%</span></span></label>
-      <label class="row"><span class="key">tip</span><span class="value"><input id="tip" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" aria-label="tip percent"><span class="unit">%</span></span></label>
+      <label class="row"><span class="key">tip</span><span class="value"><select id="tip" aria-label="tip percent"><option value="15">15%</option><option value="18">18%</option><option value="20" selected>20%</option><option value="22">22%</option><option value="25">25%</option></select></span></label>
+      <label class="row"><span class="key">tip on</span><span class="value"><select id="tipOn" aria-label="tip base"><option value="pre" selected>pre-tax</option><option value="total">after tax</option></select></span></label>
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="tip presets">
-      <button type="button" class="preset" data-tip="15">15%</button>
-      <button type="button" class="preset" data-tip="18">18%</button>
-      <button type="button" class="preset" data-tip="20" aria-pressed="true">20%</button>
-      <button type="button" class="preset" data-tip="25">25%</button>
-    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=36"></script>
-<script src="../lib/number-tool.js?v=36"></script>
+<script src="../lib/suite.js?v=39"></script>
+<script src="../lib/number-tool.js?v=39"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('tax');
@@ -59,7 +54,7 @@
     id: 'tax',
     about: "Subtotal → tax → tip. Tip can sit on pre-tax or on the taxed total. Stage is a stacked receipt; scrub each band.",
     hasViz: true,
-    extra: {"defaults":{"tipOn":"pre"},"fieldsHtml":"<fieldset><legend>tip on</legend><div class=\"seg\" role=\"radiogroup\" aria-label=\"tip base\"><label><input type=\"radio\" name=\"tipOn\" value=\"pre\"><span>pre-tax</span></label><label><input type=\"radio\" name=\"tipOn\" value=\"total\"><span>after tax</span></label></div></fieldset>"},
+    extra: null,
     onApply: function () {
       if (typeof window.__ibmToolRender === 'function') window.__ibmToolRender();
     }
@@ -68,8 +63,8 @@
   var stage = IBMNumberTool.ensureStage('tax');
   var money = function(n){ return IBMNumberTool.formatMoney(n); };
   function tipOn(){
-    var s = toolUI && toolUI.settings;
-    return (s && s.tipOn === 'total') ? 'total' : 'pre';
+    var el = document.getElementById('tipOn');
+    return (el && el.value === 'total') ? 'total' : 'pre';
   }
   function paint(sub, taxAmt, tipAmt, grand, tipBase){
     if (!stage) return;
@@ -97,20 +92,15 @@
     document.getElementById('out').textContent = money(grand);
     document.getElementById('sub').textContent =
       'tax ' + money(taxAmt) + ' · tip ' + money(tipAmt) + ' on ' + (tipOn() === 'total' ? 'total' : 'pre-tax');
-    paint(sub, taxAmt, tipAmt, grand, tipBase);
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(toolUI && toolUI.settings || {}) : 'viz';
+    if (mode === 'deep') IBMNumberTool.paintDeep('tax', stage, { sub: sub, taxPct: taxPct, tipPct: tipPct, tipOn: tipOn() });
+    else if (mode !== 'plain') paint(sub, taxAmt, tipAmt, grand, tipBase);
+    else stage.innerHTML = '';
   }
   window.__ibmToolRender = render;
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('.preset');
-    if (!btn) return;
-    document.getElementById('tip').value = btn.getAttribute('data-tip');
-    document.querySelectorAll('#presets .preset').forEach(function(b){
-      b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
-    });
-    render();
-  });
-  ['subtotal','tax','tip'].forEach(function(id){
+  ['subtotal','tax','tip','tipOn'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
   });
   render();
 })();

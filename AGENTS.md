@@ -65,7 +65,7 @@ Regenerate number-tool pages: `node scripts/gen-number-tools.mjs`. Keep `lib/sui
 | Time dial / chart | nudge limit | coarse 5m | Accel wheel, arrows/`[` `]`, soft presets while running |
 
 Attrs on inputs: `data-primary`, `data-axis-x`, `data-pinch`, `data-step-fast`.
-Number tools: haptic `vibrate(8)` on each stepped change; blur clamps min/max (soft red flash); percent fields default 0–100 when unit is `%`.
+Number tools: haptic `vibrate(8)` on each stepped change; blur clamps min/max (soft red flash); percent fields default 0–100 when unit is `%`. Layer setting: **viz** (metaphor stage) / **deep** (Vega-Lite or WebGL relational chart, lazy-loaded from `/lib/`) / **plain**.
 
 Desk apps: words primary swipe cycles metrics; time dial scrub nudges limit. Number tools also support **copy** / **link** under the face (clipboard result + URL field hydrate) and print styles.
 
