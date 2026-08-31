@@ -1782,6 +1782,38 @@
     font-size: 11px;
     color: var(--mute);
   }
+  .goal-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    margin-top: 8px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    max-width: 220px;
+  }
+  .goal-presets button {
+    font: inherit;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: var(--mute);
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--hair);
+    margin: 0;
+    padding: 8px 4px;
+    min-height: 36px;
+    cursor: pointer;
+    aspect-ratio: 1;
+  }
+  .goal-presets button:last-child { border-right: 0; }
+  .goal-presets button:hover,
+  .goal-presets button:focus-visible { color: var(--ink); outline: none; }
+  .goal-presets button[aria-pressed="true"] {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
   .keys-hint {
     font-style: normal;
     font-size: 11px;
@@ -4180,6 +4212,12 @@
             <input id="target" type="number" min="1" step="1" inputmode="numeric" placeholder="—" aria-label="word target">
             <em>words · mark in text</em>
           </div>
+          <div class="goal-presets" id="goalPresets" role="group" aria-label="word goal presets">
+            <button type="button" class="preset" data-target="250" aria-pressed="false">250</button>
+            <button type="button" class="preset" data-target="500" aria-pressed="false">500</button>
+            <button type="button" class="preset" data-target="750" aria-pressed="false">750</button>
+            <button type="button" class="preset" data-target="1000" aria-pressed="false">1k</button>
+          </div>
           <button type="button" class="layer-sq is-on" data-layer="target" aria-pressed="true" aria-label="show target" title="show target"></button>
         </fieldset>
         <fieldset class="layer-row" data-layer="reach">
@@ -4300,7 +4338,7 @@
   <div class="cap" id="scaleCap"></div>
 </aside>
 
-<script src="lib/suite.js?v=35"></script>
+<script src="lib/suite.js?v=43"></script>
 <script>
 (function () {
   var TEXT_KEY = 'wordcounter.text';
@@ -5363,6 +5401,7 @@
     });
     applyLayerControls();
     targetInput.value = settings.target > 0 ? String(settings.target) : '';
+    syncGoalPresets();
     stopPhraseInput.value = settings.stopPhrase || DEFAULT_STOP;
     main.setAttribute('data-layout', settings.layout);
     main.setAttribute('data-reach', layerOn('reach') ? settings.reach : 'none');
@@ -5813,6 +5852,15 @@
   function parseTarget(raw) {
     var v = parseInt(raw, 10);
     return (!raw || !v || v < 1) ? 0 : v;
+  }
+
+  function syncGoalPresets() {
+    var root = el('goalPresets');
+    if (!root) return;
+    var t = settings.target || 0;
+    Array.prototype.forEach.call(root.querySelectorAll('.preset'), function (btn) {
+      btn.setAttribute('aria-pressed', String(Number(btn.getAttribute('data-target')) === t));
+    });
   }
 
   function disarmClear() {
@@ -6817,9 +6865,27 @@
 
   targetInput.addEventListener('input', function () {
     settings.target = parseTarget(targetInput.value);
+    syncGoalPresets();
     saveSettings();
     render();
   });
+
+  var goalPresets = el('goalPresets');
+  if (goalPresets) {
+    goalPresets.addEventListener('click', function (e) {
+      var btn = e.target.closest('.preset');
+      if (!btn) return;
+      var n = parseTarget(btn.getAttribute('data-target'));
+      settings.target = n;
+      targetInput.value = n ? String(n) : '';
+      if (!layerOn('target')) settings.showTarget = true;
+      syncGoalPresets();
+      applySettingsControls();
+      saveSettings();
+      render();
+      haptic(8);
+    });
+  }
 
   stopPhraseInput.addEventListener('change', function () {
     settings.stopPhrase = stopPhraseInput.value.trim() || DEFAULT_STOP;

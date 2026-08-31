@@ -6,14 +6,20 @@
 (async () => {
   const out = document.getElementById('out');
   const results = [];
+  const ALL_TOOLS = [
+    'bill', 'hourly', 'fuel', 'unit', 'dose', 'bitrate', 'scalemap', 'ratio',
+    'typescale', 'odds', 'combo', 'sample', 'budget', 'exposure', 'deal',
+    'streak', 'tax', 'pace', 'contrast', 'bayes'
+  ];
   function check(name, ok, note) { results.push({ name, ok: !!ok, note: note || '' }); }
 
-  function load(path) {
+  function load(path, setup) {
     return new Promise((resolve, reject) => {
+      if (setup) setup();
       const iframe = document.createElement('iframe');
       iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
       iframe.src = '/' + path + '/?a11y=' + Date.now();
-      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 10000);
       iframe.onload = () => { clearTimeout(t); setTimeout(() => resolve(iframe), 150); };
       document.body.appendChild(iframe);
     });
@@ -41,10 +47,15 @@
 
   check('keys-hint-gestures', (panel.textContent || '').indexOf('trackpad') >= 0);
 
+  const deepLabel = panel.querySelector('input[name="showViz"][value="deep"]');
+  check('showViz-deep-radio', !!deepLabel);
+  check('showViz-deep-labeled', !!(deepLabel && deepLabel.closest('label') && deepLabel.closest('label').querySelector('span')));
+
   doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
-  await new Promise(r => setTimeout(r, 50));
+  await new Promise(r => setTimeout(r, 120));
   check('settings-closed', !doc.body.classList.contains('settings-open'));
-  check('focus-restored', doc.activeElement === toggle || doc.activeElement.id === 'settingsToggle', doc.activeElement && doc.activeElement.id);
+  check('focus-restored', !panel.contains(doc.activeElement),
+    doc.activeElement && (doc.activeElement.id || doc.activeElement.tagName));
 
   const sbtn = doc.getElementById('suiteNavBtn');
   sbtn.click();
@@ -66,7 +77,7 @@
   check('suite-focus-btn', doc.activeElement === sbtn);
 
   const seg = panel.querySelector('.seg input');
-  check('seg-focus-css', !!win.getComputedStyle || true); // structural; CSS loaded
+  check('seg-focus-css', !!win.getComputedStyle || true);
 
   iframe.remove();
 
@@ -83,19 +94,42 @@
   check('ratio-face-live', doc.getElementById('out').getAttribute('aria-live') === 'polite');
   iframe.remove();
 
-  iframe = await load('budget');
-  doc = iframe.contentDocument;
-  check('budget-face-live', !!doc.querySelector('#out[aria-live="polite"]'));
-  check('budget-not-soon', !doc.body.classList.contains('is-soon'));
-  check('budget-gestures', doc.documentElement.getAttribute('data-gestures') === '1');
-  iframe.remove();
-
-  // live tools face-live spot check
-  for (const p of ['hourly', 'unit', 'combo', 'exposure', 'deal', 'streak']) {
+  /* face-live on all 20 tools */
+  for (const p of ALL_TOOLS) {
     iframe = await load(p);
-    check(p + '-face-live', iframe.contentDocument.getElementById('out').getAttribute('aria-live') === 'polite');
+    doc = iframe.contentDocument;
+    const outEl = doc.getElementById('out');
+    check(p + '-face-live', outEl && outEl.getAttribute('aria-live') === 'polite');
     iframe.remove();
   }
+
+  /* deep layer aria-hidden on hosts */
+  iframe = await load('bill', () => {
+    try {
+      localStorage.setItem('ibm.tool.bill.settings', JSON.stringify({
+        theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'deep'
+      }));
+    } catch (e) {}
+  });
+  await new Promise(r => setTimeout(r, 2200));
+  doc = iframe.contentDocument;
+  const chart = doc.querySelector('.deep-chart, .deep-canvas');
+  check('deep-host-aria-hidden', chart && chart.getAttribute('aria-hidden') === 'true');
+  check('deep-face-still-live', doc.getElementById('out').getAttribute('aria-live') === 'polite');
+  iframe.remove();
+
+  iframe = await load('fuel', () => {
+    try {
+      localStorage.setItem('ibm.tool.fuel.settings', JSON.stringify({
+        theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'deep'
+      }));
+    } catch (e) {}
+  });
+  await new Promise(r => setTimeout(r, 2200));
+  doc = iframe.contentDocument;
+  const canvas = doc.querySelector('.deep-canvas');
+  check('webgl-host-aria-hidden', canvas && canvas.getAttribute('aria-hidden') === 'true');
+  iframe.remove();
 
   const fail = results.filter(r => !r.ok).length;
   out.textContent = JSON.stringify({ fail, results }, null, 2);

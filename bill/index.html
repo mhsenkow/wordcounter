@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -39,13 +39,19 @@
     <fieldset class="panel">
       <legend>receipt</legend>
       <label class="row"><span class="key">total</span><span class="value"><input id="total" type="number" inputmode="decimal" min="0" step="0.01" value="86.40" aria-label="receipt total"></span></label>
-      <label class="row"><span class="key">tip</span><span class="value"><select id="tip" aria-label="tip percent" data-primary data-axis="y" data-axis-x="people" data-gesture="1"><option value="15">15%</option><option value="18">18%</option><option value="20" selected>20%</option><option value="22">22%</option><option value="25">25%</option></select></span></label>
+      <label class="row"><span class="key">tip</span><span class="value"><input id="tip" type="number" inputmode="decimal" min="0" max="100" step="1" value="20" data-primary data-axis="y" data-axis-x="people" data-step-fast="5" data-gesture="1" aria-label="tip percent"><span class="unit">%</span></span></label>
       <label class="row"><span class="key">people</span><span class="value"><input id="people" type="number" inputmode="numeric" min="1" step="1" value="2" aria-label="people"></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="tip presets" data-cols="4">
+      <button type="button" class="preset" data-tip="15" aria-pressed="false">15%<span class="preset-meta">standard</span></button>
+      <button type="button" class="preset" data-tip="18" aria-pressed="false">18%<span class="preset-meta">good</span></button>
+      <button type="button" class="preset" data-tip="20" aria-pressed="true">20%<span class="preset-meta">usual</span></button>
+      <button type="button" class="preset" data-tip="25" aria-pressed="false">25%<span class="preset-meta">great</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('bill');
@@ -62,7 +68,7 @@
   var stage = IBMNumberTool.ensureStage('bill');
   function S(){ return (toolUI && toolUI.settings) || {}; }
   function money(n){ return IBMNumberTool.formatMoney(n, { forceCents: true }); }
-  function paint(people, tipPct, tipAmt, grand){
+  function paint(people, tipPct, tipAmt, grand, total){
     var n = Math.max(1, Math.min(12, people));
     var view = S().view || 'people';
     var tipMark = S().tipMark || 'share';
@@ -70,10 +76,11 @@
     var ribbon = tipMark === 'dollars'
       ? Math.max(0, Math.min(92, Math.min(1, tipAmt / Math.max(grand, 0.01)) * 100))
       : Math.max(0, Math.min(92, tipShare * 100));
+    var maxW = Math.max(total, tipAmt, grand, 0.01);
     var html = '<div class="receipt-well" data-view="' + view + '">';
-    html += '<div class="rcpt-lines"><span class="rcpt-line" data-scrub="total"><em>sub</em><i></i></span>';
+    html += '<div class="rcpt-lines"><span class="rcpt-line" data-scrub="total"><em>sub</em><i style="flex:' + (total / maxW).toFixed(4) + '"></i></span>';
     html += '<span class="rcpt-tip" data-scrub="tip" style="--ribbon:' + ribbon.toFixed(1) + '%"><em>tip</em><b></b></span>';
-    html += '<span class="rcpt-line is-total" data-scrub="tip"><em>total</em><i></i></span></div>';
+    html += '<span class="rcpt-line is-total" data-scrub="tip"><em>total</em><i style="flex:' + (grand / maxW).toFixed(4) + '"></i></span></div>';
     html += '<div class="person-cols">';
     for (var i = 0; i < n; i++) html += '<b data-scrub="people" style="--tip:' + ribbon.toFixed(1) + '%"></b>';
     html += '</div></div>';
@@ -92,13 +99,20 @@
       (people === 1 ? 'you pay' : 'per person') + ' · tip ' + money(tip) + ' · total ' + money(grand);
     var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
     if (mode === 'deep') IBMNumberTool.paintDeep('bill', stage, { people: people, tipPct: tipPct, total: total });
-    else if (mode !== 'plain') paint(people, tipPct, tip, grand);
+    else if (mode !== 'plain') paint(people, tipPct, tip, grand, total);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
   ['total','tip','people'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
+  });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["tip"],
+    map: null,
+    after: function () { render(); }
   });
   render();
 })();

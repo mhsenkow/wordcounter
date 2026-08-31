@@ -20,12 +20,15 @@ import {
 } from './lib/count.mjs';
 import { parseDuration, formatClock } from './lib/time.mjs';
 import {
+  billSplit,
   taxTip,
   paceEta,
   contrastRatio,
   combinations,
-  bayesUpdate
+  bayesUpdate,
+  formatDurationHours
 } from './lib/calc/index.mjs';
+import { VEGA, WEBGL, ALL_TOOLS as PAYLOAD_TOOLS, scrubFor } from './lib/deep-payloads.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
@@ -269,6 +272,93 @@ test('calc bayes update', () => {
 test('parse duration helpers', () => {
   assert.equal(parseDuration('25m'), 25 * 60000);
   assert.equal(formatClock(65000), '1:05');
+});
+
+const ALL_TOOLS = [
+  'bill', 'hourly', 'fuel', 'unit', 'dose', 'bitrate', 'scalemap', 'ratio',
+  'typescale', 'odds', 'combo', 'sample', 'budget', 'exposure', 'deal',
+  'streak', 'tax', 'pace', 'contrast', 'bayes'
+];
+
+test('all 20 number tools exist with live HTML', () => {
+  for (const id of ALL_TOOLS) {
+    const p = path.join(__dirname, id, 'index.html');
+    assert.ok(fs.existsSync(p), id + ' missing');
+    const html = fs.readFileSync(p, 'utf8');
+    assert.ok(html.length > 5000, id + ' index.html too small');
+    assert.doesNotMatch(html, /coming soon/i);
+  }
+});
+
+test('deep-viz covers all 20 tools', () => {
+  const deep = fs.readFileSync(path.join(__dirname, 'lib/deep-viz.js'), 'utf8');
+  assert.match(deep, /IBMDeepViz/);
+  const webgl = new Set();
+  const specs = new Set();
+  const vegaScrub = new Set();
+  const webglScrub = new Set();
+  let m;
+  const webglRe = /var WEBGL = \{([^}]+)\}/;
+  const specsRe = /var SPECS = \{([^}]+)\}/;
+  const vegaScrubRe = /var VEGA_SCRUB = \{([^}]+)\}/;
+  const webglScrubRe = /var WEBGL_SCRUB = \{([^}]+)\}/;
+  const wm = deep.match(webglRe);
+  const sm = deep.match(specsRe);
+  const vsm = deep.match(vegaScrubRe);
+  const wsm = deep.match(webglScrubRe);
+  assert.ok(wm && sm, 'deep-viz WEBGL/SPECS maps missing');
+  const keyRe = /(\w+)\s*:/g;
+  while ((m = keyRe.exec(wm[1]))) webgl.add(m[1]);
+  keyRe.lastIndex = 0;
+  while ((m = keyRe.exec(sm[1]))) specs.add(m[1]);
+  if (vsm) { keyRe.lastIndex = 0; while ((m = keyRe.exec(vsm[1]))) vegaScrub.add(m[1]); }
+  if (wsm) { keyRe.lastIndex = 0; while ((m = keyRe.exec(wsm[1]))) webglScrub.add(m[1]); }
+  for (const id of ALL_TOOLS) {
+    assert.ok(webgl.has(id) || specs.has(id), id + ' missing from deep-viz');
+    if (webgl.has(id)) {
+      assert.ok(webglScrub.has(id), id + ' missing WEBGL_SCRUB');
+      assert.ok(!vegaScrub.has(id), id + ' wrongly in VEGA_SCRUB');
+    } else {
+      assert.ok(vegaScrub.has(id), id + ' missing VEGA_SCRUB');
+      assert.ok(!webglScrub.has(id), id + ' wrongly in WEBGL_SCRUB');
+    }
+  }
+});
+
+test('deep payload contracts match deep-viz scrub maps', () => {
+  const deep = fs.readFileSync(path.join(__dirname, 'lib/deep-viz.js'), 'utf8');
+  const vegaBlock = deep.match(/var VEGA_SCRUB = \{([^}]+)\}/);
+  const webglBlock = deep.match(/var WEBGL_SCRUB = \{([^}]+)\}/);
+  assert.ok(vegaBlock && webglBlock, 'scrub maps in deep-viz.js');
+  for (const id of PAYLOAD_TOOLS) {
+    const scrub = scrubFor(id);
+    assert.ok(scrub, id + ' scrubFor');
+    const re = new RegExp(id + ":\\s*['\"]" + scrub + "['\"]");
+    if (WEBGL[id]) {
+      assert.match(webglBlock[1], re, id + ' WEBGL_SCRUB');
+      assert.ok(!vegaBlock[1].includes(id + ':'), id + ' should not be in VEGA_SCRUB');
+    } else {
+      assert.match(vegaBlock[1], re, id + ' VEGA_SCRUB');
+      assert.ok(!webglBlock[1].includes(id + ':'), id + ' should not be in WEBGL_SCRUB');
+    }
+    const html = fs.readFileSync(path.join(__dirname, id, 'index.html'), 'utf8');
+    assert.match(html, /paintDeep\s*\(/, id + ' paintDeep call');
+    if (WEBGL[id]) {
+      assert.match(html, new RegExp('id="' + scrub + '"'), id + ' scrub input in HTML');
+    }
+  }
+});
+
+test('calc bill split', () => {
+  const r = billSplit({ total: 100, tipPct: 20, people: 4 });
+  assert.equal(r.grand, 120);
+  assert.equal(r.perPerson, 30);
+  assert.equal(r.people, 4);
+});
+
+test('calc format duration hours', () => {
+  assert.equal(formatDurationHours(1.5), '1:30');
+  assert.equal(formatDurationHours(0.25), '15 min');
 });
 
 test('suite has new instruments', () => {

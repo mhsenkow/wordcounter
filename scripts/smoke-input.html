@@ -1,0 +1,187 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>input smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const results = [];
+
+  function check(name, ok, note) {
+    results.push({ name: name, ok: !!ok, note: note || '' });
+  }
+
+  function loadFrame(path, setup) {
+    return new Promise((resolve, reject) => {
+      if (setup) setup();
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
+      iframe.src = path + '?input=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      iframe.onload = () => { clearTimeout(t); setTimeout(() => resolve(iframe), 180); };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  /* keyboard scrub — bill */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/bill/', () => {
+        localStorage.removeItem('ibm.tool.bill.values');
+        localStorage.removeItem('ibm.tool.bill');
+      });
+      const doc = iframe.contentDocument;
+      const scrub = doc.querySelector('#toolStage [data-scrub="tip"][tabindex="0"]');
+      const tip = doc.getElementById('tip');
+      if (!scrub || !tip) check('bill-keyboard-scrub', false, 'missing scrub/tip');
+      else {
+        scrub.focus();
+        const before = tip.value;
+        for (let i = 0; i < 3; i++) {
+          scrub.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+        }
+        check('bill-keyboard-scrub', Number(tip.value) > Number(before), before + '→' + tip.value);
+      }
+    } catch (e) { check('bill-keyboard-scrub', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* keyboard scrub — budget multi-cell */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/budget/');
+      const doc = iframe.contentDocument;
+      const scrubs = doc.querySelectorAll('#toolStage [data-scrub][tabindex="0"]');
+      const pot = doc.getElementById('pot');
+      if (!scrubs.length || !pot) check('budget-keyboard-scrub', false, 'missing');
+      else {
+        const scrub = scrubs[0];
+        scrub.focus();
+        const before = pot.value;
+        for (let i = 0; i < 3; i++) {
+          scrub.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+        }
+        check('budget-keyboard-scrub', Number(pot.value) > Number(before), before + '→' + pot.value);
+      }
+    } catch (e) { check('budget-keyboard-scrub', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* clamp — tax tip */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/tax/');
+      const doc = iframe.contentDocument;
+      const tip = doc.getElementById('tip');
+      tip.focus();
+      tip.value = '150';
+      tip.dispatchEvent(new Event('input', { bubbles: true }));
+      tip.dispatchEvent(new Event('blur'));
+      const row = tip.closest('label.row');
+      const clamped = Number(tip.value) <= 100;
+      const hadClass = row && row.classList.contains('is-clamped');
+      check('tax-clamp-value', clamped, 'value=' + tip.value);
+      check('tax-clamp-flash', hadClass, 'is-clamped');
+    } catch (e) { check('tax-clamp', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* clamp — dose want */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/dose/');
+      const doc = iframe.contentDocument;
+      const want = doc.getElementById('want');
+      want.focus();
+      want.value = '150';
+      want.dispatchEvent(new Event('input', { bubbles: true }));
+      want.dispatchEvent(new Event('blur'));
+      const wantRow = want.closest('label.row');
+      check('dose-clamp-value', Number(want.value) <= 100, 'value=' + want.value);
+      check('dose-clamp-flash', wantRow && wantRow.classList.contains('is-clamped'), 'is-clamped');
+    } catch (e) { check('dose-clamp', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* field memory — bill */
+  {
+    try {
+      localStorage.removeItem('ibm.tool.bill.values');
+      localStorage.removeItem('ibm.tool.bill');
+      let iframe = await loadFrame('/bill/');
+      const doc = iframe.contentDocument;
+      const tip = doc.getElementById('tip');
+      tip.value = '33';
+      tip.dispatchEvent(new Event('input', { bubbles: true }));
+      tip.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(r => setTimeout(r, 80));
+      iframe.remove();
+      iframe = await loadFrame('/bill/');
+      const doc2 = iframe.contentDocument;
+      check('bill-field-memory', doc2.getElementById('tip').value === '33', 'got ' + doc2.getElementById('tip').value);
+      iframe.remove();
+    } catch (e) { check('bill-field-memory', false, String(e.message || e)); }
+  }
+
+  /* field memory — hourly */
+  {
+    try {
+      localStorage.removeItem('ibm.tool.hourly.values');
+      let iframe = await loadFrame('/hourly/');
+      const doc = iframe.contentDocument;
+      const rate = doc.getElementById('rate');
+      rate.value = '87';
+      rate.dispatchEvent(new Event('input', { bubbles: true }));
+      rate.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(r => setTimeout(r, 80));
+      iframe.remove();
+      iframe = await loadFrame('/hourly/');
+      check('hourly-field-memory', iframe.contentDocument.getElementById('rate').value === '87');
+      iframe.remove();
+    } catch (e) { check('hourly-field-memory', false, String(e.message || e)); }
+  }
+
+  /* settings freeze — bill */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/bill/');
+      const doc = iframe.contentDocument;
+      const tip = doc.getElementById('tip');
+      tip.value = '15';
+      tip.dispatchEvent(new Event('input', { bubbles: true }));
+      doc.body.classList.add('settings-open');
+      const freeze = tip.value;
+      for (let i = 0; i < 3; i++) {
+        doc.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: -40 }));
+      }
+      check('bill-settings-freeze', tip.value === freeze, freeze + '→' + tip.value);
+    } catch (e) { check('bill-settings-freeze', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* haptic noop */
+  {
+    let iframe;
+    try {
+      iframe = await loadFrame('/bill/');
+      const win = iframe.contentWindow;
+      let threw = false;
+      try {
+        if (win.IBMNumberTool && win.IBMNumberTool.haptic) win.IBMNumberTool.haptic(8);
+        else threw = true;
+      } catch (e) { threw = true; }
+      check('haptic-noop', !threw);
+    } catch (e) { check('haptic-noop', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})();
+</script>

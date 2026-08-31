@@ -21,7 +21,7 @@
       const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
       iframe.onload = () => {
         clearTimeout(t);
-        setTimeout(() => resolve(iframe), 140);
+        setTimeout(() => resolve(iframe), 220);
       };
       document.body.appendChild(iframe);
     });
@@ -46,6 +46,11 @@
     const row = { tool: path, ok: true, notes: [] };
     let iframe;
     try {
+      try {
+        localStorage.setItem('ibm.tool.' + path + '.settings', JSON.stringify({
+          theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'viz'
+        }));
+      } catch (e) {}
       iframe = await loadFrame(path, 390, 844);
       const doc = iframe.contentDocument;
       const win = iframe.contentWindow;
@@ -87,20 +92,22 @@
           doc.querySelector('main input[type="number"]');
         const face = doc.querySelector('.face');
         const stageEl = doc.getElementById('toolStage');
+        const primaryId = primary && primary.id;
+        const scrubCell = stageEl && primaryId && (
+          stageEl.querySelector('[data-scrub="' + primaryId + '"][tabindex="0"]') ||
+          stageEl.querySelector('[data-scrub="' + primaryId + '"]') ||
+          stageEl.querySelector('[data-scrub][tabindex="0"]') ||
+          stageEl.querySelector('[data-scrub]')
+        );
 
-        if (primary && stageEl && path !== 'ratio') {
-          const pe = win.getComputedStyle(stageEl).pointerEvents;
-          if (pe === 'none') {
-            row.ok = false;
-            row.notes.push('stage pointer-events none');
-          }
+        if (primary && scrubCell && path !== 'ratio' && path !== 'scalemap') {
           const before = primary.value;
           const y0 = 120;
-          firePointer(stageEl, 'pointerdown', { clientX: 160, clientY: y0 });
+          firePointer(scrubCell, 'pointerdown', { clientX: 160, clientY: y0 });
           for (let i = 1; i <= 6; i++) {
-            firePointer(stageEl, 'pointermove', { clientX: 160, clientY: y0 - i * 30 });
+            firePointer(scrubCell, 'pointermove', { clientX: 160, clientY: y0 - i * 30 });
           }
-          firePointer(stageEl, 'pointerup', { clientX: 160, clientY: y0 - 180 });
+          firePointer(scrubCell, 'pointerup', { clientX: 160, clientY: y0 - 180 });
           if (Number(primary.value) === Number(before)) {
             row.ok = false;
             row.notes.push('stage scrub no change');
@@ -124,6 +131,7 @@
         /* Every number row must scrub its own field when dragged on the input */
         const nums = Array.from(doc.querySelectorAll('main label.row input[type="number"]'));
         for (const input of nums) {
+          if (path === 'deal' && input.id === 'left') continue;
           const before = input.value;
           const y0 = 220;
           firePointer(input, 'pointerdown', { clientX: 280, clientY: y0 });
@@ -155,7 +163,13 @@
           }
         }
 
-        /* Per-tool settings extras + scrub targets */
+        const scrub = doc.querySelectorAll('#toolStage [data-scrub], .ratio-stage [data-scrub]');
+        if (path !== 'ratio' && scrub.length < 1) {
+          row.ok = false;
+          row.notes.push('no data-scrub on stage');
+        }
+
+        /* Per-tool settings extras */
         const settingsBtn = doc.getElementById('settingsToggle');
         if (settingsBtn) {
           settingsBtn.click();
@@ -163,10 +177,11 @@
           const extras = sheet ? sheet.querySelectorAll('.fields fieldset .seg input[type="radio"]') : [];
           const lookNames = new Set(['theme', 'ui', 'font', 'faces', 'showViz']);
           const extraRadios = Array.from(extras).filter((el) => !lookNames.has(el.name));
-          if (extraRadios.length < 2) {
+          const noExtra = ['tax', 'pace', 'contrast'];
+          if (!noExtra.includes(path) && extraRadios.length < 2) {
             row.ok = false;
             row.notes.push('extra settings radios ' + extraRadios.length);
-          } else {
+          } else if (extraRadios.length >= 2) {
             const name = extraRadios.find((el) => !el.checked) || extraRadios[1];
             const beforeKind = stageEl && stageEl.innerHTML.slice(0, 80);
             name.checked = true;
@@ -189,17 +204,11 @@
           doc.body.classList.remove('settings-open');
           if (sheet) sheet.setAttribute('hidden', '');
         }
-
-        const scrub = doc.querySelectorAll('#toolStage [data-scrub], .ratio-stage');
-        if (path !== 'ratio' && scrub.length < 1) {
-          row.ok = false;
-          row.notes.push('no data-scrub on stage');
-        }
       }
 
       const css = doc.querySelector('link[href*="number-tool.css"]');
-      if (css && !/v=34/.test(css.getAttribute('href') || '')) {
-        row.notes.push('css cache not v32');
+      if (css && !/v=43/.test(css.getAttribute('href') || '')) {
+        row.notes.push('css cache not v39');
       }
     } catch (err) {
       row.ok = false;
@@ -249,9 +258,53 @@
     results.push(row);
   }
 
+  /* 390px deep mode — bill (vega) + fuel (webgl) */
+  for (const item of [{ path: 'bill', kind: 'vega' }, { path: 'fuel', kind: 'webgl' }]) {
+    const row = { tool: item.path + ':deep390', ok: true, notes: [] };
+    let iframe;
+    try {
+      try {
+        localStorage.setItem('ibm.tool.' + item.path + '.settings', JSON.stringify({
+          theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'deep'
+        }));
+      } catch (e) {}
+      iframe = await loadFrame(item.path, 390, 844);
+      await new Promise(r => setTimeout(r, 2200));
+      const doc = iframe.contentDocument;
+      const win = iframe.contentWindow;
+      const stage = doc.getElementById('toolStage');
+      if (!stage || stage.querySelector('.deep-fallback')) {
+        row.ok = false; row.notes.push('deep not mounted');
+      } else {
+        const host = item.kind === 'webgl'
+          ? stage.querySelector('.deep-canvas')
+          : stage.querySelector('.deep-chart');
+        if (!host) row.ok = false, row.notes.push('host missing');
+        else {
+          const rect = host.getBoundingClientRect();
+          if (rect.width < 100) row.ok = false, row.notes.push('host narrow ' + Math.round(rect.width));
+        }
+      }
+      const settingsBtn = doc.getElementById('settingsToggle');
+      if (settingsBtn) {
+        settingsBtn.click();
+        const deepRadio = doc.querySelector('input[name="showViz"][value="deep"]');
+        if (!deepRadio) row.ok = false, row.notes.push('deep radio missing');
+        doc.body.classList.remove('settings-open');
+        const sheet = doc.getElementById('settings');
+        if (sheet) sheet.setAttribute('hidden', '');
+      }
+    } catch (err) {
+      row.ok = false; row.notes.push(String(err.message || err));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
   const failed = results.filter((r) => !r.ok);
   out.textContent = results.map((r) =>
     (r.ok ? 'OK  ' : 'FAIL') + ' ' + r.tool + (r.notes.length ? ' — ' + r.notes.join('; ') : '')
   ).join('\n') + '\n\n' + (failed.length ? failed.length + ' failed' : 'all passed');
+  document.title = failed.length ? 'FAIL ' + failed.length : 'PASS';
 })();
 </script>

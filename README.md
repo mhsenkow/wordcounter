@@ -159,6 +159,35 @@ Top-right **panel** (icons + micro titles) links every live instrument. Theme / 
 
 Number tools share gestures, settings, stage viz, **copy** / **link** (URL field state), and print styles via `lib/number-tool.*`. Pure formulas for agents/tests: `lib/calc/index.mjs` (+ `lib/count.mjs`, `lib/time.mjs`).
 
+## Testing
+
+Fast checks (no browser):
+
+```bash
+node test.mjs                 # unit tests — count, calc, deep-viz map, markup
+scripts/run-smoke.sh          # unit + static HTML contracts
+```
+
+Browser smokes (serve repo root, open each page — `document.title` must be `PASS`):
+
+```bash
+python3 -m http.server 8777 &
+# open http://127.0.0.1:8777/scripts/smoke-gestures.html
+# open http://127.0.0.1:8777/scripts/smoke-touch.html
+# open http://127.0.0.1:8777/scripts/smoke-a11y.html
+# open http://127.0.0.1:8777/scripts/smoke-deep.html
+# open http://127.0.0.1:8777/scripts/smoke-input.html
+# open http://127.0.0.1:8777/scripts/smoke-suite.html
+```
+
+After deploy:
+
+```bash
+scripts/verify-live.sh        # curl matrix for ibm.io + GreenGeeks origin
+```
+
+Gate before deploy: `node test.mjs` + `scripts/run-smoke.sh` green + all six smoke pages `PASS` + `scripts/verify-live.sh` green.
+
 ## File layout
 
 ```
@@ -181,7 +210,7 @@ wordcounter/
 ├── scripts/
 │   ├── gen-number-tools.mjs
 │   ├── sync-deploy.sh
-│   └── smoke-*.html / run-smoke.sh
+│   └── smoke-*.html / run-smoke.sh / verify-live.sh
 ├── mcp/                    # Cloudflare Worker MCP
 ├── README.md
 └── AGENTS.md

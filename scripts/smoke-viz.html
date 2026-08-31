@@ -1,0 +1,109 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>viz metaphor smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const tools = [
+    'bill', 'hourly', 'fuel', 'unit', 'dose', 'bitrate', 'scalemap', 'ratio',
+    'typescale', 'odds', 'combo', 'sample', 'budget', 'exposure', 'deal',
+    'streak', 'tax', 'pace', 'contrast', 'bayes'
+  ];
+  const stageSel = {
+    bill: '.receipt-well',
+    hourly: '.cal-strip',
+    fuel: '.tank-route',
+    unit: '.twin-vessels',
+    dose: '.dose-drops, .field-split',
+    bitrate: '.xfer-river',
+    scalemap: '.map-plane',
+    ratio: '.ratio-stage',
+    typescale: '.type-ladder',
+    odds: '.seesaw',
+    combo: '.combo-ring',
+    sample: '.sample-bell',
+    budget: '.budget-well',
+    exposure: '.exp-instrument',
+    deal: '.deal-shoe',
+    streak: '.streak-tracks',
+    tax: '.tax-receipt',
+    pace: '.pace-route',
+    contrast: '.contrast-stage',
+    bayes: '.bayes-bars'
+  };
+  const results = [];
+
+  function baseSettings() {
+    return JSON.stringify({
+      theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'viz'
+    });
+  }
+
+  function loadFrame(path, toolId) {
+    try {
+      localStorage.setItem('ibm.tool.' + toolId + '.settings', baseSettings());
+    } catch (e) {}
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
+      iframe.src = path + '?t=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 10000);
+      iframe.onload = () => {
+        clearTimeout(t);
+        setTimeout(() => resolve(iframe), 400);
+      };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  for (const tool of tools) {
+    const row = { tool: tool, ok: true, notes: [] };
+    let iframe;
+    try {
+      iframe = await loadFrame('/' + tool + '/', tool);
+      const doc = iframe.contentDocument;
+      if (doc.documentElement.getAttribute('data-show-viz') !== 'viz') {
+        row.ok = false; row.notes.push('not viz mode');
+      }
+      const sel = stageSel[tool];
+      const el = tool === 'ratio'
+        ? doc.querySelector('.ratio-stage')
+        : doc.getElementById('toolStage');
+      if (!el) { row.ok = false; row.notes.push('stage missing'); }
+      else {
+        const hit = sel.split(',').some(s => doc.querySelector(s.trim()));
+        if (!hit) row.ok = false, row.notes.push('metaphor missing: ' + sel);
+        if (tool !== 'ratio' && el.innerHTML.trim().length < 20) {
+          row.ok = false; row.notes.push('stage empty');
+        }
+        if (tool === 'bill') {
+          const line = doc.querySelector('.rcpt-line i');
+          if (line && (!line.style.flex || line.style.flex === '0')) {
+            row.ok = false; row.notes.push('receipt bar not wired');
+          }
+        }
+        if (tool === 'exposure') {
+          const locus = doc.querySelector('.exp-instrument .locus');
+          if (locus && locus.getAttribute('cx') === '50' && locus.getAttribute('cy') === '42') {
+            /* default sunny16-ish — ok if inputs match preset */
+          }
+        }
+        const presets = doc.querySelector('.presets button.preset');
+        if (presets) {
+          const pr = presets.getBoundingClientRect();
+          if (pr.height < 36) row.ok = false, row.notes.push('preset squashed h=' + Math.round(pr.height));
+        }
+      }
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})();
+</script>

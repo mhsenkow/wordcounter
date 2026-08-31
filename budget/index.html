@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -38,19 +38,25 @@
   <div class="stack">
     <fieldset class="panel">
       <legend>week</legend>
-      <label class="row"><span class="key">pot</span><span class="value"><input id="pot" type="number" inputmode="decimal" min="0" step="10" value="600" data-primary data-axis="y" data-axis-x="live" data-step-fast="50" data-gesture="1" aria-label="weekly pot"></span></label>
+      <label class="row"><span class="key">pot</span><span class="value"><input id="pot" type="number" inputmode="decimal" min="0" step="10" value="600" data-step-fast="50" aria-label="weekly pot"></span></label>
     </fieldset>
     <fieldset class="panel">
       <legend>envelopes</legend>
-      <label class="row"><span class="key">live</span><span class="value"><input id="live" type="number" inputmode="decimal" min="0" step="10" value="280" data-step-fast="25" aria-label="live envelope"></span></label>
+      <label class="row"><span class="key">live</span><span class="value"><input id="live" type="number" inputmode="decimal" min="0" step="10" value="280" data-primary data-axis="y" data-step-fast="25" data-gesture="1" aria-label="live envelope"></span></label>
       <label class="row"><span class="key">food</span><span class="value"><input id="food" type="number" inputmode="decimal" min="0" step="5" value="120" data-step-fast="20" aria-label="food envelope"></span></label>
       <label class="row"><span class="key">move</span><span class="value"><input id="move" type="number" inputmode="decimal" min="0" step="5" value="80" data-step-fast="20" aria-label="move envelope"></span></label>
       <label class="row"><span class="key">fun</span><span class="value"><input id="fun" type="number" inputmode="decimal" min="0" step="5" value="60" data-step-fast="20" aria-label="fun envelope"></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="week presets" data-cols="4">
+      <button type="button" class="preset" data-pot="300" data-live="150" data-food="80" data-move="50" data-fun="20" aria-pressed="false">lean<span class="preset-meta">$300</span></button>
+      <button type="button" class="preset" data-pot="600" data-live="280" data-food="120" data-move="80" data-fun="60" aria-pressed="true">base<span class="preset-meta">$600</span></button>
+      <button type="button" class="preset" data-pot="800" data-live="200" data-food="200" data-move="250" data-fun="100" aria-pressed="false">travel<span class="preset-meta">$800</span></button>
+      <button type="button" class="preset" data-pot="400" data-live="220" data-food="100" data-move="60" data-fun="40" aria-pressed="false">tight<span class="preset-meta">$400</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('budget');
@@ -125,10 +131,17 @@
       });
     } else if (mode !== 'plain') paint(pot, parts, left);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
   ['pot','live','food','move','fun'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
+  });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["pot","live","food","move","fun"],
+    map: null,
+    after: function () { render(); }
   });
   render();
 })();

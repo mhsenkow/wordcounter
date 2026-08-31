@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -42,10 +42,16 @@
       <label class="row"><span class="key">units</span><span class="value"><select id="units" aria-label="distance units"><option value="mi" selected>miles</option><option value="km">km</option></select></span></label>
       <label class="row"><span class="key">measure</span><span class="value"><input id="measure" type="number" inputmode="decimal" min="0" step="0.1" value="2.4" data-primary data-axis="y" data-axis-x="real" data-step-fast="1" data-gesture="1" aria-label="inches on map"><span class="unit">in</span></span></label>
     </fieldset>
+    <div class="presets" id="presets" role="group" aria-label="map presets" data-cols="4">
+      <button type="button" class="preset" data-real="0.1" data-measure="3" data-units="mi" aria-pressed="false">city<span class="preset-meta">0.1 mi/in</span></button>
+      <button type="button" class="preset" data-real="0.25" data-measure="2" data-units="mi" aria-pressed="false">park<span class="preset-meta">¼ mi/in</span></button>
+      <button type="button" class="preset" data-real="1" data-measure="2.4" data-units="mi" aria-pressed="true">usgs<span class="preset-meta">1 mi/in</span></button>
+      <button type="button" class="preset" data-real="50" data-measure="1.5" data-units="mi" aria-pressed="false">atlas<span class="preset-meta">50 mi/in</span></button>
+    </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('scalemap');
@@ -100,11 +106,18 @@
     if (mode === 'deep') IBMNumberTool.paintDeep('scalemap', stage, { measure: measure, real: realIn, units: units, dist: out });
     else if (mode !== 'plain') paint(measure, realIn, units, out);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
   ['real','measure','units'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
+  });
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["real","measure","units"],
+    map: null,
+    after: function () { render(); }
   });
   render();
 })();

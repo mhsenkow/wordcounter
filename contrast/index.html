@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -43,16 +43,16 @@
       <label class="row"><span class="key">lift</span><span class="value"><input id="lift" type="number" inputmode="numeric" min="-40" max="40" step="2" value="0" data-primary data-axis="y" data-axis-x="lift" data-step-fast="5" data-gesture="1" aria-label="brightness lift"><span class="unit">Δ</span></span></label>
       <label class="row"><span class="key">text</span><span class="value"><select id="size" aria-label="text size for WCAG"><option value="normal" selected>normal</option><option value="large">large</option></select></span></label>
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="contrast presets">
-      <button type="button" class="preset" data-fg="#111111" data-bg="#ffffff">ink/white</button>
-      <button type="button" class="preset" data-fg="#c45c26" data-bg="#f2f2f0">accent</button>
-      <button type="button" class="preset" data-fg="#757575" data-bg="#f2f2f0">mute</button>
-      <button type="button" class="preset" data-fg="#ffffff" data-bg="#161616">dark</button>
+    <div class="presets" id="presets" role="group" aria-label="contrast presets" data-cols="4">
+      <button type="button" class="preset" data-fg="#111111" data-bg="#ffffff" data-lift="0" aria-pressed="false">ink<span class="preset-meta">B/W</span></button>
+      <button type="button" class="preset" data-fg="#c45c26" data-bg="#f2f2f0" data-lift="0" aria-pressed="false">accent<span class="preset-meta">warm</span></button>
+      <button type="button" class="preset" data-fg="#757575" data-bg="#f2f2f0" data-lift="0" aria-pressed="false">mute<span class="preset-meta">gray</span></button>
+      <button type="button" class="preset" data-fg="#ffffff" data-bg="#161616" data-lift="0" aria-pressed="true">dark<span class="preset-meta">night</span></button>
     </div>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('contrast');
@@ -147,17 +147,14 @@
     if (mode === 'deep') IBMNumberTool.paintDeep('contrast', stage, { L1: L1, L2: L2, ratio: ratio, size: size() });
     else if (mode !== 'plain') paint(fgHex, bgHex, ratio, pass, L1, L2);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('.preset');
-    if (!btn) return;
-    baseFg = btn.getAttribute('data-fg');
-    baseBg = btn.getAttribute('data-bg');
-    document.getElementById('fg').value = baseFg;
-    document.getElementById('bg').value = baseBg;
-    document.getElementById('lift').value = 0;
-    render();
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["fg","bg","lift"],
+    map: null,
+    after: function () { baseFg = document.getElementById("fg").value; baseBg = document.getElementById("bg").value; render();; }
   });
   ['fg','bg','lift','size'].forEach(function(id){
     document.getElementById(id).addEventListener('input', function(){

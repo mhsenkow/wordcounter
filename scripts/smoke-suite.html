@@ -1,0 +1,114 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>suite smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const LIVE_TOOLS = [
+    'bill', 'hourly', 'budget', 'fuel', 'tax', 'unit', 'dose', 'bitrate',
+    'scalemap', 'pace', 'ratio', 'typescale', 'exposure', 'contrast',
+    'odds', 'combo', 'deal', 'sample', 'streak', 'bayes', 'words', 'time'
+  ];
+  const results = [];
+
+  function check(name, ok, note) {
+    results.push({ name: name, ok: !!ok, note: note || '' });
+  }
+
+  function load(path, w, h) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:' + (w || 900) + 'px;height:' + (h || 700) + 'px;border:0';
+      iframe.src = path + '?suite=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path)), 8000);
+      iframe.onload = () => { clearTimeout(t); setTimeout(() => resolve(iframe), 160); };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  /* tools map */
+  {
+    let iframe;
+    try {
+      iframe = await load('/tools/');
+      const doc = iframe.contentDocument;
+      const links = [...doc.querySelectorAll('.map-tile')];
+      check('map-tile-count', links.length >= 20, 'count=' + links.length);
+      check('map-no-soon', !doc.body.classList.contains('is-soon'));
+      const hrefs = links.map(a => a.getAttribute('href') || '').join(' ');
+      for (const id of ['bill', 'bayes', 'ratio', 'pace']) {
+        check('map-link-' + id, /bill|hourly|fuel|tax|unit|dose|bitrate|scalemap|pace|ratio|typescale|exposure|contrast|odds|combo|deal|sample|streak|bayes/.test(hrefs));
+      }
+      const groups = doc.querySelectorAll('.map-group');
+      check('map-groups', groups.length >= 4, 'groups=' + groups.length);
+    } catch (e) { check('tools-map', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* suite grid navigation — bill */
+  {
+    let iframe;
+    try {
+      iframe = await load('/bill/');
+      const doc = iframe.contentDocument;
+      const btn = doc.getElementById('suiteNavBtn');
+      const panel = doc.getElementById('suiteNavPanel');
+      if (!btn || !panel) check('bill-suite-nav', false, 'missing nav');
+      else {
+        btn.click();
+        await new Promise(r => setTimeout(r, 80));
+        check('bill-suite-open', doc.querySelector('.suite-nav').classList.contains('is-open'));
+        const hourly = [...doc.querySelectorAll('.suite-tile')].find(t => (t.textContent || '').toLowerCase().includes('hourly'));
+        check('bill-suite-hourly-tile', !!hourly);
+        if (hourly) {
+          const href = hourly.getAttribute('href') || '';
+          check('bill-suite-hourly-href', /hourly/.test(href), href);
+        }
+        doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        await new Promise(r => setTimeout(r, 50));
+        check('bill-suite-esc', !doc.querySelector('.suite-nav').classList.contains('is-open'));
+      }
+    } catch (e) { check('bill-suite', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* suite grid — words */
+  {
+    let iframe;
+    try {
+      iframe = await load('/');
+      const doc = iframe.contentDocument;
+      const btn = doc.getElementById('suiteNavBtn');
+      btn.click();
+      await new Promise(r => setTimeout(r, 80));
+      check('words-suite-open', doc.querySelector('.suite-nav').classList.contains('is-open'));
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await new Promise(r => setTimeout(r, 50));
+      check('words-suite-esc', !doc.querySelector('.suite-nav').classList.contains('is-open'));
+    } catch (e) { check('words-suite', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  /* suite grid — time */
+  {
+    let iframe;
+    try {
+      iframe = await load('/timecount/');
+      const doc = iframe.contentDocument;
+      const btn = doc.getElementById('suiteNavBtn');
+      btn.click();
+      await new Promise(r => setTimeout(r, 80));
+      check('time-suite-open', doc.querySelector('.suite-nav').classList.contains('is-open'));
+      doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await new Promise(r => setTimeout(r, 50));
+      check('time-suite-esc', !doc.querySelector('.suite-nav').classList.contains('is-open'));
+    } catch (e) { check('time-suite', false, String(e.message || e)); }
+    if (iframe) iframe.remove();
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})();
+</script>

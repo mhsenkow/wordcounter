@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -41,17 +41,17 @@
       <label class="row"><span class="key">from</span><span class="value"><input id="n" type="number" inputmode="numeric" min="0" step="1" value="52" data-primary data-axis="y" data-axis-x="k" data-step-fast="5" data-gesture="1" aria-label="total items in the pile"></span></label>
       <label class="row"><span class="key">pick</span><span class="value"><input id="k" type="number" inputmode="numeric" min="0" step="1" value="5" aria-label="how many to pick"></span></label>
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="combo presets">
-      <button type="button" class="preset" data-n="52" data-k="5">poker</button>
-      <button type="button" class="preset" data-n="49" data-k="6">lotto</button>
-      <button type="button" class="preset" data-n="10" data-k="3">team</button>
-      <button type="button" class="preset" data-n="20" data-k="2">pair</button>
+    <div class="presets" id="presets" role="group" aria-label="combo presets" data-cols="4">
+      <button type="button" class="preset" data-n="52" data-k="5" aria-pressed="true">poker<span class="preset-meta">5-card</span></button>
+      <button type="button" class="preset" data-n="49" data-k="6" aria-pressed="false">lotto<span class="preset-meta">6/49</span></button>
+      <button type="button" class="preset" data-n="10" data-k="3" aria-pressed="false">team<span class="preset-meta">of 10</span></button>
+      <button type="button" class="preset" data-n="20" data-k="2" aria-pressed="false">pair<span class="preset-meta">of 20</span></button>
     </div>
     <p class="note">same cards in a different order still count as one</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('combo');
@@ -112,14 +112,14 @@
     if (mode === 'deep') IBMNumberTool.paintDeep('combo', stage, { n: n, k: k, count: ways });
     else if (mode !== 'plain') paint(n, k);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('.preset');
-    if (!btn) return;
-    document.getElementById('n').value = btn.getAttribute('data-n');
-    document.getElementById('k').value = btn.getAttribute('data-k');
-    render();
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["n","k"],
+    map: null,
+    after: function () { render(); }
   });
   ['n','k'].forEach(function(id){ document.getElementById(id).addEventListener('input', render); });
   render();

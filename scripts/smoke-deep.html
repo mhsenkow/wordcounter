@@ -1,0 +1,199 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>deep viz smoke</title>
+<pre id="out">running…</pre>
+<script>
+(async () => {
+  const out = document.getElementById('out');
+  const WEBGL = { fuel: 1, ratio: 1, exposure: 1, combo: 1, bayes: 1, sample: 1 };
+  const VEGA_SCRUB = {
+    bill: 'tip', hourly: 'days', budget: 'live', tax: 'tip', unit: 'amount',
+    dose: 'want', bitrate: 'size', scalemap: 'measure', pace: 'pace',
+    typescale: 'base', contrast: 'lift', odds: 'p', deal: 'left', streak: 'run'
+  };
+  const WEBGL_SCRUB = { fuel: 'miles', ratio: 'w', exposure: 'iso', combo: 'n', bayes: 'prior', sample: 'n' };
+  const tools = [
+    'bill', 'hourly', 'fuel', 'unit', 'dose', 'bitrate', 'scalemap', 'ratio',
+    'typescale', 'odds', 'combo', 'sample', 'budget', 'exposure', 'deal',
+    'streak', 'tax', 'pace', 'contrast', 'bayes'
+  ];
+  const results = [];
+
+  function baseSettings(showViz) {
+    return JSON.stringify({
+      theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: showViz
+    });
+  }
+
+  function loadFrame(path, toolId, mode) {
+    try {
+      localStorage.removeItem('ibm.tool.' + toolId + '.values');
+      localStorage.setItem('ibm.tool.' + toolId + '.settings', baseSettings(mode));
+    } catch (e) {}
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = 'position:fixed;left:-9999px;width:900px;height:700px;border:0';
+      iframe.src = path + '?deep=' + mode + '&t=' + Date.now();
+      const t = setTimeout(() => reject(new Error('timeout ' + path + ' ' + mode)), 12000);
+      iframe.onload = () => {
+        clearTimeout(t);
+        setTimeout(() => resolve(iframe), mode === 'deep' ? 2200 : 200);
+      };
+      document.body.appendChild(iframe);
+    });
+  }
+
+  function vis(el, win) {
+    if (!el) return false;
+    const s = (win || el.ownerDocument.defaultView).getComputedStyle(el);
+    return s.display !== 'none' && s.visibility !== 'hidden';
+  }
+
+  function assertViz(doc, tool) {
+    const row = { tool: tool, mode: 'viz', ok: true, notes: [] };
+    const html = doc.documentElement;
+    const showViz = html.getAttribute('data-show-viz');
+    if (showViz !== 'viz') {
+      row.ok = false; row.notes.push('data-show-viz=' + showViz);
+    }
+    if (tool === 'ratio') {
+      const ratioStage = doc.querySelector('.ratio-stage');
+      if (!ratioStage || !vis(ratioStage, doc.defaultView)) {
+        row.ok = false; row.notes.push('ratio-stage not visible');
+      }
+      const box = doc.getElementById('box');
+      if (!box) row.ok = false, row.notes.push('ratio box missing');
+    } else {
+      const stage = doc.getElementById('toolStage');
+      if (!stage) { row.ok = false; row.notes.push('toolStage missing'); }
+      else if (stage.querySelector('.deep-fallback')) {
+        row.ok = false; row.notes.push('unexpected fallback in viz');
+      }
+    }
+    return row;
+  }
+
+  async function assertDeep(doc, win, tool) {
+    const row = { tool: tool, mode: 'deep', ok: true, notes: [] };
+    const html = doc.documentElement;
+    if (html.getAttribute('data-show-viz') !== 'deep') {
+      row.ok = false; row.notes.push('data-show-viz not deep');
+    }
+    const stage = doc.getElementById('toolStage');
+    if (!stage) { row.ok = false; row.notes.push('toolStage missing'); return row; }
+    if (stage.querySelector('.deep-fallback')) {
+      row.ok = false; row.notes.push('deep-fallback shown');
+      return row;
+    }
+    const kind = stage.getAttribute('data-deep');
+    if (WEBGL[tool]) {
+      if (kind !== 'webgl') row.ok = false, row.notes.push('expected webgl got ' + kind);
+      const canvas = stage.querySelector('.deep-canvas');
+      if (!canvas) row.ok = false, row.notes.push('no deep-canvas');
+      else if (!(canvas.width > 0 && canvas.height > 0)) row.ok = false, row.notes.push('canvas zero size');
+    } else {
+      if (kind !== 'vega') row.ok = false, row.notes.push('expected vega got ' + kind);
+      const chart = stage.querySelector('.deep-chart');
+      if (!chart) row.ok = false, row.notes.push('no deep-chart');
+      else if (!chart.querySelector('canvas, svg')) row.ok = false, row.notes.push('chart empty');
+    }
+    const vizEl = stage.querySelector('.deep-chart, .deep-canvas');
+    if (vizEl) {
+      const vr = vizEl.getBoundingClientRect();
+      const sr = stage.getBoundingClientRect();
+      if (vr.height < 100) row.ok = false, row.notes.push('chart height ' + Math.round(vr.height));
+      /* upper-well layout: chart sits above face+stack via --pad-b, not full stage */
+      const st = win.getComputedStyle(stage);
+      const padB = parseFloat(st.getPropertyValue('--pad-b')) || 0;
+      const padT = parseFloat(st.getPropertyValue('--pad-t')) || 0;
+      const wellH = sr.height - padB - padT;
+      if (wellH > 80 && vr.height / wellH < 0.45) {
+        row.ok = false; row.notes.push('chart not filling well ' + Math.round(vr.height) + '/' + Math.round(wellH));
+      }
+    }
+    if (tool === 'ratio') {
+      const ratioStage = doc.querySelector('.ratio-stage');
+      if (ratioStage && vis(ratioStage, doc.defaultView)) {
+        row.ok = false; row.notes.push('ratio-stage should be hidden in deep');
+      }
+    }
+    const scrubId = WEBGL[tool] ? WEBGL_SCRUB[tool] : VEGA_SCRUB[tool];
+    if (scrubId) {
+      const scrub = stage.querySelector('.deep-scrub[data-scrub="' + scrubId + '"]');
+      if (!scrub) row.ok = false, row.notes.push('deep-scrub missing for ' + scrubId);
+      else {
+        const input = doc.getElementById(scrubId);
+        if (input) {
+          scrub.focus();
+          const before = input.value;
+          scrub.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
+          if (Number(input.value) <= Number(before)) {
+            row.ok = false; row.notes.push('deep scrub keyboard ' + before + '→' + input.value);
+          }
+        }
+      }
+    }
+    if (row.ok && scrubId) {
+      const input = doc.getElementById(scrubId);
+      if (input && typeof win.__ibmToolRender === 'function') {
+        const beforeKind = stage.getAttribute('data-deep');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        win.__ibmToolRender();
+        await new Promise(r => setTimeout(r, 400));
+        if (stage.getAttribute('data-deep') !== beforeKind) {
+          row.ok = false; row.notes.push('re-render lost deep kind');
+        }
+        if (stage.querySelector('.deep-fallback')) {
+          row.ok = false; row.notes.push('re-render showed fallback');
+        }
+      }
+    }
+    return row;
+  }
+
+  function assertPlain(doc, tool) {
+    const row = { tool: tool, mode: 'plain', ok: true, notes: [] };
+    if (doc.documentElement.getAttribute('data-show-viz') !== 'plain') {
+      row.ok = false; row.notes.push('data-show-viz not plain');
+    }
+    const stage = doc.getElementById('toolStage');
+    if (stage && stage.innerHTML.trim() && !stage.querySelector('.deep-fallback')) {
+      /* ratio ensureStage may leave empty shell */
+      if (tool !== 'ratio' || stage.querySelector('.deep-chart, .deep-canvas')) {
+        row.ok = false; row.notes.push('toolStage not empty');
+      }
+    }
+    if (tool === 'ratio') {
+      const ratioStage = doc.querySelector('.ratio-stage');
+      if (ratioStage && vis(ratioStage, doc.defaultView)) {
+        row.ok = false; row.notes.push('ratio-stage visible in plain');
+      }
+    }
+    return row;
+  }
+
+  for (const tool of tools) {
+    const path = '/' + tool + '/';
+    for (const mode of ['viz', 'deep', 'plain']) {
+      let iframe;
+      try {
+        iframe = await loadFrame(path, tool, mode);
+        const doc = iframe.contentDocument;
+        const win = iframe.contentWindow;
+        let row;
+        if (mode === 'viz') row = assertViz(doc, tool);
+        else if (mode === 'deep') row = await assertDeep(doc, win, tool);
+        else row = assertPlain(doc, tool);
+        results.push(row);
+      } catch (e) {
+        results.push({ tool: tool, mode: mode, ok: false, notes: [String(e.message || e)] });
+      }
+      if (iframe) iframe.remove();
+    }
+  }
+
+  const fail = results.filter(r => !r.ok).length;
+  out.textContent = JSON.stringify({ fail, results }, null, 2);
+  document.title = fail ? 'FAIL ' + fail : 'PASS';
+})();
+</script>

@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Serif:wght@400;500&family=Josefin+Sans:wght@400;500&family=Josefin+Slab:wght@400;500&family=Libre+Franklin:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Oswald:wght@400;500&family=Roboto+Slab:wght@400;500&family=Share+Tech+Mono&family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Space+Mono:wght@400;700&display=swap"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=39">
+<link rel="stylesheet" href="../lib/number-tool.css?v=43">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -41,17 +41,17 @@
       <label class="row"><span class="key">left</span><span class="value"><input id="left" type="number" inputmode="numeric" min="1" max="52" step="1" value="40" data-primary data-axis="y" data-axis-x="want" data-step-fast="5" data-gesture="1" aria-label="cards left in deck"></span></label>
       <label class="row"><span class="key">want</span><span class="value"><input id="want" type="number" inputmode="numeric" min="0" step="1" value="8" data-step-fast="2" aria-label="wanted cards still left"></span></label>
     </fieldset>
-    <div class="presets" id="presets" role="group" aria-label="deck presets">
-      <button type="button" class="preset" data-left="52" data-want="4">aces</button>
-      <button type="button" class="preset" data-left="52" data-want="13">hearts</button>
-      <button type="button" class="preset" data-left="52" data-want="16">tens+</button>
-      <button type="button" class="preset" data-left="20" data-want="3">short</button>
+    <div class="presets" id="presets" role="group" aria-label="deck presets" data-cols="4">
+      <button type="button" class="preset" data-left="52" data-want="4" aria-pressed="false">aces<span class="preset-meta">4/52</span></button>
+      <button type="button" class="preset" data-left="52" data-want="13" aria-pressed="false">hearts<span class="preset-meta">13/52</span></button>
+      <button type="button" class="preset" data-left="52" data-want="16" aria-pressed="false">tens+<span class="preset-meta">16/52</span></button>
+      <button type="button" class="preset" data-left="20" data-want="3" aria-pressed="false">short<span class="preset-meta">3/20</span></button>
     </div>
     <p class="note">lit cards = the ones you want</p>
   </div>
 </main>
-<script src="../lib/suite.js?v=39"></script>
-<script src="../lib/number-tool.js?v=39"></script>
+<script src="../lib/suite.js?v=43"></script>
+<script src="../lib/number-tool.js?v=43"></script>
 <script>
 (function () {
   if (window.IBMTools) IBMTools.mountSuiteNav('deal');
@@ -100,14 +100,14 @@
     if (mode === 'deep') IBMNumberTool.paintDeep('deal', stage, { left: left, want: want, p: pp });
     else if (mode !== 'plain') paint(left, want);
     else stage.innerHTML = '';
+    if (presets) presets.sync();
   }
   window.__ibmToolRender = render;
-  document.getElementById('presets').addEventListener('click', function(e){
-    var btn = e.target.closest('.preset');
-    if (!btn) return;
-    document.getElementById('left').value = btn.getAttribute('data-left');
-    document.getElementById('want').value = btn.getAttribute('data-want');
-    render();
+
+  var presets = IBMNumberTool.bindPresets('#presets', {
+    keys: ["left","want"],
+    map: null,
+    after: function () { render(); }
   });
   ['left','want'].forEach(function(id){
     document.getElementById(id).addEventListener('input', render);

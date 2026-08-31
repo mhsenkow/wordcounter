@@ -18,12 +18,12 @@
     { path: 'odds', primary: 'p', secondary: 'win' },
     { path: 'combo', primary: 'n', secondary: 'k' },
     { path: 'sample', primary: 'n', secondary: 'p' },
-    { path: 'budget', primary: 'pot', secondary: 'live' },
+    { path: 'budget', primary: 'live', secondary: 'pot' },
     { path: 'exposure', primary: 'fnum', secondary: 'shut', pinchTarget: 'iso' },
     { path: 'deal', primary: 'left', secondary: 'want' },
     { path: 'streak', primary: 'p', secondary: 'run' },
     { path: 'tax', primary: 'subtotal', secondary: 'tip' },
-    { path: 'pace', primary: 'distance', secondary: 'pace' },
+    { path: 'pace', primary: 'pace', secondary: 'distance' },
     { path: 'contrast', primary: 'lift' },
     { path: 'bayes', primary: 'prior', secondary: 'hit' },
   ];
@@ -88,22 +88,24 @@
 
       if (t.secondary) {
         const sec = doc.getElementById(t.secondary);
-        const sb = sec.value;
-        for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: 0, deltaX: 40 });
-        if (primary.getAttribute('data-axis-x') === t.secondary && Number(sec.value) === Number(sb)) {
-          row.ok = false; row.notes.push('horizontal no change');
+        if (sec && sec.tagName !== 'SELECT') {
+          const sb = sec.value;
+          for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: 0, deltaX: 40 });
+          if (primary.getAttribute('data-axis-x') === t.secondary && Number(sec.value) === Number(sb)) {
+            row.ok = false; row.notes.push('horizontal no change');
+          }
+          sec.focus();
+          const s2 = sec.value;
+          const p2 = primary.value;
+          for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0 });
+          if (Number(sec.value) <= Number(s2)) {
+            row.ok = false; row.notes.push('focused secondary not driven');
+          }
+          if (Number(primary.value) !== Number(p2)) {
+            row.ok = false; row.notes.push('primary moved while secondary focused');
+          }
+          sec.blur();
         }
-        sec.focus();
-        const s2 = sec.value;
-        const p2 = primary.value;
-        for (let i = 0; i < 3; i++) fireWheel(doc, { deltaY: -40, deltaX: 0 });
-        if (Number(sec.value) <= Number(s2)) {
-          row.ok = false; row.notes.push('focused secondary not driven');
-        }
-        if (Number(primary.value) !== Number(p2)) {
-          row.ok = false; row.notes.push('primary moved while secondary focused');
-        }
-        sec.blur();
       }
 
       const pinchEl = doc.getElementById(t.pinchTarget || t.primary);
@@ -248,6 +250,55 @@
           row.ok = false; row.notes.push('settings still scrubs dial');
         }
         doc.body.classList.remove('settings-open');
+      }
+    } catch (e) {
+      row.ok = false; row.notes.push(String(e && e.message || e));
+    }
+    if (iframe) iframe.remove();
+    results.push(row);
+  }
+
+  /* —— Deep mode gesture subset —— */
+  const deepTools = [
+    { path: 'bill', scrub: 'tip' },
+    { path: 'fuel', scrub: 'miles' },
+    { path: 'ratio', scrub: 'w', isRatio: true },
+    { path: 'budget', scrub: 'live' },
+    { path: 'pace', scrub: 'pace' }
+  ];
+  for (const t of deepTools) {
+    const row = { tool: t.path + ':deep', ok: true, notes: [] };
+    let iframe;
+    try {
+      try {
+        localStorage.setItem('ibm.tool.' + t.path + '.settings', JSON.stringify({
+          theme: 'light', ui: 'braun', font: 'mono', faces: 'local', showViz: 'deep'
+        }));
+      } catch (e) {}
+      iframe = await loadFrame('/' + t.path + '/?deepgest=' + Date.now());
+      await new Promise(r => setTimeout(r, 2200));
+      const doc = iframe.contentDocument;
+      const stage = doc.getElementById('toolStage');
+      if (!stage) { row.ok = false; row.notes.push('toolStage missing'); }
+      else if (stage.querySelector('.deep-fallback')) {
+        row.ok = false; row.notes.push('deep-fallback');
+      } else {
+        const input = doc.getElementById(t.scrub);
+        const scrubEl = stage.querySelector('.deep-scrub[data-scrub="' + t.scrub + '"]') || stage;
+        if (!input) { row.ok = false; row.notes.push('input ' + t.scrub); }
+        else {
+          const before = input.value;
+          for (let i = 0; i < 3; i++) fireWheel(scrubEl, { deltaY: -40, deltaX: 0 });
+          if (Number(input.value) <= Number(before)) {
+            row.ok = false; row.notes.push('deep wheel no change ' + before + '→' + input.value);
+          }
+        }
+        if (t.isRatio) {
+          const rs = doc.querySelector('.ratio-stage');
+          if (rs && rs.offsetParent !== null) {
+            row.ok = false; row.notes.push('ratio-stage visible in deep');
+          }
+        }
       }
     } catch (e) {
       row.ok = false; row.notes.push(String(e && e.message || e));
