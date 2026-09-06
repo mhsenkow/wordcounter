@@ -89,7 +89,7 @@ function pageShell({ id, title, blurb, about, status, body, script, hasViz, extr
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="webFonts" rel="stylesheet" href="${FONTS}" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="${FONTS}"></noscript>
-<link rel="stylesheet" href="../lib/number-tool.css?v=45">
+<link rel="stylesheet" href="../lib/number-tool.css?v=46">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 </head>
@@ -113,7 +113,7 @@ ${soon ? `<p class="soon-badge">coming soon</p>
   </div>
   <p class="note">Open the tools panel (top right) for live instruments. This page holds the slot so the suite stays honest.</p>` : body}
 </main>
-<script src="../lib/suite.js?v=45"></script>
+<script src="../lib/suite.js?v=47"></script>
 <script src="../lib/number-tool.js?v=45"></script>
 <script>
 (function () {
@@ -1742,6 +1742,271 @@ ${presetsSyncLine()}
   });
 ${presetsBind(['tax','tip'])}
   render();`
+  },
+
+  invoice: {
+    title: 'invoice',
+    blurb: 'lines · due',
+    about: 'Parties + line items → subtotal → discount → tax → due. Stage is a printable invoice sheet; scrub qty or tax on the face.',
+    status: 'live',
+    hasViz: true,
+    extra: makeExtra(
+      { layout: 'sheet' },
+      segField('layout', 'layout', 'stage layout', [['sheet', 'sheet'], ['bands', 'bands']])
+    ),
+    body: `
+  <div class="face">
+    <div class="face-value" id="out" role="status" aria-live="polite" aria-atomic="true">$0.00</div>
+    <p class="face-sub" id="sub">due</p>
+  </div>
+  <div class="stack">
+    <fieldset class="panel">
+      <legend>parties</legend>
+      <label class="row is-text"><span class="key">from</span><span class="value"><input id="from" type="text" autocomplete="organization" value="Acme Studio" aria-label="from"></span></label>
+      <label class="row is-text"><span class="key">to</span><span class="value"><input id="to" type="text" autocomplete="organization" value="Client Co" aria-label="bill to"></span></label>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>meta</legend>
+      <label class="row is-text"><span class="key">number</span><span class="value"><input id="number" type="text" value="INV-1042" aria-label="invoice number"></span></label>
+      <label class="row is-text"><span class="key">date</span><span class="value"><input id="date" type="text" value="2026-03-12" aria-label="invoice date"></span></label>
+      <label class="row is-text"><span class="key">due</span><span class="value"><input id="due" type="text" value="2026-03-26" aria-label="due date"></span></label>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>lines</legend>
+      <div class="inv-edit" id="invEdit" role="group" aria-label="line items">
+        <div class="inv-edit-head" aria-hidden="true"><span>desc</span><span>qty</span><span>rate</span></div>
+        <div class="inv-edit-row">
+          <input id="d1" type="text" class="is-text" value="Design" aria-label="line 1 description">
+          <input id="q1" type="number" inputmode="decimal" min="0" step="0.5" value="12" data-no-spin data-primary data-axis="y" data-axis-x="r1" data-step-fast="2" data-gesture="1" aria-label="line 1 quantity">
+          <input id="r1" type="number" inputmode="decimal" min="0" step="5" value="125" data-no-spin data-step-fast="25" aria-label="line 1 rate">
+        </div>
+        <div class="inv-edit-row">
+          <input id="d2" type="text" class="is-text" value="Research" aria-label="line 2 description">
+          <input id="q2" type="number" inputmode="decimal" min="0" step="0.5" value="4" data-no-spin data-step-fast="2" aria-label="line 2 quantity">
+          <input id="r2" type="number" inputmode="decimal" min="0" step="5" value="125" data-no-spin data-step-fast="25" aria-label="line 2 rate">
+        </div>
+        <div class="inv-edit-row">
+          <input id="d3" type="text" class="is-text" value="" placeholder="—" aria-label="line 3 description">
+          <input id="q3" type="number" inputmode="decimal" min="0" step="0.5" value="0" data-no-spin data-step-fast="2" aria-label="line 3 quantity">
+          <input id="r3" type="number" inputmode="decimal" min="0" step="5" value="0" data-no-spin data-step-fast="25" aria-label="line 3 rate">
+        </div>
+        <div class="inv-edit-row">
+          <input id="d4" type="text" class="is-text" value="" placeholder="—" aria-label="line 4 description">
+          <input id="q4" type="number" inputmode="decimal" min="0" step="0.5" value="0" data-no-spin data-step-fast="2" aria-label="line 4 quantity">
+          <input id="r4" type="number" inputmode="decimal" min="0" step="5" value="0" data-no-spin data-step-fast="25" aria-label="line 4 rate">
+        </div>
+      </div>
+    </fieldset>
+    <fieldset class="panel">
+      <legend>adjust</legend>
+      ${selectRow('disc as', 'discMode', 'discount mode', [['dollars', 'dollars', true], ['pct', 'percent']])}
+      <label class="row"><span class="key">discount</span><span class="value"><input id="discount" type="number" inputmode="decimal" min="0" step="1" value="0" data-step-fast="10" aria-label="discount"></span></label>
+      <label class="row"><span class="key">tax</span><span class="value"><input id="tax" type="number" inputmode="decimal" min="0" max="100" step="0.25" value="0" data-step-fast="1" aria-label="tax percent"><span class="unit">%</span></span></label>
+    </fieldset>
+${presetsMarkup('invoice presets', [
+  { label: 'design', d1: 'Design', q1: '12', r1: '125', d2: 'Research', q2: '4', r2: '125', d3: '', q3: '0', r3: '0', d4: '', q4: '0', r4: '0', discount: '0', tax: '0', meta: '16h', pressed: true },
+  { label: 'retainer', d1: 'Retainer', q1: '1', r1: '4000', d2: '', q2: '0', r2: '0', d3: '', q3: '0', r3: '0', d4: '', q4: '0', r4: '0', discount: '0', tax: '0', meta: 'month' },
+  { label: 'goods', d1: 'Widgets', q1: '24', r1: '18', d2: 'Shipping', q2: '1', r2: '45', d3: '', q3: '0', r3: '0', d4: '', q4: '0', r4: '0', discount: '0', tax: '8.875', meta: 'taxed' },
+  { label: 'clear', d1: '', q1: '0', r1: '0', d2: '', q2: '0', r2: '0', d3: '', q3: '0', r3: '0', d4: '', q4: '0', r4: '0', discount: '0', tax: '0', meta: 'blank' }
+])}
+  </div>`,
+    script: `
+  var stage = IBMNumberTool.ensureStage('invoice');
+  var LINE_N = 4;
+  function S(){ return (toolUI && toolUI.settings) || {}; }
+  function money(n){ return IBMNumberTool.formatMoney(n, { forceCents: true }); }
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function val(id){
+    var el = document.getElementById(id);
+    return el ? el.value : '';
+  }
+  function num(id){
+    return Math.max(0, parseFloat(val(id)) || 0);
+  }
+  function readLines(){
+    var out = [];
+    for (var i = 1; i <= LINE_N; i++) {
+      var desc = String(val('d' + i) || '').trim();
+      var qty = num('q' + i);
+      var rate = num('r' + i);
+      var amt = qty * rate;
+      if (!desc && amt <= 0) continue;
+      out.push({
+        i: i,
+        desc: desc || ('Line ' + i),
+        qty: qty,
+        rate: rate,
+        amt: amt
+      });
+    }
+    return out;
+  }
+  function totals(lines){
+    var sub = lines.reduce(function(s, L){ return s + L.amt; }, 0);
+    var discRaw = num('discount');
+    var discMode = val('discMode') === 'pct' ? 'pct' : 'dollars';
+    var discAmt = discMode === 'pct' ? sub * (discRaw / 100) : discRaw;
+    if (discAmt > sub) discAmt = sub;
+    var taxable = Math.max(0, sub - discAmt);
+    var taxPct = num('tax');
+    var taxAmt = taxable * (taxPct / 100);
+    var grand = taxable + taxAmt;
+    return { sub: sub, discAmt: discAmt, discMode: discMode, taxable: taxable, taxPct: taxPct, taxAmt: taxAmt, grand: grand };
+  }
+  function paintSheet(lines, t){
+    var html = '<div class="inv-sheet">';
+    html += '<div class="inv-head"><div class="inv-brand">invoice</div><div class="inv-meta">';
+    html += '<span><em>#</em><b>' + esc(val('number') || '—') + '</b></span>';
+    html += '<span><em>date</em><b>' + esc(val('date') || '—') + '</b></span>';
+    html += '<span><em>due</em><b>' + esc(val('due') || '—') + '</b></span>';
+    html += '</div></div>';
+    html += '<div class="inv-parties">';
+    html += '<div><em>from</em><b>' + esc(val('from') || '—') + '</b></div>';
+    html += '<div><em>to</em><b>' + esc(val('to') || '—') + '</b></div>';
+    html += '</div>';
+    html += '<div class="inv-lines" role="table" aria-label="line items">';
+    html += '<div class="inv-line is-head" role="row"><span>item</span><span>qty</span><span>rate</span><span>amt</span></div>';
+    if (!lines.length) {
+      html += '<div class="inv-line is-empty" role="row"><span>no lines yet</span></div>';
+    } else {
+      for (var i = 0; i < lines.length; i++) {
+        var L = lines[i];
+        var w = t.sub > 0 ? Math.max(2, (L.amt / t.sub) * 100) : 0;
+        html += '<div class="inv-line" role="row" data-scrub="q' + L.i + '" style="--w:' + w.toFixed(1) + '%">';
+        html += '<span class="inv-desc">' + esc(L.desc) + '</span>';
+        html += '<span>' + (L.qty % 1 ? L.qty.toFixed(1) : String(L.qty)) + '</span>';
+        html += '<span>' + money(L.rate) + '</span>';
+        html += '<span class="inv-amt">' + money(L.amt) + '</span>';
+        html += '</div>';
+      }
+    }
+    html += '</div>';
+    html += '<div class="inv-totals">';
+    html += '<div><em>subtotal</em><b>' + money(t.sub) + '</b></div>';
+    if (t.discAmt > 0) {
+      html += '<div data-scrub="discount"><em>discount' + (t.discMode === 'pct' ? ' · %' : '') + '</em><b>−' + money(t.discAmt) + '</b></div>';
+    }
+    if (t.taxAmt > 0 || t.taxPct > 0) {
+      html += '<div data-scrub="tax"><em>tax · ' + t.taxPct + '%</em><b>' + money(t.taxAmt) + '</b></div>';
+    }
+    html += '<div class="is-grand"><em>total due</em><b>' + money(t.grand) + '</b></div>';
+    html += '</div></div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function paintBands(lines, t){
+    var parts = lines.slice();
+    if (t.discAmt > 0) parts.push({ i: 'discount', desc: 'discount', amt: -t.discAmt, scrub: 'discount' });
+    if (t.taxAmt > 0) parts.push({ i: 'tax', desc: 'tax', amt: t.taxAmt, scrub: 'tax' });
+    var max = Math.max(t.grand, t.sub, 0.01);
+    var html = '<div class="inv-bands">';
+    if (!parts.length) {
+      html += '<div class="inv-band is-empty"><em>add a line</em></div>';
+    } else {
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        var pct = Math.max(2, Math.min(100, (Math.abs(p.amt) / max) * 100));
+        var scrub = p.scrub || ('q' + p.i);
+        html += '<div class="inv-band' + (p.amt < 0 ? ' is-disc' : '') + (scrub === 'tax' ? ' is-tax' : '') + '" data-scrub="' + scrub + '" style="--w:' + pct.toFixed(1) + '%">';
+        html += '<em>' + esc(p.desc) + '</em><b>' + money(p.amt) + '</b><i></i></div>';
+      }
+    }
+    html += '</div>';
+    stage.innerHTML = html;
+    IBMNumberTool.afterPaint && IBMNumberTool.afterPaint();
+  }
+  function plainText(lines, t){
+    var rows = [
+      'INVOICE ' + (val('number') || ''),
+      'From: ' + (val('from') || ''),
+      'To: ' + (val('to') || ''),
+      'Date: ' + (val('date') || '') + ' · Due: ' + (val('due') || ''),
+      ''
+    ];
+    lines.forEach(function(L){
+      rows.push(L.desc + ' · ' + L.qty + ' × ' + money(L.rate) + ' = ' + money(L.amt));
+    });
+    rows.push('');
+    rows.push('Subtotal ' + money(t.sub));
+    if (t.discAmt > 0) rows.push('Discount −' + money(t.discAmt));
+    if (t.taxAmt > 0) rows.push('Tax ' + money(t.taxAmt));
+    rows.push('Total due ' + money(t.grand));
+    return rows.join('\\n');
+  }
+  function render(){
+    var lines = readLines();
+    var t = totals(lines);
+    document.getElementById('out').textContent = money(t.grand);
+    var n = lines.length;
+    document.getElementById('sub').textContent =
+      (n ? n + (n === 1 ? ' line' : ' lines') : 'no lines') +
+      (val('due') ? ' · due ' + val('due') : '') +
+      (t.taxAmt > 0 ? ' · tax ' + money(t.taxAmt) : '');
+    var mode = IBMNumberTool.vizMode ? IBMNumberTool.vizMode(S()) : 'viz';
+    if (mode === 'deep') {
+      IBMNumberTool.paintDeep('invoice', stage, {
+        lines: lines.map(function(L){ return { desc: L.desc, amt: L.amt }; }),
+        sub: t.sub, disc: t.discAmt, tax: t.taxAmt, grand: t.grand
+      });
+    } else if (mode !== 'plain') {
+      if ((S().layout || 'sheet') === 'bands') paintBands(lines, t);
+      else paintSheet(lines, t);
+    } else stage.innerHTML = '';
+    window.__ibmInvoicePlain = function(){ return plainText(lines, t); };
+${presetsSyncLine()}
+  }
+  window.__ibmToolRender = render;
+  ['from','to','number','date','due','discMode','discount','tax','d1','q1','r1','d2','q2','r2','d3','q3','r3','d4','q4','r4'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+${presetsBind(['d1','q1','r1','d2','q2','r2','d3','q3','r3','d4','q4','r4','discount','tax'])}
+  function wirePrintCopy(){
+    var actions = document.querySelector('main .face .face-actions');
+    if (!actions) return;
+    if (!document.getElementById('printInvBtn')) {
+      var pb = document.createElement('button');
+      pb.type = 'button';
+      pb.className = 'quiet-btn';
+      pb.id = 'printInvBtn';
+      pb.title = 'Save as PDF via print dialog';
+      pb.textContent = 'pdf';
+      pb.addEventListener('click', function(){
+        var lines = readLines();
+        var t = totals(lines);
+        paintSheet(lines, t);
+        var restore = function(){
+          window.removeEventListener('afterprint', restore);
+          render();
+        };
+        window.addEventListener('afterprint', restore);
+        setTimeout(function(){ window.print(); }, 30);
+      });
+      actions.appendChild(pb);
+    }
+    var copyBtn = document.getElementById('copyResultBtn');
+    if (copyBtn && !copyBtn.dataset.invBound) {
+      copyBtn.dataset.invBound = '1';
+      copyBtn.addEventListener('click', function(e){
+        if (typeof window.__ibmInvoicePlain !== 'function') return;
+        e.stopImmediatePropagation();
+        var text = window.__ibmInvoicePlain();
+        IBMNumberTool.copyText(text).then(function(){
+          var prev = copyBtn.textContent;
+          copyBtn.textContent = 'copied';
+          setTimeout(function(){ copyBtn.textContent = prev; }, 1200);
+        });
+      }, true);
+    }
+  }
+  render();
+  setTimeout(wirePrintCopy, 0);
+  setTimeout(wirePrintCopy, 50);`
   },
 
   pace: {

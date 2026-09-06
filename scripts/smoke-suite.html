@@ -6,7 +6,7 @@
 (async () => {
   const out = document.getElementById('out');
   const LIVE_TOOLS = [
-    'bill', 'hourly', 'budget', 'fuel', 'tax', 'unit', 'dose', 'bitrate',
+    'bill', 'hourly', 'budget', 'fuel', 'tax', 'invoice', 'unit', 'dose', 'bitrate',
     'scalemap', 'pace', 'ratio', 'typescale', 'exposure', 'contrast',
     'odds', 'combo', 'deal', 'sample', 'streak', 'bayes', 'words', 'time'
   ];
@@ -38,7 +38,7 @@
       check('map-no-soon', !doc.body.classList.contains('is-soon'));
       const hrefs = links.map(a => a.getAttribute('href') || '').join(' ');
       for (const id of ['bill', 'bayes', 'ratio', 'pace']) {
-        check('map-link-' + id, /bill|hourly|fuel|tax|unit|dose|bitrate|scalemap|pace|ratio|typescale|exposure|contrast|odds|combo|deal|sample|streak|bayes/.test(hrefs));
+        check('map-link-' + id, /bill|hourly|fuel|tax|invoice|unit|dose|bitrate|scalemap|pace|ratio|typescale|exposure|contrast|odds|combo|deal|sample|streak|bayes/.test(hrefs));
       }
       const groups = doc.querySelectorAll('.map-group');
       check('map-groups', groups.length >= 4, 'groups=' + groups.length);

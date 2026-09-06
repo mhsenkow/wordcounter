@@ -15,6 +15,7 @@ Surreptitious **tools panel** (top-right grid): icons + micro titles, grouped. T
 | money | **budget** | `budget/` | `/budget/` | live |
 | money | **fuel** | `fuel/` | `/fuel/` | live |
 | money | **tax** | `tax/` | `/tax/` | live |
+| money | **invoice** | `invoice/` | `/invoice/` | live |
 | convert | **unit** | `unit/` | `/unit/` | live |
 | convert | **dose** | `dose/` | `/dose/` | live |
 | convert | **bandwidth** | `bitrate/` | `/bitrate/` | live · labeled bandwidth |

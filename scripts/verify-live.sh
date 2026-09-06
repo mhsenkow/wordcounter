@@ -24,7 +24,7 @@ check() {
 echo "== Cloudflare Worker ($BASE) =="
 for path in \
   /wordcount/ /timecount/ /tools/ \
-  /bill/ /hourly/ /budget/ /fuel/ /tax/ \
+  /bill/ /hourly/ /budget/ /fuel/ /tax/ /invoice/ \
   /unit/ /dose/ /bitrate/ /scalemap/ /pace/ \
   /ratio/ /typescale/ /exposure/ /contrast/ \
   /odds/ /combo/ /deal/ /sample/ /streak/ /bayes/; do

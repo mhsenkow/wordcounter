@@ -3484,3 +3484,369 @@ body[data-tool="ratio"] .ratio-stage .guides .spiral {
   font: 500 1.35rem/1 var(--digits);
   color: var(--ink);
 }
+
+/* —— Invoice —— */
+label.row.is-text input[type="text"],
+.inv-edit input.is-text {
+  text-align: left;
+  font-family: var(--ui);
+  font-variant-numeric: normal;
+  letter-spacing: 0;
+}
+.inv-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 2px;
+}
+.inv-edit-head,
+.inv-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 64px 72px;
+  gap: 6px;
+  align-items: center;
+}
+.inv-edit-head {
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mute);
+  opacity: .7;
+  padding: 0 0 4px;
+}
+.inv-edit-row input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0;
+}
+.inv-edit-row input[type="number"] {
+  text-align: right;
+}
+/* Keep sheet clear of masthead (left) + suite chrome (right) */
+.tool-stage[data-kind="invoice"] {
+  --pad-t: calc(var(--mast-h) + 28px);
+  --pad-r: max(120px, 14vw);
+  --pad-l: max(20px, 3vw);
+}
+.tool-stage[data-kind="invoice"] .inv-sheet,
+.tool-stage[data-kind="invoice"] .inv-bands {
+  position: absolute;
+  inset: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tool-stage[data-kind="invoice"] .inv-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--face) 94%, transparent);
+  box-sizing: border-box;
+}
+.tool-stage[data-kind="invoice"] .inv-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+.tool-stage[data-kind="invoice"] .inv-brand {
+  font: 500 12px/1.1 var(--ui);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.tool-stage[data-kind="invoice"] .inv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: right;
+  font-size: 11px;
+}
+.tool-stage[data-kind="invoice"] .inv-meta em,
+.tool-stage[data-kind="invoice"] .inv-parties em,
+.tool-stage[data-kind="invoice"] .inv-totals em {
+  font-style: normal;
+  color: var(--mute);
+  letter-spacing: .06em;
+  text-transform: lowercase;
+  margin-right: 8px;
+}
+.tool-stage[data-kind="invoice"] .inv-meta b,
+.tool-stage[data-kind="invoice"] .inv-parties b,
+.tool-stage[data-kind="invoice"] .inv-totals b {
+  font: 500 12px/1.2 var(--digits);
+  color: var(--ink);
+}
+.tool-stage[data-kind="invoice"] .inv-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 6px 0 2px;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.tool-stage[data-kind="invoice"] .inv-parties div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tool-stage[data-kind="invoice"] .inv-parties b {
+  font-family: var(--ui);
+  font-weight: 500;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-stage[data-kind="invoice"] .inv-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.tool-stage[data-kind="invoice"] .inv-line {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 48px 64px 72px;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  font-size: 12px;
+  color: var(--ink);
+  border-bottom: 1px solid color-mix(in srgb, var(--hair) 80%, transparent);
+}
+.tool-stage[data-kind="invoice"] .inv-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: var(--w, 0%);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  pointer-events: none;
+}
+.tool-stage[data-kind="invoice"] .inv-line.is-head {
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--mute);
+  padding-top: 0;
+  border-bottom-color: var(--hair);
+}
+.tool-stage[data-kind="invoice"] .inv-line.is-head::before,
+.tool-stage[data-kind="invoice"] .inv-line.is-empty::before {
+  display: none;
+}
+.tool-stage[data-kind="invoice"] .inv-line.is-empty {
+  color: var(--mute);
+  grid-template-columns: 1fr;
+}
+.tool-stage[data-kind="invoice"] .inv-line span:not(.inv-desc) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--digits);
+}
+.tool-stage[data-kind="invoice"] .inv-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-stage[data-kind="invoice"] .inv-amt {
+  font-weight: 500;
+}
+.tool-stage[data-kind="invoice"] .inv-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+  padding-top: 6px;
+  margin-top: auto;
+}
+.tool-stage[data-kind="invoice"] .inv-totals > div {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  min-width: min(220px, 100%);
+  justify-content: space-between;
+}
+.tool-stage[data-kind="invoice"] .inv-totals .is-grand {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ink);
+}
+.tool-stage[data-kind="invoice"] .inv-totals .is-grand b {
+  font-size: 15px;
+}
+.tool-stage[data-kind="invoice"] .inv-bands {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+.tool-stage[data-kind="invoice"] .inv-band {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  padding: 6px 8px;
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+.tool-stage[data-kind="invoice"] .inv-band i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--w, 0%);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  pointer-events: none;
+}
+.tool-stage[data-kind="invoice"] .inv-band.is-disc i {
+  background: color-mix(in srgb, var(--mute) 22%, transparent);
+}
+.tool-stage[data-kind="invoice"] .inv-band.is-tax i {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.tool-stage[data-kind="invoice"] .inv-band em {
+  position: relative;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--mute);
+  z-index: 1;
+}
+.tool-stage[data-kind="invoice"] .inv-band b {
+  position: relative;
+  z-index: 1;
+  font: 500 12px/1 var(--digits);
+}
+.tool-stage[data-kind="invoice"] .inv-band.is-empty {
+  color: var(--mute);
+  justify-content: center;
+  border-style: dashed;
+}
+@media (max-width: 520px) {
+  .inv-edit-head,
+  .inv-edit-row {
+    grid-template-columns: minmax(0, 1fr) 56px 64px;
+  }
+  .tool-stage[data-kind="invoice"] {
+    --pad-r: 72px;
+    --pad-l: 16px;
+  }
+  .tool-stage[data-kind="invoice"] .inv-line {
+    grid-template-columns: minmax(0, 1fr) 40px 52px 60px;
+    gap: 4px;
+    font-size: 11px;
+  }
+  .tool-stage[data-kind="invoice"] .inv-parties {
+    grid-template-columns: 1fr;
+  }
+}
+@media (orientation: landscape) and (max-height: 820px) {
+  .tool-stage[data-kind="invoice"] {
+    --pad-t: calc(var(--mast-h) + 12px);
+    --pad-r: max(100px, 12vw);
+  }
+  .tool-stage[data-kind="invoice"] .inv-sheet {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .tool-stage[data-kind="invoice"] .inv-line {
+    padding: 3px 0;
+  }
+}
+
+/* Invoice print — sheet only, letter-ready */
+@media print {
+  body.tool-app[data-tool="invoice"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block !important;
+    padding: 0.55in !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+  body.tool-app[data-tool="invoice"] .masthead,
+  body.tool-app[data-tool="invoice"] .suite-nav,
+  body.tool-app[data-tool="invoice"] .suite-chrome,
+  body.tool-app[data-tool="invoice"] main,
+  body.tool-app[data-tool="invoice"] #settings,
+  body.tool-app[data-tool="invoice"] .dock,
+  body.tool-app[data-tool="invoice"] .face-actions,
+  body.tool-app[data-tool="invoice"] .scrub-bubble,
+  body.tool-app[data-tool="invoice"] .actions,
+  body.tool-app[data-tool="invoice"] button {
+    display: none !important;
+  }
+  body.tool-app[data-tool="invoice"] .tool-stage {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+    --pad-t: 0px;
+    --pad-r: 0px;
+    --pad-b: 0px;
+    --pad-l: 0px;
+  }
+  body.tool-app[data-tool="invoice"] .inv-sheet,
+  body.tool-app[data-tool="invoice"] .inv-bands {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+    padding: 0 !important;
+    gap: 14px !important;
+    color: #111 !important;
+  }
+  body.tool-app[data-tool="invoice"] .inv-sheet *,
+  body.tool-app[data-tool="invoice"] .inv-bands * {
+    color: #111 !important;
+    border-color: #ccc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.tool-app[data-tool="invoice"] .inv-brand {
+    font-size: 16px !important;
+    letter-spacing: .2em !important;
+  }
+  body.tool-app[data-tool="invoice"] .inv-meta b,
+  body.tool-app[data-tool="invoice"] .inv-parties b,
+  body.tool-app[data-tool="invoice"] .inv-totals b,
+  body.tool-app[data-tool="invoice"] .inv-amt {
+    font-weight: 600 !important;
+  }
+  body.tool-app[data-tool="invoice"] .inv-totals .is-grand {
+    border-top-color: #111 !important;
+  }
+  body.tool-app[data-tool="invoice"] .inv-line::before,
+  body.tool-app[data-tool="invoice"] .inv-band i,
+  body.tool-app[data-tool="invoice"] .inv-line[data-scrub],
+  body.tool-app[data-tool="invoice"] .inv-totals [data-scrub] {
+    outline: none !important;
+  }
+  body.tool-app[data-tool="invoice"] .inv-line::before,
+  body.tool-app[data-tool="invoice"] .inv-band i {
+    display: none !important;
+  }
+  body.tool-app[data-tool="invoice"] .deep-chart,
+  body.tool-app[data-tool="invoice"] .deep-canvas,
+  body.tool-app[data-tool="invoice"] .deep-fallback {
+    display: none !important;
+  }
+}

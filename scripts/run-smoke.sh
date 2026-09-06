@@ -17,7 +17,7 @@ node <<NODE
 const fs = require('fs');
 const path = require('path');
 const CACHE_V = ${CACHE_V};
-const tools = ['bill','hourly','fuel','unit','dose','bitrate','scalemap','ratio','typescale','odds','combo','sample','budget','exposure','deal','streak','tax','pace','contrast','bayes'];
+const tools = ['bill','hourly','fuel','unit','dose','bitrate','scalemap','ratio','typescale','odds','combo','sample','budget','exposure','deal','streak','tax','invoice','pace','contrast','bayes'];
 let fail = 0;
 function bad(msg) { console.error('FAIL', msg); fail++; }
 

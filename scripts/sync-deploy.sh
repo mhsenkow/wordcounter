@@ -10,7 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PORT="${PORTFOLIO_PUBLIC:-/Users/powerox/portfolio/portfolio/public}"
 PORTFOLIO_APP="$(dirname "$PORT")"
-TOOLS=(bill hourly fuel unit dose bitrate scalemap ratio typescale odds combo sample budget exposure deal streak tax pace contrast bayes)
+TOOLS=(bill hourly fuel unit dose bitrate scalemap ratio typescale odds combo sample budget exposure deal streak tax invoice pace contrast bayes)
 DO_FTP=0
 DO_CF=0
 
